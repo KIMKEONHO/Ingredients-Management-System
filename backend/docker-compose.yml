@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: kkhims-mysql-container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: kkhims
+      MYSQL_USER: testuser
+      MYSQL_PASSWORD: testpw
+    ports:
+      - "3309:3306"  # 로컬에서 접근할 수 있게 포트 매핑
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - kkhims-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql-data:
+
+networks:
+  kkhims-net:
+    driver: bridge
