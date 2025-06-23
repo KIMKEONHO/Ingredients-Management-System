@@ -24,16 +24,70 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-security")
+// Spring Boot 기본 의존성
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-security") // security
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+
+    // Lombok
     compileOnly("org.projectlombok:lombok")
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
-    runtimeOnly("com.h2database:h2")
-    runtimeOnly("com.mysql:mysql-connector-j")
     annotationProcessor("org.projectlombok:lombok")
+
+    // 개발 및 실행환경 관련
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+//    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
+
+    // DB
+    runtimeOnly("com.mysql:mysql-connector-j")
+    runtimeOnly("com.h2database:h2")
+
+    // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+//    testImplementation("org.testcontainers:mysql:1.19.3")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
     testImplementation("org.springframework.security:spring-security-test")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // OpenAPI
+//    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
+
+    // JSON 처리
+//    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+//    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+//    implementation("com.google.code.gson:gson")
+
+    // JWT
+    implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
+
+    // QueryDSL (JPA 동적 쿼리 빌더)
+//    implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
+//    annotationProcessor("com.querydsl:querydsl-apt:5.0.0:jakarta")
+//    annotationProcessor("jakarta.annotation:jakarta.annotation-api")
+//    annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+
+    // 외부 라이브러리
+//    implementation("net.nurigo:sdk:4.2.7") // 누리고 SDK
+//    implementation("org.jsoup:jsoup:1.17.2")
+//    implementation("org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE")
+
+    // Kotlin 지원
+//    implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    // STOMP
+//    implementation("org.springframework.boot:spring-boot-starter-websocket")
+//    implementation("org.springframework.boot:spring-boot-starter-webflux")
+//    implementation("org.springframework.boot:spring-boot-starter-actuator")
+//    implementation("org.springframework.boot:spring-boot-starter-aop")
+//    implementation("org.springframework.boot:spring-boot-starter-cache")
+
+    // Apache POI for Excel export - 추가된 부분
+//    implementation("org.apache.poi:poi:5.2.3")
+//    implementation("org.apache.poi:poi-ooxml:5.2.3")
 }
 
 tasks.test {

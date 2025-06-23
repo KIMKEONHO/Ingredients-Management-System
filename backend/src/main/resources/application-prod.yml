@@ -2,7 +2,7 @@ server:
   port: 8090
 spring:
   datasource:
-    url: jdbc:mysql://52.79.119.147:3309/kkmims
+    url: jdbc:mysql://52.79.119.147:3309/kkhims
     username: root
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
