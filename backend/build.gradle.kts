@@ -29,9 +29,13 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security") // security
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-mail")
+
+    // redis
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.session:spring-session-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     // Lombok
     compileOnly("org.projectlombok:lombok")
@@ -81,7 +85,6 @@ dependencies {
     // STOMP
 //    implementation("org.springframework.boot:spring-boot-starter-websocket")
 //    implementation("org.springframework.boot:spring-boot-starter-webflux")
-//    implementation("org.springframework.boot:spring-boot-starter-actuator")
 //    implementation("org.springframework.boot:spring-boot-starter-aop")
 //    implementation("org.springframework.boot:spring-boot-starter-cache")
 

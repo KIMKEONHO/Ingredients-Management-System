@@ -1,6 +1,11 @@
 server:
   port: 8090
+  shutdown: graceful # 천천히 내려가게 하는 설정
 spring:
+  autoconfigure:
+    exclude:
+  lifecycle:
+    timeout-per-shutdown-phase: 1h # 스프링부트가 종료 요청을 받은 후 기다릴 수 있는 최대한의 시간
   datasource:
     url: jdbc:mysql://52.79.119.147:3309/kkhims
     username: root
@@ -24,3 +29,8 @@ logging:
 custom:
   site:
     name: "My Site Prod"
+data:
+  redis:
+    host: 172.17.0.1
+    port: 6379
+    password: ${custom.secret.spring.data.redis.password}
