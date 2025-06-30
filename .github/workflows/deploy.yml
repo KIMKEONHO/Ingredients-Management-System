@@ -2,12 +2,7 @@ name: 'deploy'
 on:
   push:
     paths:
-      - '.github/workflows/**'
-      - 'src/**'
-      - 'build.gradle'
-      - 'Dockerfile'
-      - 'readme.md'
-      - 'infraScript/**'
+      - 'backend/**'
     branches:
       - 'main'
 jobs:
@@ -56,11 +51,14 @@ jobs:
         env:
           ACTIONS_STEP_DEBUG: true
           APPLICATION_SECRET: ${{ secrets.APPLICATION_SECRET_YML }}
-        run: echo "$APPLICATION_SECRET" > src/main/resources/application-secret.yml
+        run: |
+          mkdir -p backend/src/main/resources
+          echo "$APPLICATION_SECRET" > src/main/resources/application-secret.yml
       - name: 빌드 앤 푸시
         uses: docker/build-push-action@v3
         with:
-          context: .
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/ims:${{ needs.makeTagAndRelease.outputs.tag_name }},
