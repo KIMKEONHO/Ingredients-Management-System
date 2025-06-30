@@ -85,3 +85,4 @@ jobs:
             curl -o /dockerProjects/ims/zero_downtime_deploy.py https://raw.githubusercontent.com/jerry6475@naver.com/Ingredients-Management-System/main/backend/infraScript/zero_downtime_deploy.py
             chmod +x /dockerProjects/ims/zero_downtime_deploy.py
             /dockerProjects/ims/zero_downtime_deploy.py
+  test:
