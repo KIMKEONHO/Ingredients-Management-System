@@ -8,8 +8,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpw
       MYSQL_DATABASE: kkhims
-      MYSQL_USER: testuser
-      MYSQL_PASSWORD: testpw
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 1234
     ports:
       - "3309:3306"  # 로컬에서 접근할 수 있게 포트 매핑
     volumes:
