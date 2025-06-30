@@ -27,7 +27,7 @@ dependencies {
 // Spring Boot 기본 의존성
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-security") // security
+//    implementation("org.springframework.boot:spring-boot-starter-security") // security
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-mail")
@@ -53,7 +53,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 //    testImplementation("org.testcontainers:mysql:1.19.3")
     testImplementation("org.testcontainers:junit-jupiter:1.19.3")
-    testImplementation("org.springframework.security:spring-security-test")
+//    testImplementation("org.springframework.security:spring-security-test")
 
     // OpenAPI
 //    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
