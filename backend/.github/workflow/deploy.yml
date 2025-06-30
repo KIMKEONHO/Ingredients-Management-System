@@ -2,12 +2,12 @@ name: 'deploy'
 on:
   push:
     paths:
-      - '.github/workflows/**'
-      - 'src/**'
-      - 'build.gradle'
-      - 'Dockerfile'
-      - 'readme.md'
-      - 'infraScript/**'
+      - 'backend/.github/workflows/**'
+      - 'backend/src/**'
+      - 'backend/build.gradle'
+      - 'backend/Dockerfile'
+      - 'backend/readme.md'
+      - 'backend/infraScript/**'
     branches:
       - 'main'
 jobs:
