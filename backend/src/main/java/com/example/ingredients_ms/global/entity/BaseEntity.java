@@ -29,4 +29,5 @@ public class BaseEntity {
     @Column(name = "modified_at")
     @LastModifiedDate
     private LocalDateTime modifiedAt;
+
 }
