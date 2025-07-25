@@ -8,7 +8,7 @@ public class IngredientsMsApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(IngredientsMsApplication.class, args);
-        System.out.println("hey man");
+        System.out.println("hey man: test" );
 
     }
 
