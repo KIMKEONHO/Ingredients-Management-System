@@ -23,10 +23,10 @@ import java.util.Set;
 @SuperBuilder
 public class User extends BaseEntity {
 
-    @Column(name = "email", length = 255, nullable = false)
+    @Column(name = "email", length = 255, nullable = false, unique = true)
     private String email;
 
-    @Column(name = "phone_num", length = 255, nullable = false)
+    @Column(name = "phone_num", length = 255, nullable = false, unique = true)
     private String phoneNum;
 
     @Column(name = "user_name", length = 255, nullable = false)
