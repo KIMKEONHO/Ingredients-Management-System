@@ -56,7 +56,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
 
     // OpenAPI
-//    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 
     // JSON 처리
 //    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
