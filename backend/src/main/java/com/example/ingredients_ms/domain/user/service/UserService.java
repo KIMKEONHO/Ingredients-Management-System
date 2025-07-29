@@ -7,7 +7,6 @@ import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.WithdrawRequestDto;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
-import com.example.ingredients_ms.domain.user.dto.response.LoginResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.WithdrawResponseDto;
 import com.example.ingredients_ms.domain.user.entity.Role;
 import com.example.ingredients_ms.domain.user.entity.User;
@@ -15,6 +14,7 @@ import com.example.ingredients_ms.domain.user.repository.UserRepository;
 import com.example.ingredients_ms.global.Status;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -23,10 +23,18 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class UserService {
 
-    public final UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public CreateUserResponseDto createUser(CreateUserRequestDto createUserRequestDto) {
+
+        User checkedSignUpUser = userRepository.findByEmail(createUserRequestDto.getEmail());
+
+        // 기존에 존재하는 유저인지 체크
+        if (checkedSignUpUser != null) {
+            throw new BusinessLogicException(ExceptionCode.ALREADY_USER);
+        }
 
         // 입력 받은 정보 저장
         User user = User.builder()
@@ -34,7 +42,7 @@ public class UserService {
                 .phoneNum(createUserRequestDto.getPhoneNumber())
                 .nickname(createUserRequestDto.getNickName())
                 .email(createUserRequestDto.getEmail())
-                .password(createUserRequestDto.getPassword())
+                .password(passwordEncoder.encode(createUserRequestDto.getPassword()))
                 .status(Status.ACTIVE)
                 .roles(Set.of(Role.USER))
                 .build();
@@ -55,7 +63,7 @@ public class UserService {
     }
 
     @Transactional
-    public LoginResponseDto login(LoginRequestDto loginRequestDto) {
+    public User login(LoginRequestDto loginRequestDto) {
 
         User user = userRepository.findByEmail(loginRequestDto.getEmail());
 
@@ -69,14 +77,11 @@ public class UserService {
             throw new BusinessLogicException(ExceptionCode.NOT_ACTIVE);
         }
 
-        if(!user.getPassword().equals(loginRequestDto.getPassword())){
+        if (!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
             throw new BusinessLogicException(ExceptionCode.INCORRECT_PASSWORD);
         }
 
-        return LoginResponseDto.builder()
-                .email(user.getEmail())
-                .password(user.getPassword())
-                .build();
+        return user;
     }
 
     public WithdrawResponseDto withdraw(WithdrawRequestDto withdrawRequestDto) {
