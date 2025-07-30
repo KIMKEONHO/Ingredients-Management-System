@@ -49,6 +49,7 @@ public class JwtProvider {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", user.getId());
         claims.put("username", user.getUserName());
+        claims.put("email", user.getEmail());
         claims.put("roles", user.getRoles());
         long now = new Date().getTime();
         Date accessTokenExpiresln= new Date(now + seconds * 1000);
@@ -57,5 +58,27 @@ public class JwtProvider {
                 .setExpiration(accessTokenExpiresln)
                 .signWith(getSecretKey(), SignatureAlgorithm.HS512)
                 .compact();
+    }
+
+    public Map<String, Object> getClaims(String token) {
+        String body = Jwts.parserBuilder()
+                .setSigningKey(getSecretKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("body", String.class);
+        return Ut.toMap(body);
+    }
+
+    public boolean verify(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(getSecretKey())
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        }catch (Exception e){
+            return false;
+        }
     }
 }
