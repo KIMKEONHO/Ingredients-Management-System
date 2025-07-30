@@ -8,6 +8,7 @@ import com.example.ingredients_ms.domain.user.dto.response.WithdrawResponseDto;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.service.UserService;
 import com.example.ingredients_ms.global.jwt.JwtProvider;
+import com.example.ingredients_ms.global.rsdata.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
@@ -93,6 +94,27 @@ public class UserController {
         User user = userService.getUserByEmail(userEmail);
 
         return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @GetMapping("/logout")
+    public RsData<?> logout(HttpServletResponse res) {
+
+        Cookie cookie = new Cookie("accessToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+
+        res.addCookie(cookie);
+
+        Cookie refreshCookie = new Cookie("refreshToken", null);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(true);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(0);
+        res.addCookie(refreshCookie);
+
+        return new RsData<>("200", "로그아웃에 성공하였습니다.");
     }
 
 }
