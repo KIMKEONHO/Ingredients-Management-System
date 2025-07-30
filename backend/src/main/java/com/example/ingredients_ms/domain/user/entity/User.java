@@ -40,6 +40,7 @@ public class User extends BaseEntity {
     private String password;
 
     @JsonIgnore
+    @Column(name = "refresh_token", length = 512)
     private String refreshToken;
 
     @Enumerated(EnumType.STRING)

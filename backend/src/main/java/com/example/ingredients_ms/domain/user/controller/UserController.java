@@ -56,6 +56,14 @@ public class UserController {
 
         res.addCookie(cookie);
 
+        String refreshToken = responseDto.getRefreshToken();
+        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(true);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(3600);
+        res.addCookie(refreshCookie);
+
         return new ResponseEntity<>(token, HttpStatus.OK);
     }
 
@@ -78,15 +86,11 @@ public class UserController {
             }
         }
 
-        log.info("accessToken: {}", accessToken);
-
         Map<String, Object> claims = jwtProvider.getClaims(accessToken);
 
         String userEmail = (String) claims.get("email");
 
         User user = userService.getUserByEmail(userEmail);
-
-        log.info("userEmail: {}", userEmail);
 
         return new ResponseEntity<>(user, HttpStatus.OK);
     }

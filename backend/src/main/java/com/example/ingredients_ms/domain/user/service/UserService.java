@@ -17,6 +17,7 @@ import com.example.ingredients_ms.global.rsdata.RsData;
 import com.example.ingredients_ms.global.security.SecurityUser;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -61,6 +63,12 @@ public class UserService {
                 .build();
 
         user.setCart(cart);
+
+        // RefreshToken 생성
+        String refreshToken = jwtProvider.genRefreshToken(user);
+        user.setRefreshToken(refreshToken);
+
+        log.info("refreshToken: {}", refreshToken);
 
         User savedUser = userRepository.save(user);
 
