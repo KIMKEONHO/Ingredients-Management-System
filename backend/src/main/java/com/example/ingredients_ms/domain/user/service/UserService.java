@@ -22,10 +22,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -127,8 +124,13 @@ public class UserService {
     public SecurityUser getUserFromAccessToken(String accessToken){
         Map<String, Object> payloadBody = jwtProvider.getClaims(accessToken);
         long id = (int)payloadBody.get("id");
+        String username = payloadBody.get("username").toString();
         String email = (String) payloadBody.get("email");
         List<GrantedAuthority> authorities = new ArrayList<>();
         return new SecurityUser(id,email,"",authorities);
+    }
+
+    public Optional<User> findBySocialIdAndSsoProvider(String socialId, String socialProvider){
+        return userRepository.findBySocialIdAndSsoProvider(socialId,socialProvider);
     }
 }

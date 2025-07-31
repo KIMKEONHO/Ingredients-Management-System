@@ -39,6 +39,14 @@ public class User extends BaseEntity {
     @Column(name = "password", length = 255, nullable = false)
     private String password;
 
+    //oauth에서 제공된 user 식별 아이디
+    @Column(name = "social_id", length = 255)
+    private String socialId;
+
+    //사용된 oauth 이름, kakao, naver.
+    @Column(name = "sso_provider", length = 50)
+    private String ssoProvider;
+
     @JsonIgnore
     @Column(name = "refresh_token", length = 512)
     private String refreshToken;
@@ -56,9 +64,6 @@ public class User extends BaseEntity {
 
     @Column(length = 50)
     private String socialProvider;
-
-    @Column(length = 255)
-    private String socialId;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Cart cart;
