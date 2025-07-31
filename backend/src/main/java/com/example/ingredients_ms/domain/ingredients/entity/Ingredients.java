@@ -15,6 +15,7 @@ import java.util.List;
 @Table(name="ingredients")
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Ingredients extends BaseEntity {
 
     @Column(name = "name", length = 255, nullable = false)
