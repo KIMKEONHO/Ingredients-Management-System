@@ -19,7 +19,7 @@ public class ApiSecurityConfig {
     private final JwtAuthorizationFilter jwtAuthorizationFilter;
 
     @Bean
-    SecurityFilterChain apifilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain apifilterChain(HttpSecurity http) throws Exception {
         http
                 .securityMatcher("/api/**")
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
