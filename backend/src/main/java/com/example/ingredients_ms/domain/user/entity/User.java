@@ -5,6 +5,7 @@ import com.example.ingredients_ms.domain.complaint.entity.Complaint;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
 import com.example.ingredients_ms.global.Status;
 import com.example.ingredients_ms.global.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -37,6 +38,10 @@ public class User extends BaseEntity {
 
     @Column(name = "password", length = 255, nullable = false)
     private String password;
+
+    @JsonIgnore
+    @Column(name = "refresh_token", length = 512)
+    private String refreshToken;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
