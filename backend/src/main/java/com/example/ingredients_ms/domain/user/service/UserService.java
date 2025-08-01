@@ -16,12 +16,14 @@ import com.example.ingredients_ms.global.jwt.JwtProvider;
 import com.example.ingredients_ms.global.rsdata.RsData;
 import com.example.ingredients_ms.global.security.SecurityUser;
 import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -36,10 +38,10 @@ public class UserService {
     @Transactional
     public CreateUserResponseDto createUser(CreateUserRequestDto createUserRequestDto) {
 
-        User checkedSignUpUser = userRepository.findByEmail(createUserRequestDto.getEmail());
+        Optional<User> checkedSignUpUser = userRepository.findByEmail(createUserRequestDto.getEmail());
 
         // 기존에 존재하는 유저인지 체크
-        if (checkedSignUpUser != null) {
+        if (checkedSignUpUser.isPresent()) {
             throw new BusinessLogicException(ExceptionCode.ALREADY_USER);
         }
 
@@ -51,7 +53,7 @@ public class UserService {
                 .email(createUserRequestDto.getEmail())
                 .password(passwordEncoder.encode(createUserRequestDto.getPassword()))
                 .status(Status.ACTIVE)
-                .roles(Set.of(Role.USER))
+                .role(Role.USER)
                 .build();
 
         // 카트 생성 후 설정
@@ -60,12 +62,6 @@ public class UserService {
                 .build();
 
         user.setCart(cart);
-
-        // RefreshToken 생성
-        String refreshToken = jwtProvider.genRefreshToken(user);
-        user.setRefreshToken(refreshToken);
-
-        log.info("refreshToken: {}", refreshToken);
 
         User savedUser = userRepository.save(user);
 
@@ -78,12 +74,14 @@ public class UserService {
     @Transactional
     public User login(LoginRequestDto loginRequestDto) {
 
-        User user = userRepository.findByEmail(loginRequestDto.getEmail());
+        Optional<User> opUser = userRepository.findByEmail(loginRequestDto.getEmail());
 
         // USER가 있는 USER인지
-        if(user == null){
+        if(opUser.isEmpty()){
             throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
         }
+
+        User user = opUser.get();
 
         // 활동 가능한 상태인지
         if(user.getStatus() != Status.ACTIVE){
@@ -102,9 +100,9 @@ public class UserService {
         return null;
     }
 
-    public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
+//    public User getUserByEmail(String email) {
+//        return userRepository.findByEmail(email);
+//    }
 
 
     // 토큰 유효성 검증
@@ -127,10 +125,44 @@ public class UserService {
         String username = payloadBody.get("username").toString();
         String email = (String) payloadBody.get("email");
         List<GrantedAuthority> authorities = new ArrayList<>();
-        return new SecurityUser(id,email,"",authorities);
+        return new SecurityUser(id,email,username,"",authorities);
     }
 
     public Optional<User> findBySocialIdAndSsoProvider(String socialId, String socialProvider){
         return userRepository.findBySocialIdAndSsoProvider(socialId,socialProvider);
+    }
+
+    public void modify(User user, @NotBlank String username){
+        user.setUserName(username);
+    }
+
+    public User modifyOrJoins(String email, String username, String provider, String socialId){
+       Optional<User> opUser = userRepository.findByEmail(email);
+
+        if(opUser.isPresent()){
+            User user = opUser.get();
+            modify(user,username);
+            return user;
+        }
+
+        return createSocialUser(email, "",username,provider,socialId);
+    }
+
+    public User createSocialUser(String email, String password, String username,String provider,String socialId){
+
+
+        User user = User.builder()
+                .email(email)
+                .password(password)
+                .userName(username)
+                .phoneNum(" ")
+                .ssoProvider(provider)
+                .role(Role.USER)
+                .socialId(socialId)
+                .createdAt(LocalDateTime.now())
+                .modifiedAt(LocalDateTime.now())
+                .build();
+
+        return userRepository.save(user);
     }
 }
