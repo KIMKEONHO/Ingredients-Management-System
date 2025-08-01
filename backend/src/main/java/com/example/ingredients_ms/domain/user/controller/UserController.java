@@ -8,11 +8,11 @@ import com.example.ingredients_ms.domain.user.dto.response.WithdrawResponseDto;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.service.UserService;
 import com.example.ingredients_ms.global.jwt.JwtProvider;
+import com.example.ingredients_ms.global.jwt.TokenService;
 import com.example.ingredients_ms.global.rsdata.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,6 +29,7 @@ import java.util.Map;
 public class UserController {
     private final UserService userService;
     private final JwtProvider jwtProvider;
+    private final TokenService tokenService;
 
     @PostMapping("/signup")
     @Operation(summary = "유저 생성", description = "유저를 생성하는 로직")
@@ -43,29 +42,16 @@ public class UserController {
 
     @PostMapping("/login")
     @Operation(summary = "로그인", description = "로그인 하는 로직")
-    public ResponseEntity<?> login(LoginRequestDto loginRequestDto, HttpServletResponse res) {
+    public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDto, HttpServletResponse response) {
 
-        User responseDto = userService.login(loginRequestDto);
+        // 1. 인증 처리
+        User user = userService.login(loginRequestDto);
 
-        String token = jwtProvider.genAccessToken(responseDto);
+        // 2. Access/Refresh Token 발급 + 쿠키 설정 (TokenService 사용)
+        String accessToken = tokenService.makeAuthCookies(user, response);
 
-        Cookie cookie = new Cookie("accessToken", token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(3600);
-
-        res.addCookie(cookie);
-
-        String refreshToken = responseDto.getRefreshToken();
-        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(3600);
-        res.addCookie(refreshCookie);
-
-        return new ResponseEntity<>(token, HttpStatus.OK);
+        // 3. 응답
+        return ResponseEntity.ok().body(accessToken);
     }
 
     @DeleteMapping("/withdraw")
@@ -76,25 +62,25 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<?> me (HttpServletRequest req) {
-        Cookie[] cookies = req.getCookies();
-        String accessToken = "";
-
-        for  (Cookie cookie : cookies) {
-            if(cookie.getName().equals("accessToken")) {
-                accessToken = cookie.getValue();
-            }
-        }
-
-        Map<String, Object> claims = jwtProvider.getClaims(accessToken);
-
-        String userEmail = (String) claims.get("email");
-
-        User user = userService.getUserByEmail(userEmail);
-
-        return new ResponseEntity<>(user, HttpStatus.OK);
-    }
+//    @GetMapping("/me")
+//    public ResponseEntity<?> me (HttpServletRequest req) {
+//        Cookie[] cookies = req.getCookies();
+//        String accessToken = "";
+//
+//        for  (Cookie cookie : cookies) {
+//            if(cookie.getName().equals("accessToken")) {
+//                accessToken = cookie.getValue();
+//            }
+//        }
+//
+//        Map<String, Object> claims = jwtProvider.getClaims(accessToken);
+//
+//        String userEmail = (String) claims.get("email");
+//
+//        User user = userService.getUserByEmail(userEmail);
+//
+//        return new ResponseEntity<>(user, HttpStatus.OK);
+//    }
 
     @GetMapping("/logout")
     public RsData<?> logout(HttpServletResponse res) {

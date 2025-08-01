@@ -28,7 +28,10 @@ logging:
     org.springframework.transaction.interceptor: INFO
 custom:
   site:
-    name: "My Site Prod"
+    name: "BLOG"
+    cookieDomain: "${custom.prod.cookieDomain}"
+    frontUrl: "${custom.prod.frontUrl}"
+    backUrl: "${custom.prod.backUrl}"
 data:
   redis:
     host: 172.17.0.1
