@@ -15,19 +15,23 @@ public class SecurityUser extends User implements OAuth2User {
 
     private final long id;
     private Map<String, Object> attributes;
+    private final String email;
 
     // 일반 로그인시 사용할 생성자
-    public SecurityUser(long id, String username, String password,
+    public SecurityUser(long id, String email, String username, String password,
                         Collection<? extends GrantedAuthority> authorities) {
         super(username, password, authorities);
         this.id = id;
+        this.email = email;
     }
 
-    public SecurityUser(long id, String username, String password,
+    // SSO 로그인시 사용할 생성자
+    public SecurityUser(long id, String email, String username, String password,
                         Collection<? extends GrantedAuthority> authorities,
                         Map<String, Object> attributes) {
         super(username, password, authorities);
         this.id = id;
+        this.email = email;
         this.attributes = attributes;
     }
 

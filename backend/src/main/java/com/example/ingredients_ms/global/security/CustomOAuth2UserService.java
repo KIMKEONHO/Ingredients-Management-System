@@ -32,12 +32,24 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         Map<String, Object> attributes = oAuth2User.getAttributes();
         Map<String, String> attributesProperties = (Map<String, String>) attributes.get("properties");
         String nickname = attributesProperties.get("nickname");
-        String profileImgUrl = attributesProperties.get("profile_image");
+        // 프로필 이미지 필요시
+//        String profileImgUrl = attributesProperties.get("profile_image");
         String email = providerTypeCode + "__" + oauthId;
 
         Optional<User> validUser = userService.findBySocialIdAndSsoProvider(oauthId,providerTypeCode);
 
-        return null;
+        User user;
+        user = validUser.orElseGet(() -> userService.modifyOrJoins(email, nickname, providerTypeCode, oauthId));
+
+
+        return new SecurityUser(
+                user.getId(),
+                user.getEmail(),
+                user.getUserName(),
+                "",
+                user.getAuthorities(),
+                attributes
+        );
     }
 
 }
