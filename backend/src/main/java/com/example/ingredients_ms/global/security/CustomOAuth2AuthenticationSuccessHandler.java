@@ -4,7 +4,6 @@ import com.example.ingredients_ms.domain.exeption.BusinessLogicException;
 import com.example.ingredients_ms.domain.exeption.ExceptionCode;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.repository.UserRepository;
-import com.example.ingredients_ms.global.app.AppConfig;
 import com.example.ingredients_ms.global.jwt.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,7 +26,6 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SavedRequestAwareA
                                         Authentication authentication) throws IOException {
 
         String requestUri = request.getRequestURI();
-        String provider = extractProviderFromUri(requestUri);
 
         SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
 
@@ -39,20 +37,9 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SavedRequestAwareA
         tokenService.makeAuthCookies(user, response);
 
         // 리다이렉트
-        String redirectUrl = AppConfig.getSiteFrontUrl();
+        String redirectUrl = request.getParameter("state");
 
         response.sendRedirect(redirectUrl);
     }
 
-    private String extractProviderFromUri(String uri) {
-        if(uri == null || uri.isBlank()) {
-            return null;
-        }
-        if(!uri.startsWith("/login/oauth2/code/")){
-            return null;
-        }
-        // 예: /login/oauth2/code/github -> github
-        String[] segments = uri.split("/");
-        return segments[segments.length - 1];
-    }
 }
