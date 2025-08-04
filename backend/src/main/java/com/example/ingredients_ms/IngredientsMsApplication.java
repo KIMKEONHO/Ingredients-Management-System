@@ -13,5 +13,4 @@ public class IngredientsMsApplication {
         System.out.println("hey man: test" );
 
     }
-
 }

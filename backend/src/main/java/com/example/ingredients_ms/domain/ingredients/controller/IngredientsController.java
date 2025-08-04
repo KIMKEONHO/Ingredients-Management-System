@@ -34,11 +34,20 @@ public class IngredientsController {
         return new RsData<>("200", "식재료가 성공적으로 조회되었습니다.", responseDto);
     }
 
+
+
     @Operation(summary = "모든 식재료 조회", description = "모든 식재료 목록을 조회합니다.")
     @GetMapping("/")
     public RsData<List<IngredientResponseDto>> getAllIngredients() {
         List<IngredientResponseDto> responseDtos = ingredientsService.getAllIngredients();
         return new RsData<>("200", "모든 식재료가 성공적으로 조회되었습니다.", responseDtos);
+    }
+
+    @Operation(summary = "카테고리별 식재료 조회", description = "특정 카테고리에 속하는 모든 식재료 목록을 조회합니다.")
+    @GetMapping("/category/{categoryId}")
+    public RsData<List<IngredientResponseDto>> getIngredientsByCategory(@PathVariable Long categoryId) {
+        List<IngredientResponseDto> responseDtos = ingredientsService.getIngredientsByCategory(categoryId);
+        return new RsData<>("200", "카테고리별 식재료가 성공적으로 조회되었습니다.", responseDtos);
     }
 
     @Operation(summary = "식재료 수정", description = "기존 식재료를 수정합니다.")

@@ -5,6 +5,7 @@ import com.example.ingredients_ms.domain.ingredientscategory.entity.IngredientsC
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.List;
 @Table(name="ingredients")
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class Ingredients extends BaseEntity {
 
     @Column(name = "name", length = 255, nullable = false)

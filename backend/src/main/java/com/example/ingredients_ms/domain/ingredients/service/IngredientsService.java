@@ -56,6 +56,15 @@ public class IngredientsService {
                 .collect(Collectors.toList());
     }
 
+    public List<IngredientResponseDto> getIngredientsByCategory(Long categoryId) {
+        IngredientsCategory category = ingredientsCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.CATEGORY_NOT_FOUND));
+
+        return ingredientsRepository.findByCategoryOrderById(category).stream()
+                .map(IngredientResponseDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public IngredientResponseDto updateIngredient(Long ingredientId, UpdateIngredientRequestDto requestDto) {
         Ingredients ingredient = ingredientsRepository.findById(ingredientId)
@@ -75,6 +84,7 @@ public class IngredientsService {
 
         return IngredientResponseDto.fromEntity(updatedIngredient);
     }
+
 
     @Transactional
     public void deleteIngredient(Long ingredientId) {
