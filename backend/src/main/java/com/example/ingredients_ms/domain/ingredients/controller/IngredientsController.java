@@ -1,7 +1,6 @@
 package com.example.ingredients_ms.domain.ingredients.controller;
 
 import com.example.ingredients_ms.domain.ingredients.dto.request.CreateIngredientRequestDto;
-import com.example.ingredients_ms.domain.ingredients.dto.request.UpdateIngredientRequestDto;
 import com.example.ingredients_ms.domain.ingredients.dto.response.IngredientResponseDto;
 import com.example.ingredients_ms.domain.ingredients.service.IngredientsService;
 import com.example.ingredients_ms.global.rsdata.RsData;
@@ -15,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @Tag(name = "식재료 API", description = "식재료 관리를 위한 API")
-@RequestMapping("/api/v1/ingredients")
+@RequestMapping("/api/v1/ingredient")
 public class IngredientsController {
 
     private final IngredientsService ingredientsService;
@@ -27,13 +26,13 @@ public class IngredientsController {
         return new RsData<>("200", "식재료가 성공적으로 추가되었습니다.", responseDto);
     }
 
+
     @Operation(summary = "식재료 조회", description = "ID로 단일 식재료를 조회합니다.")
     @GetMapping("/{ingredientId}")
     public RsData<IngredientResponseDto> getIngredient(@PathVariable Long ingredientId) {
         IngredientResponseDto responseDto = ingredientsService.getIngredient(ingredientId);
         return new RsData<>("200", "식재료가 성공적으로 조회되었습니다.", responseDto);
     }
-
 
 
     @Operation(summary = "모든 식재료 조회", description = "모든 식재료 목록을 조회합니다.")
@@ -43,6 +42,7 @@ public class IngredientsController {
         return new RsData<>("200", "모든 식재료가 성공적으로 조회되었습니다.", responseDtos);
     }
 
+
     @Operation(summary = "카테고리별 식재료 조회", description = "특정 카테고리에 속하는 모든 식재료 목록을 조회합니다.")
     @GetMapping("/category/{categoryId}")
     public RsData<List<IngredientResponseDto>> getIngredientsByCategory(@PathVariable Long categoryId) {
@@ -50,12 +50,14 @@ public class IngredientsController {
         return new RsData<>("200", "카테고리별 식재료가 성공적으로 조회되었습니다.", responseDtos);
     }
 
+
     @Operation(summary = "식재료 수정", description = "기존 식재료를 수정합니다.")
     @PutMapping("/{ingredientId}")
-    public RsData<IngredientResponseDto> updateIngredient(@PathVariable Long ingredientId, @RequestBody UpdateIngredientRequestDto requestDto) {
+    public RsData<IngredientResponseDto> updateIngredient(@PathVariable Long ingredientId, @RequestBody CreateIngredientRequestDto requestDto) {
         IngredientResponseDto responseDto = ingredientsService.updateIngredient(ingredientId, requestDto);
         return new RsData<>("200", "식재료가 성공적으로 수정되었습니다.", responseDto);
     }
+
 
     @Operation(summary = "식재료 삭제", description = "목록에서 식재료를 삭제합니다.")
     @DeleteMapping("/{ingredientId}")

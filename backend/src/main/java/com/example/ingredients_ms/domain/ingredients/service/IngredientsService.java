@@ -3,7 +3,6 @@ package com.example.ingredients_ms.domain.ingredients.service;
 import com.example.ingredients_ms.domain.exeption.BusinessLogicException;
 import com.example.ingredients_ms.domain.exeption.ExceptionCode;
 import com.example.ingredients_ms.domain.ingredients.dto.request.CreateIngredientRequestDto;
-import com.example.ingredients_ms.domain.ingredients.dto.request.UpdateIngredientRequestDto;
 import com.example.ingredients_ms.domain.ingredients.dto.response.IngredientResponseDto;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.ingredients.repository.IngredientsRepository;
@@ -26,6 +25,7 @@ public class IngredientsService {
 
     @Transactional
     public IngredientResponseDto createIngredient(CreateIngredientRequestDto requestDto) {
+
         if (ingredientsRepository.existsByName(requestDto.getName())) {
             throw new BusinessLogicException(ExceptionCode.DUPLICATE_INGREDIENT);
         }
@@ -44,13 +44,17 @@ public class IngredientsService {
     }
 
     public IngredientResponseDto getIngredient(Long ingredientId) {
+
         Ingredients ingredient = ingredientsRepository.findById(ingredientId)
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.INGREDIENT_NOT_FOUND));
 
         return IngredientResponseDto.fromEntity(ingredient);
     }
 
+
     public List<IngredientResponseDto> getAllIngredients() {
+
+        // 일단 DB가 비어있을 때 오류가 발생하진 않음.
         return ingredientsRepository.findAllByOrderById().stream()
                 .map(IngredientResponseDto::fromEntity)
                 .collect(Collectors.toList());
@@ -66,14 +70,16 @@ public class IngredientsService {
     }
 
     @Transactional
-    public IngredientResponseDto updateIngredient(Long ingredientId, UpdateIngredientRequestDto requestDto) {
+    public IngredientResponseDto updateIngredient(Long ingredientId, CreateIngredientRequestDto requestDto) {
+
+        // 식재료 존재여부 확인
         Ingredients ingredient = ingredientsRepository.findById(ingredientId)
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.INGREDIENT_NOT_FOUND));
-
+        // 식재료명 중복 검사
         if (ingredientsRepository.existsByName(requestDto.getName())) {
             throw new BusinessLogicException(ExceptionCode.DUPLICATE_INGREDIENT);
         }
-
+        // 카테고리 존재여부 확인
         IngredientsCategory category = ingredientsCategoryRepository.findById(requestDto.getCategoryId())
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.CATEGORY_NOT_FOUND));
 
