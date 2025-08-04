@@ -26,7 +26,7 @@ public class JwtProvider {
 
     public SecretKey getSecretKey() {
         if(cachedSecretKey == null) {
-            cachedSecretKey = cachedSecretKey = _getSecretKey();
+            cachedSecretKey = _getSecretKey();
         }
         return cachedSecretKey;
     }
@@ -50,7 +50,7 @@ public class JwtProvider {
         claims.put("id", user.getId());
         claims.put("username", user.getUserName());
         claims.put("email", user.getEmail());
-        claims.put("roles", user.getRoles());
+        claims.put("role", user.getRole());
         long now = new Date().getTime();
         Date accessTokenExpiresln= new Date(now + seconds * 1000);
         return Jwts.builder()

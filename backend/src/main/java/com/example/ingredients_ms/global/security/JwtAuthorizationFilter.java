@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     @Override
     @SneakyThrows
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
-        if (request.getRequestURI().equals("/api/v1/users/login") || request.getRequestURI().equals("/api/v1/users/logout") || request.getRequestURI().equals("/api/v1/users/signup")) {
+        if (List.of("/api/v1/users/login", "/api/v1/users/logout", "/api/v1/users/signup").contains(request.getRequestURI()) ) {
             filterChain.doFilter(request, response);
             return;
         }
