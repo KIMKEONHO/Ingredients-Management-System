@@ -40,6 +40,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/*/ingredient/").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/*/ingredient/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/*/ingredient/").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/*/cart/item/**").permitAll()
                 )
                 .csrf(csrf->csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())

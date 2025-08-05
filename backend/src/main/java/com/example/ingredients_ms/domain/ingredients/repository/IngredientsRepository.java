@@ -15,5 +15,6 @@ public interface IngredientsRepository extends JpaRepository<Ingredients, Long> 
 
     boolean existsByName(String name);
 
+    Ingredients findById(long id);
 
 }

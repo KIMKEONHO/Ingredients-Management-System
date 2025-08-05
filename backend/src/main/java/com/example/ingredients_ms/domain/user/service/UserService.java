@@ -100,9 +100,9 @@ public class UserService {
         return null;
     }
 
-//    public User getUserByEmail(String email) {
-//        return userRepository.findByEmail(email);
-//    }
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
 
 
     // 토큰 유효성 검증
@@ -136,8 +136,10 @@ public class UserService {
         user.setUserName(username);
     }
 
+    @Transactional
     public User modifyOrJoins(String email, String username, String provider, String socialId){
        Optional<User> opUser = userRepository.findByEmail(email);
+       log.info("user email : {}", email);
 
         if(opUser.isPresent()){
             User user = opUser.get();
@@ -150,7 +152,6 @@ public class UserService {
 
     public User createSocialUser(String email, String password, String username,String provider,String socialId){
 
-
         User user = User.builder()
                 .email(email)
                 .password(password)
@@ -162,6 +163,12 @@ public class UserService {
                 .createdAt(LocalDateTime.now())
                 .modifiedAt(LocalDateTime.now())
                 .build();
+
+        Cart cart = Cart.builder()
+                .user(user)
+                .build();
+
+        user.setCart(cart);
 
         return userRepository.save(user);
     }
