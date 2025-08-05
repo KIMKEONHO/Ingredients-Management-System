@@ -9,8 +9,8 @@ import com.example.ingredients_ms.domain.cartitem.dto.response.CreateCartItemRes
 import com.example.ingredients_ms.domain.cartitem.dto.response.UpdateCartItemResponseDto;
 import com.example.ingredients_ms.domain.cartitem.entity.CartItem;
 import com.example.ingredients_ms.domain.cartitem.repository.CartItemRepository;
-import com.example.ingredients_ms.domain.exeption.BusinessLogicException;
-import com.example.ingredients_ms.domain.exeption.ExceptionCode;
+import com.example.ingredients_ms.global.exeption.BusinessLogicException;
+import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.ingredients.service.IngredientsService;
 import jakarta.transaction.Transactional;

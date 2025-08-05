@@ -2,11 +2,11 @@ package com.example.ingredients_ms.domain.cart.service;
 
 import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.cart.repository.CartRepository;
-import com.example.ingredients_ms.domain.exeption.BusinessLogicException;
+import com.example.ingredients_ms.global.exeption.BusinessLogicException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import static com.example.ingredients_ms.domain.exeption.ExceptionCode.CART_NOT_FOUND;
+import static com.example.ingredients_ms.global.exeption.ExceptionCode.CART_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
