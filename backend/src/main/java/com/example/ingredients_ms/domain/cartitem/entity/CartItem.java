@@ -20,10 +20,10 @@ import lombok.experimental.SuperBuilder;
 public class CartItem extends BaseEntity {
 
     @Column(name = "count")
-    private Integer count = 0;
+    private Integer count;
 
     @Column(name = "cost")
-    private double cost;
+    private double cost = 0.0;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id")

@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter@Setter@Builder
-public class CreateCartItemResponseDto {
-    private String ingredientName;
+public class UpdateCartItemResponseDto {
+    private double cost;
     private Integer count;
 }

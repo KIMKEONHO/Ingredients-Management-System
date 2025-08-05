@@ -12,7 +12,9 @@ public enum ExceptionCode {
     INGREDIENT_NOT_FOUND(404,"존재하지 않는 식재료입니다."),
     DUPLICATE_INGREDIENT(404,"이미 존재하는 식재료입니다."),
     ALREADY_USER(404, "이미 존재하는 유저입니다."),
-    INVALID_TOKEN(404,"유효하지 않은 토큰입니다.")
+    INVALID_TOKEN(404,"유효하지 않은 토큰입니다."),
+    CART_NOT_FOUND(404,"카트가 존재하지 않습니다."),
+    NOT_OWNER(404,"해당 주인이 아닙니다.")
     ;
 
     @Getter

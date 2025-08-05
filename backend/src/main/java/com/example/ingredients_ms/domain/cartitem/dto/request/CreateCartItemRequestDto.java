@@ -9,6 +9,6 @@ public class CreateCartItemRequestDto {
 
     private Long ingredientId;
     private Integer count;
-    private double price = 0.0;
+    private double cost = 0.0;
 
 }

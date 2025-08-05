@@ -4,8 +4,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter@Setter@Builder
-public class CreateCartItemResponseDto {
-    private String ingredientName;
+public class AllCartItemsResponseDto {
+
+    private double cost;
+    private String name;
     private Integer count;
+    private LocalDateTime createdAt;
+
 }
