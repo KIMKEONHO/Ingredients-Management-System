@@ -28,7 +28,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/*/members").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/*/users/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/*/users/signup").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/*/users/me").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/**/users/me").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/users/logout").permitAll()
                 )
                 .csrf(csrf->csrf.disable())
