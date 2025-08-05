@@ -99,4 +99,15 @@ public class IngredientsService {
         }
         ingredientsRepository.deleteById(ingredientId);
     }
+
+    // ID를 통해 식재료 찾기
+    public Ingredients findById(long id) {
+
+        Ingredients ingredient = ingredientsRepository.findById(id);
+        if (ingredient == null) {
+            throw new BusinessLogicException(ExceptionCode.INGREDIENT_NOT_FOUND);
+        }
+
+        return ingredientsRepository.findById(id);
+    }
 }

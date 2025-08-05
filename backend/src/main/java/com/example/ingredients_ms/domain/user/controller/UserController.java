@@ -13,6 +13,7 @@ import com.example.ingredients_ms.global.rsdata.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -62,25 +66,25 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-//    @GetMapping("/me")
-//    public ResponseEntity<?> me (HttpServletRequest req) {
-//        Cookie[] cookies = req.getCookies();
-//        String accessToken = "";
-//
-//        for  (Cookie cookie : cookies) {
-//            if(cookie.getName().equals("accessToken")) {
-//                accessToken = cookie.getValue();
-//            }
-//        }
-//
-//        Map<String, Object> claims = jwtProvider.getClaims(accessToken);
-//
-//        String userEmail = (String) claims.get("email");
-//
-//        User user = userService.getUserByEmail(userEmail);
-//
-//        return new ResponseEntity<>(user, HttpStatus.OK);
-//    }
+    @GetMapping("/me")
+    public ResponseEntity<?> me (HttpServletRequest req) {
+        Cookie[] cookies = req.getCookies();
+        String accessToken = "";
+
+        for  (Cookie cookie : cookies) {
+            if(cookie.getName().equals("accessToken")) {
+                accessToken = cookie.getValue();
+            }
+        }
+
+        Map<String, Object> claims = jwtProvider.getClaims(accessToken);
+
+        String userEmail = (String) claims.get("email");
+
+        Optional<User> user = userService.getUserByEmail(userEmail);
+
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
 
     @GetMapping("/logout")
     public RsData<?> logout(HttpServletResponse res) {

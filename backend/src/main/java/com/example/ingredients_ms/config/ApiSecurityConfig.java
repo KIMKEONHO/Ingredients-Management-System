@@ -49,7 +49,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/*/inventory/*").permitAll()
                         //수정할거
                         .requestMatchers(HttpMethod.GET, "/api/*/inventory/user/*").permitAll()
-
+                        .requestMatchers(HttpMethod.GET, "/api/*/cart/item/**").permitAll()
                 )
                 .csrf(csrf->csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())

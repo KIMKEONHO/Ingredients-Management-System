@@ -4,7 +4,11 @@ import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
@@ -12,13 +16,14 @@ import lombok.*;
 @Table(name="cartitem")
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder
 public class CartItem extends BaseEntity {
 
     @Column(name = "count")
-    private Integer count = 0;
+    private Integer count;
 
     @Column(name = "cost")
-    private Integer cost;
+    private double cost = 0.0;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id")
