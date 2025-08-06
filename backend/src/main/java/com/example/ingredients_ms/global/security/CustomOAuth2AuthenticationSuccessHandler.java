@@ -1,7 +1,7 @@
 package com.example.ingredients_ms.global.security;
 
-import com.example.ingredients_ms.domain.exeption.BusinessLogicException;
-import com.example.ingredients_ms.domain.exeption.ExceptionCode;
+import com.example.ingredients_ms.global.exeption.BusinessLogicException;
+import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.repository.UserRepository;
 import com.example.ingredients_ms.global.jwt.TokenService;
