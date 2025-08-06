@@ -32,7 +32,7 @@ public class ComplaintService {
 
         Optional<User> opUser = userRepository.findById(requestDto.getUserId());
 
-        if(opUser.isPresent()){
+        if(opUser.isEmpty()){
             throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
         }
 
@@ -141,6 +141,8 @@ public class ComplaintService {
     public void updateComplaintStatus(Long complaintId, int statusCode, String role) {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.ID_NOT_FOUND));
+
+        log.info("role : {}", role );
 
         ComplaintStatus status = ComplaintStatus.fromCode(statusCode);
         complaint.setStatus(status);
