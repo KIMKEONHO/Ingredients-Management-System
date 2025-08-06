@@ -4,13 +4,14 @@ import com.example.ingredients_ms.domain.feedback.entity.ComplaintFeedback;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Getter
@@ -28,11 +29,8 @@ public class Complaint extends BaseEntity {
     private String content;
 
     @Enumerated(EnumType.STRING)
-    @ElementCollection(fetch = FetchType.LAZY)
-    @Builder.Default
-    @CollectionTable(name = "complaint_categories", joinColumns = @JoinColumn(name = "complaint_id"))
     @Column(name = "categories", nullable = false)
-    private Set<Category> categories = new HashSet<>();
+    private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -40,4 +38,8 @@ public class Complaint extends BaseEntity {
 
     @OneToMany(mappedBy = "complaint", cascade = CascadeType.ALL)
     private List<ComplaintFeedback> feedbacks = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private ComplaintStatus status = ComplaintStatus.PENDING;
 }

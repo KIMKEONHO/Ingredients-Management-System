@@ -27,7 +27,7 @@ public class CartItemController {
     @GetMapping("/")
     public RsData<?> allCartItems() {
 
-        List<AllCartItemsResponseDto> responseDtos = cartItemService.getAllItems(getUserId());
+        List<AllCartItemsResponseDto> responseDtos = cartItemService.getAllItems(tokenService.getIdFromToken());
 
         return new RsData<>("200","모든 Itme을 찾았습니다.", responseDtos);
     }
@@ -36,7 +36,7 @@ public class CartItemController {
     @DeleteMapping("/{itemId}")
     public RsData<?> deleteById(@PathVariable Long itemId) {
 
-        cartItemService.deleteItem(itemId, getUserId());
+        cartItemService.deleteItem(itemId, tokenService.getIdFromToken());
 
         return new RsData<>("204", "아이템이 삭제되었습니다.");
     }
@@ -44,7 +44,7 @@ public class CartItemController {
     @PatchMapping("{itemId}")
     public RsData<?> updateById(@PathVariable Long itemId, @RequestBody UpdateCartItemRequestDto updateCartItemRequestDto) {
 
-        UpdateCartItemResponseDto updateItem = cartItemService.updateItem(itemId,updateCartItemRequestDto, getUserId());
+        UpdateCartItemResponseDto updateItem = cartItemService.updateItem(itemId,updateCartItemRequestDto, tokenService.getIdFromToken());
 
         return new RsData<>("200","아이템이 수정되었습니다.", updateItem);
     }
@@ -52,13 +52,10 @@ public class CartItemController {
     @PostMapping("/")
     public RsData<?> save(@RequestBody CreateCartItemRequestDto requestDto) {
 
-        CreateCartItemResponseDto cartItemResponseDto = cartItemService.createCartItem(requestDto, getUserId() );
+        CreateCartItemResponseDto cartItemResponseDto = cartItemService.createCartItem(requestDto, tokenService.getIdFromToken() );
 
         return new RsData<>("201",cartItemResponseDto.getIngredientName() + "가 추가되었습니다.", cartItemResponseDto);
     }
 
-    public Long getUserId() {
-        return tokenService.getIdFromToken();
-    }
 
 }

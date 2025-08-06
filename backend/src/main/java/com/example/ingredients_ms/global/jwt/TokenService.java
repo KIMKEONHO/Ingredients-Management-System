@@ -61,6 +61,22 @@ public class TokenService {
         return Long.valueOf(String.valueOf(claims.get("id")));
     }
 
+    public String getRoleFromToken() {
+        String token = getTokenFromRequest();
+
+        if (token == null) {
+            throw new IllegalArgumentException("Token is missing");
+        }
+
+        if (!jwtProvider.verify(token)) {
+            throw new IllegalArgumentException("Invalid or expired token");
+        }
+
+        Map<String, Object> claims = jwtProvider.getClaims(token);
+
+        return String.valueOf(claims.get("role"));
+    }
+
     private String getTokenFromRequest() {
         String authorization = httpServletRequest.getHeader("Authorization");
         if (StringUtils.hasText(authorization) && authorization.startsWith("Bearer ")) {
