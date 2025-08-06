@@ -30,16 +30,23 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/*/users/signup").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/users/me").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/users/logout").permitAll()
+                        // 식재료 카테고리 api
                         .requestMatchers(HttpMethod.POST, "/api/*/category/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/category/").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/*/category/*").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/*/category/*").permitAll()
+                        // 식재료 관리 api
                         .requestMatchers(HttpMethod.DELETE, "/api/*/ingredient/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/ingredient/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/ingredient/category/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/ingredient/").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/*/ingredient/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/*/ingredient/").permitAll()
+                        // 재고 관리 api
+                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/inventory/*").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/*/inventory/*").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/*/inventory/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/cart/item/**").permitAll()
                 )
                 .csrf(csrf->csrf.disable())
