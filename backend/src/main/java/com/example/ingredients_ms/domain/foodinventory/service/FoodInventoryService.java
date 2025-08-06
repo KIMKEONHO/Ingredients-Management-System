@@ -1,7 +1,6 @@
 package com.example.ingredients_ms.domain.foodinventory.service;
 
-import com.example.ingredients_ms.domain.exeption.BusinessLogicException;
-import com.example.ingredients_ms.domain.exeption.ExceptionCode;
+
 import com.example.ingredients_ms.domain.foodinventory.dto.request.CreateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
@@ -12,6 +11,8 @@ import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.ingredients.repository.IngredientsRepository;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.repository.UserRepository;
+import com.example.ingredients_ms.global.exeption.BusinessLogicException;
+import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
