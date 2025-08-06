@@ -1,8 +1,6 @@
 package com.example.ingredients_ms.domain.user.service;
 
 import com.example.ingredients_ms.domain.cart.entity.Cart;
-import com.example.ingredients_ms.global.exeption.BusinessLogicException;
-import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.WithdrawRequestDto;
@@ -12,6 +10,8 @@ import com.example.ingredients_ms.domain.user.entity.Role;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.repository.UserRepository;
 import com.example.ingredients_ms.global.Status;
+import com.example.ingredients_ms.global.exeption.BusinessLogicException;
+import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.global.jwt.JwtProvider;
 import com.example.ingredients_ms.global.rsdata.RsData;
 import com.example.ingredients_ms.global.security.SecurityUser;
@@ -20,11 +20,14 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -121,11 +124,17 @@ public class UserService {
 
     public SecurityUser getUserFromAccessToken(String accessToken){
         Map<String, Object> payloadBody = jwtProvider.getClaims(accessToken);
-        long id = (int)payloadBody.get("id");
+
+        long id = Long.parseLong(payloadBody.get("id").toString());
         String username = payloadBody.get("username").toString();
-        String email = (String) payloadBody.get("email");
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        return new SecurityUser(id,email,username,"",authorities);
+        String email = payloadBody.get("email").toString();
+        String role = payloadBody.get("role").toString(); // "ADMIN"
+
+        List<GrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + role) // Spring Security 표준 prefix
+        );
+
+        return new SecurityUser(id, email, username, "", authorities);
     }
 
     public Optional<User> findBySocialIdAndSsoProvider(String socialId, String socialProvider){
