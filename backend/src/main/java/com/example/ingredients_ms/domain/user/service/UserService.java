@@ -1,8 +1,8 @@
 package com.example.ingredients_ms.domain.user.service;
 
 import com.example.ingredients_ms.domain.cart.entity.Cart;
-import com.example.ingredients_ms.domain.exeption.BusinessLogicException;
-import com.example.ingredients_ms.domain.exeption.ExceptionCode;
+import com.example.ingredients_ms.global.exeption.BusinessLogicException;
+import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.WithdrawRequestDto;

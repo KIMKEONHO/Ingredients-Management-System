@@ -1,7 +1,7 @@
 package com.example.ingredients_ms.domain.ingredients.service;
 
-import com.example.ingredients_ms.domain.exeption.BusinessLogicException;
-import com.example.ingredients_ms.domain.exeption.ExceptionCode;
+import com.example.ingredients_ms.global.exeption.BusinessLogicException;
+import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.domain.ingredients.dto.request.CreateIngredientRequestDto;
 import com.example.ingredients_ms.domain.ingredients.dto.response.IngredientResponseDto;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;

@@ -1,15 +1,14 @@
 package com.example.ingredients_ms.domain.ingredientscategory.service;
 
 
-import com.example.ingredients_ms.domain.exeption.BusinessLogicException;
-import com.example.ingredients_ms.domain.exeption.ExceptionCode;
+import com.example.ingredients_ms.global.exeption.BusinessLogicException;
+import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.domain.ingredientscategory.dto.request.CreateIngredientsCategoryRequestDto;
 import com.example.ingredients_ms.domain.ingredientscategory.dto.response.AllIngredientsCategoryResponseDto;
 import com.example.ingredients_ms.domain.ingredientscategory.dto.response.IngredientsCategoryResponseDto;
 import com.example.ingredients_ms.domain.ingredientscategory.dto.response.UpdateIngredientsCategoryResponseDto;
 import com.example.ingredients_ms.domain.ingredientscategory.entity.IngredientsCategory;
 import com.example.ingredients_ms.domain.ingredientscategory.repository.IngredientsCategoryRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

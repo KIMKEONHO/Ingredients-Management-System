@@ -1,4 +1,4 @@
-package com.example.ingredients_ms.domain.exeption;
+package com.example.ingredients_ms.global.exeption;
 
 import lombok.Getter;
 
