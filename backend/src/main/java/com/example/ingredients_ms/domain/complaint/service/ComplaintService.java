@@ -5,6 +5,7 @@ import com.example.ingredients_ms.domain.complaint.dto.response.ComplaintDetailR
 import com.example.ingredients_ms.domain.complaint.dto.response.CreateComplaintResponseDto;
 import com.example.ingredients_ms.domain.complaint.entity.Category;
 import com.example.ingredients_ms.domain.complaint.entity.Complaint;
+import com.example.ingredients_ms.domain.complaint.entity.ComplaintStatus;
 import com.example.ingredients_ms.domain.complaint.repository.ComplaintRepository;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.repository.UserRepository;
@@ -91,6 +92,7 @@ public class ComplaintService {
                 .toList();
     }
 
+    @Transactional
     public CreateComplaintResponseDto updateComplaint(Long complaintId, CreateComplaintRequestDto requestDto, Long userId){
         Complaint complaint = findComplaint(complaintId);
 
@@ -125,8 +127,26 @@ public class ComplaintService {
         }
     }
 
+    @Transactional
+    public void deleteComplaint(Long complaintId, Long userId){
+        Complaint complaint = findComplaint(complaintId);
+        if(isOwner(complaint, userId)){
+            complaintRepository.delete(complaint);
+        }else {
+            throw new BusinessLogicException(ExceptionCode.NOT_OWNER);
+        }
+    }
 
+    @Transactional
+    public void updateComplaintStatus(Long complaintId, int statusCode, String role) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.ID_NOT_FOUND));
 
+        ComplaintStatus status = ComplaintStatus.fromCode(statusCode);
+        complaint.setStatus(status);
+
+        complaintRepository.save(complaint);
+    }
 
 
 }

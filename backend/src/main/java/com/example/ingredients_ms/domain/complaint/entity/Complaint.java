@@ -39,8 +39,7 @@ public class Complaint extends BaseEntity {
     @OneToMany(mappedBy = "complaint", cascade = CascadeType.ALL)
     private List<ComplaintFeedback> feedbacks = new ArrayList<>();
 
-    // Enum for status
-    public enum ComplaintStatus {
-        PENDING, IN_PROGRESS, COMPLETED, REJECTED
-    }
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private ComplaintStatus status = ComplaintStatus.PENDING;
 }

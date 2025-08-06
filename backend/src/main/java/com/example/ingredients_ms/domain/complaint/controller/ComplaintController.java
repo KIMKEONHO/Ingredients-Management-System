@@ -43,7 +43,7 @@ public class ComplaintController {
 
         CreateComplaintResponseDto responseDto =  complaintService.createComplaint(requestDto);
 
-        return new RsData<>("200","민원이 생성되었습니다.", responseDto);
+        return new RsData<>("201","민원이 생성되었습니다.", responseDto);
     }
 
     // ( 본인거 단건 조회 )
@@ -67,13 +67,19 @@ public class ComplaintController {
     // 컴플레인 삭제
     @DeleteMapping("/{complaintId}")
     public RsData<?> deleteComplaint(@PathVariable("complaintId") Long complaintId){
-        return null;
+
+        complaintService.deleteComplaint(complaintId, tokenService.getIdFromToken());
+
+        return new RsData<>("204", "민원이 삭제되었습니다.");
     }
 
     // 관리자가 민원 상태를 변경하는 것
-    @PatchMapping("/{complaintId}/status/{statusId}")
-    public RsData<?> updateComplaintStatus(@PathVariable("complaintId") Long complaintId, @PathVariable("statusId") Long statusId){
-        return null;
+    @PatchMapping("/{complaintId}/status/{statusCode}")
+    public RsData<?> updateComplaintStatus(@PathVariable("complaintId") Long complaintId, @PathVariable("statusCode") int statusCode){
+
+        complaintService.updateComplaintStatus(complaintId, statusCode, tokenService.getRoleFromToken());
+
+        return new RsData<>("201", "민원 상태가 변경되었습니다.");
     }
 
 
