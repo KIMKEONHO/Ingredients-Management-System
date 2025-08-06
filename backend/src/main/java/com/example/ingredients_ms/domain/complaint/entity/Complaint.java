@@ -40,6 +40,6 @@ public class Complaint extends BaseEntity {
     private List<ComplaintFeedback> feedbacks = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private ComplaintStatus status = ComplaintStatus.PENDING;
 }
