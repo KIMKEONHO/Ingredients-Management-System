@@ -21,8 +21,6 @@ public class CreateFoodInventoryRequestDto {
     private LocalDateTime expirationDate;
     // 어디에 보관할까요? 냉장? 냉동? 아니면 그냥 실온?
     private Set<Place> places;
-    // 이 재료의 주인님 ID
-    private Long userId;
     // 어떤 식재료인가요? (예: 당근, 양파)
     private Long ingredientId;
 }

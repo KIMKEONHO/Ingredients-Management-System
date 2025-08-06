@@ -43,12 +43,10 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/*/ingredient/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/*/ingredient/").permitAll()
                         // 재고 관리 api
-                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/*/inventory/*").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/*/inventory/*").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/*/inventory/*").permitAll()
-                        //수정할거
-                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/user/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/cart/item/**").permitAll()
                 )
                 .csrf(csrf->csrf.disable())

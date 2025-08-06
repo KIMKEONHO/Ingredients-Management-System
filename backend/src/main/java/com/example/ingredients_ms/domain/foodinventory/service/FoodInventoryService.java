@@ -6,6 +6,7 @@ import com.example.ingredients_ms.domain.foodinventory.dto.request.CreateFoodInv
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
+import com.example.ingredients_ms.domain.foodinventory.entity.Place;
 import com.example.ingredients_ms.domain.foodinventory.repository.FoodInventoryRepository;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.ingredients.repository.IngredientsRepository;
@@ -30,12 +31,15 @@ public class FoodInventoryService {
 
     // 새로운 재료를 냉장고에 등록합니다. 환영 파티라도 열어야 할까요?
     @Transactional
-    public FoodInventoryResponseDto createFoodInventory(CreateFoodInventoryRequestDto requestDto) {
-        User user = userRepository.findById(requestDto.getUserId())
+    public FoodInventoryResponseDto createFoodInventory(Long userId, CreateFoodInventoryRequestDto requestDto) {
+        //유저 찾기
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.USER_NOT_FOUND));
+        //식재료 찾기
         Ingredients ingredient = ingredientsRepository.findById(requestDto.getIngredientId())
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.INGREDIENT_NOT_FOUND));
 
+        //저장할 재고 객체 생성
         FoodInventory foodInventory = FoodInventory.builder()
                 .quantity(requestDto.getQuantity())
                 .unit(requestDto.getUnit())
@@ -46,37 +50,60 @@ public class FoodInventoryService {
                 .ingredient(ingredient)
                 .build();
 
+        // 저장
         FoodInventory savedFoodInventory = foodInventoryRepository.save(foodInventory);
         return FoodInventoryResponseDto.fromEntity(savedFoodInventory);
     }
 
-    // 냉장고 속 특정 재료 하나를 꺼내봅니다. "오늘 저녁은 너로 정했다!"
-    public FoodInventoryResponseDto getFoodInventory(Long foodInventoryId) {
-        FoodInventory foodInventory = foodInventoryRepository.findById(foodInventoryId)
-                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
-        return FoodInventoryResponseDto.fromEntity(foodInventory);
+    @Transactional
+    public List<FoodInventoryResponseDto> getFoodInventoriesByPlace(Long userId, String placeName){
+
+        Place place = Place.valueOf(placeName.toUpperCase());
+
+        List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdAndPlaces(userId,place);
+
+        // places 미리 초기화
+        inventories.forEach(inventory -> inventory.getPlaces().size());
+
+        // 엔티티(객체)를 Dto로 변환하여 반환
+        return inventories.stream()
+                .map(FoodInventoryResponseDto::fromEntity)
+                .collect(Collectors.toList());
+
     }
 
-    // 특정 사용자의 냉장고 전체를 훑어봅니다. 뭐가 있나~?
+
+    // 냉장고 안의 모든 식재료를 조회합니다. 뭐가 있는지 한번 볼까요?
+    @Transactional
     public List<FoodInventoryResponseDto> getFoodInventories(Long userId) {
-        return foodInventoryRepository.findByUser_IdOrderById(userId).stream()
+
+        List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdOrderById(userId);
+
+        // places 미리 초기화
+        inventories.forEach(inventory -> inventory.getPlaces().size());
+
+        return inventories.stream()
                 .map(FoodInventoryResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    // 특정 카테고리의 재료들만 골라봅니다. "오늘은 채소 파티다!"
+    // 특정 카테고리의 식재료만 필터링해서 보여줍니다. 오늘은 어떤 요리를 해볼까요?
+    @Transactional
     public List<FoodInventoryResponseDto> getFoodInventoriesByCategory(Long userId, Long categoryId) {
+
         return foodInventoryRepository.findByUser_IdAndIngredient_Category_IdOrderById(userId, categoryId).stream()
                 .map(FoodInventoryResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    // 재료 정보를 수정합니다. 유통기한 연장의 꿈...은 이루어지지 않습니다.
+    // 기존 식재료의 정보를 수정합니다. 양이 늘거나 유통기한이 바뀌었나요?
     @Transactional
-    public FoodInventoryResponseDto updateFoodInventory(UpdateFoodInventoryRequestDto requestDto) {
-        FoodInventory foodInventory = foodInventoryRepository.findById(requestDto.getFoodInventoryId())
+    public FoodInventoryResponseDto updateFoodInventory(Long userId,UpdateFoodInventoryRequestDto requestDto) {
+
+        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndId(userId, requestDto.getFoodInventoryId())
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
 
+        // 저장할 객체에 값 할당
         foodInventory.setQuantity(requestDto.getQuantity());
         foodInventory.setUnit(requestDto.getUnit());
         foodInventory.setBoughtDate(requestDto.getBoughtDate());
@@ -87,12 +114,15 @@ public class FoodInventoryService {
         return FoodInventoryResponseDto.fromEntity(updatedFoodInventory);
     }
 
-    // 재료를 삭제합니다. 잘가, 즐거웠어...
+    // 다 쓴 식재료는 냉장고에서 비워줍니다. 안녕...
     @Transactional
-    public void deleteFoodInventory(Long foodInventoryId) {
-        if (!foodInventoryRepository.existsById(foodInventoryId)) {
+    public void deleteFoodInventory(Long userId, Long foodInventoryId) {
+
+        // 사용자가 추가한 식품 재고중에 존재하는지 확인
+        if (!foodInventoryRepository.existsByUser_IdAndId(userId,foodInventoryId)) {
             throw new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND);
         }
+
         foodInventoryRepository.deleteById(foodInventoryId);
     }
 }
