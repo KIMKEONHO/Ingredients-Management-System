@@ -17,7 +17,8 @@ public enum ExceptionCode {
     CART_NOT_FOUND(404, "카트가 존재하지 않습니다."),
     NOT_OWNER(403, "해당 주인이 아닙니다."),
     COMPLAINT_NOT_FOUND(404,"컴플레인을 찾을 수 없습니다."),
-    FOOD_INVENTORY_NOT_FOUND(404,"재고를 찾을 수 없습니다.")
+    FOOD_INVENTORY_NOT_FOUND(404,"재고를 찾을 수 없습니다."),
+    FEEDBACK_NOT_FOUND(404, "피드백을 찾을 수 없습니다.")
     ;
 
     @Getter
