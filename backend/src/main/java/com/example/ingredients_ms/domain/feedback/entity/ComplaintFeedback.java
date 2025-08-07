@@ -5,6 +5,7 @@ import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
@@ -12,6 +13,7 @@ import lombok.*;
 @Table(name="complaint_feedback")
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder
 public class ComplaintFeedback extends BaseEntity {
 
     @Column(name = "title", length = 255, nullable = false)
