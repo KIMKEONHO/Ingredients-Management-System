@@ -36,6 +36,9 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/*/users/me").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/users/logout").permitAll()
 
+                        // 이메일 인증
+                        .requestMatchers(HttpMethod.POST, "/api/*/email/send").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/email/verify").permitAll()
 
                         // 식재료 카테고리 api
                         .requestMatchers(HttpMethod.POST, "/api/*/category/*").hasRole("ADMIN")
