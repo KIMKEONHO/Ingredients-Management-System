@@ -115,6 +115,7 @@ public class UserService {
 
     // 토큰 갱신
     public RsData<String> refreshAccessToken(String refreshToken) {
+        log.info("Refresh Token: " + refreshToken);
         User user = userRepository.findByRefreshToken(refreshToken).orElseThrow(() -> new BusinessLogicException(ExceptionCode.INVALID_TOKEN));
 
         String accessToken = jwtProvider.genAccessToken(user);
