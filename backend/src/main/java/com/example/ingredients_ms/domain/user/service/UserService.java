@@ -1,12 +1,12 @@
 package com.example.ingredients_ms.domain.user.service;
 
 import com.example.ingredients_ms.domain.cart.entity.Cart;
+import com.example.ingredients_ms.domain.email.service.EmailService;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
+import com.example.ingredients_ms.domain.user.dto.request.FindIdRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.WithdrawRequestDto;
-import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
-import com.example.ingredients_ms.domain.user.dto.response.ValidUserResponseDto;
-import com.example.ingredients_ms.domain.user.dto.response.WithdrawResponseDto;
+import com.example.ingredients_ms.domain.user.dto.response.*;
 import com.example.ingredients_ms.domain.user.entity.Role;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.repository.UserRepository;
@@ -25,6 +25,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final EmailService emailService;
 
     @Transactional
     public CreateUserResponseDto createUser(CreateUserRequestDto createUserRequestDto) {
@@ -198,5 +200,47 @@ public class UserService {
         user.setCart(cart);
 
         return userRepository.save(user);
+    }
+
+    public FindIdResponseDto findId(FindIdRequestDto requestDto){
+
+        Optional<User> user = userRepository.findByPhoneNumAndUserName(requestDto.getPhone(), requestDto.getName());
+
+        if(user.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        return FindIdResponseDto.builder()
+                .id(user.get().getId())
+                .email(user.get().getEmail())
+                .build();
+    }
+
+    public void findPw(String email){
+        Optional<User> opUser = userRepository.findByEmail(email);
+
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+
+        String tempPassword = generateTempPassword();
+
+        user.setPassword(passwordEncoder.encode(tempPassword));
+        userRepository.save(user);
+
+        emailService.sendTempPasswordEmail(user.getEmail(), tempPassword);
+    }
+
+    // 새로운 패스워드 생성
+    private String generateTempPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder sb = new StringBuilder();
+        SecureRandom random = new SecureRandom();
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }

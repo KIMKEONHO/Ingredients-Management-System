@@ -7,6 +7,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -92,5 +93,32 @@ public class EmailService {
             throw new BusinessLogicException(NON_MATCHED);
         }
         return codeFoundByEmail.equals(code);
+    }
+
+    public void sendTempPasswordEmail(String to, String tempPassword) {
+        String subject = "[Ingredients] 임시 비밀번호 안내";
+        String content = """
+                <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+                    <h2>임시 비밀번호 발급 안내</h2>
+                    <p>아래 임시 비밀번호로 로그인 후, 반드시 비밀번호를 변경해주세요.</p>
+                    <div style="padding: 10px; background-color: #f5f5f5; border-radius: 5px; width: fit-content;">
+                        <b>%s</b>
+                    </div>
+                    <p>감사합니다.</p>
+                </div>
+                """.formatted(tempPassword);
+
+        try {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, true); // true → HTML 형식
+
+            javaMailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("임시 비밀번호 메일 전송 실패", e);
+        }
     }
 }

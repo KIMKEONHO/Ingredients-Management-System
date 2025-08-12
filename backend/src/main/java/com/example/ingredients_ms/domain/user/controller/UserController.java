@@ -1,9 +1,8 @@
 package com.example.ingredients_ms.domain.user.controller;
 
-import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.WithdrawRequestDto;
+import com.example.ingredients_ms.domain.user.dto.request.*;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
+import com.example.ingredients_ms.domain.user.dto.response.FindIdResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.ValidUserResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.WithdrawResponseDto;
 import com.example.ingredients_ms.domain.user.entity.User;
@@ -54,6 +53,22 @@ public class UserController {
 
         // 3. 응답
         return new RsData<>("200", "로그인하였습니다.", accessToken);
+    }
+
+    @GetMapping("/findID")
+    public RsData<?> findID(@RequestBody FindIdRequestDto requestDto) {
+
+        FindIdResponseDto response = userService.findId(requestDto);
+
+        return new RsData<>("200", "ID를 찾았습니다.", response);
+    }
+
+    @GetMapping("/findPW")
+    public RsData<?> findPW(@RequestBody FindPwRequestDto requestDto){
+
+        userService.findPw(requestDto.getEmail());
+
+        return new RsData<>("201","임시 비빌번호를 메일로 전송하였습니다.");
     }
 
     @DeleteMapping("/withdraw")
