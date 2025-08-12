@@ -5,6 +5,7 @@ import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.WithdrawRequestDto;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
+import com.example.ingredients_ms.domain.user.dto.response.ValidUserResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.WithdrawResponseDto;
 import com.example.ingredients_ms.domain.user.entity.Role;
 import com.example.ingredients_ms.domain.user.entity.User;
@@ -106,6 +107,22 @@ public class UserService {
     public Optional<User> getUserByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+    public ValidUserResponseDto getUserByEmailToDto(String email){
+
+        Optional<User> user = userRepository.findByEmail(email);
+        if(user.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        ValidUserResponseDto validUserResponseDto = ValidUserResponseDto.builder()
+                .email(user.get().getEmail())
+                .name(user.get().getUserName())
+                .build();
+
+        return validUserResponseDto;
+    }
+
 
 
     // 토큰 유효성 검증

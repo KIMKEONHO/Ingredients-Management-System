@@ -4,6 +4,7 @@ import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.WithdrawRequestDto;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
+import com.example.ingredients_ms.domain.user.dto.response.ValidUserResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.WithdrawResponseDto;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.service.UserService;
@@ -18,12 +19,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,16 +35,16 @@ public class UserController {
 
     @PostMapping("/signup")
     @Operation(summary = "유저 생성", description = "유저를 생성하는 로직")
-    public ResponseEntity<?> createUser(@Valid @RequestBody CreateUserRequestDto userRequestDto) {
+    public RsData<?> createUser(@Valid @RequestBody CreateUserRequestDto userRequestDto) {
 
         CreateUserResponseDto response = userService.createUser(userRequestDto);
 
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new RsData<>("201", "유저를 생성하였습니다.", response);
     }
 
     @PostMapping("/login")
     @Operation(summary = "로그인", description = "로그인 하는 로직")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDto, HttpServletResponse response) {
+    public RsData<?> login(@RequestBody LoginRequestDto loginRequestDto, HttpServletResponse response) {
 
         // 1. 인증 처리
         User user = userService.login(loginRequestDto);
@@ -55,19 +53,19 @@ public class UserController {
         String accessToken = tokenService.makeAuthCookies(user, response);
 
         // 3. 응답
-        return ResponseEntity.ok().body(accessToken);
+        return new RsData<>("200", "로그인하였습니다.", accessToken);
     }
 
     @DeleteMapping("/withdraw")
-    public ResponseEntity<?> withdraw(WithdrawRequestDto withdrawRequestDto) {
+    public RsData<?> withdraw(WithdrawRequestDto withdrawRequestDto) {
 
         WithdrawResponseDto response = userService.withdraw(withdrawRequestDto);
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new RsData<>("200", "회원이 탈퇴되었습니다.", response);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> me (HttpServletRequest req) {
+    public RsData<?> me (HttpServletRequest req) {
         Cookie[] cookies = req.getCookies();
         String accessToken = "";
 
@@ -81,9 +79,9 @@ public class UserController {
 
         String userEmail = (String) claims.get("email");
 
-        Optional<User> user = userService.getUserByEmail(userEmail);
+        ValidUserResponseDto responseDto = userService.getUserByEmailToDto(userEmail);
 
-        return new ResponseEntity<>(user, HttpStatus.OK);
+        return new RsData<>("200","회원 인증에 성공하였습니다.", responseDto);
     }
 
     @GetMapping("/logout")

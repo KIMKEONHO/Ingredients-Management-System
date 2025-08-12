@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect } from 'react'
 import { useLoginMember } from './stores/auth/loginMamber'
-import Header from './components/Header'
+import Header from './components/layout/Header'
 import Footer from './components/layout/Footer'
 import { LoginMemberContext } from './stores/auth/loginMamber'
 
