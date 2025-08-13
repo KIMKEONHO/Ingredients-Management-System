@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Status {
+    // 활성, 비활성, 보류 중, 철회됨
     ACTIVE("active"),
     INACTIVE("inactive"),
     PENDING("pending"),

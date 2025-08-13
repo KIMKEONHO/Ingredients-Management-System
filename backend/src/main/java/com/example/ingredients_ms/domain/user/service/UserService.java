@@ -5,8 +5,9 @@ import com.example.ingredients_ms.domain.email.service.EmailService;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.FindIdRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.WithdrawRequestDto;
-import com.example.ingredients_ms.domain.user.dto.response.*;
+import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
+import com.example.ingredients_ms.domain.user.dto.response.FindIdResponseDto;
+import com.example.ingredients_ms.domain.user.dto.response.ValidUserResponseDto;
 import com.example.ingredients_ms.domain.user.entity.Role;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.repository.UserRepository;
@@ -101,9 +102,19 @@ public class UserService {
         return user;
     }
 
-    public WithdrawResponseDto withdraw(WithdrawRequestDto withdrawRequestDto) {
+    public void withdraw(String email) {
 
-        return null;
+        Optional<User> opUser = userRepository.findByEmail(email);
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+        User user = opUser.get();
+        if(user.getStatus() != Status.ACTIVE){
+            throw new BusinessLogicException(ExceptionCode.NOT_ACTIVE);
+        }
+        user.setStatus(Status.INACTIVE);
+        userRepository.save(user);
+
     }
 
     public Optional<User> getUserByEmail(String email) {
