@@ -3,7 +3,6 @@ package com.example.ingredients_ms.domain.user.service;
 import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.email.service.EmailService;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.ExchangePWRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.FindIdRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
@@ -256,7 +255,7 @@ public class UserService {
         return sb.toString();
     }
 
-    public void changePassword(String email, ExchangePWRequestDto requestDto){
+    public void changePassword(String email, String password){
 
         Optional<User> opUser = userRepository.findByEmail(email);
         if(opUser.isEmpty()){
@@ -265,9 +264,21 @@ public class UserService {
 
         User user = opUser.get();
 
-        user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
+        user.setPassword(passwordEncoder.encode(password));
 
         userRepository.save(user);
+    }
 
+    public void changeNickName(String email, String nickname){
+        Optional<User> opUser = userRepository.findByEmail(email);
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+
+        user.setNickname(nickname);
+
+        userRepository.save(user);
     }
 }

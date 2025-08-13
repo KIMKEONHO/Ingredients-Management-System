@@ -127,11 +127,19 @@ public class UserController {
             @RequestBody ExchangePWRequestDto requestDto
     ){
 
-        userService.changePassword(currentUser.getEmail(), requestDto);
+        userService.changePassword(currentUser.getEmail(), requestDto.getPassword());
 
         return new RsData<>("204", "비밀번호가 변경되었습니다.");
     }
 
+    @PostMapping("/exchange/nickname")
+    public RsData<?> exchangeNickname(
+            @CurrentUser SecurityUser currentUser,
+            @RequestBody ExchangeNickNameRequestDto requestDto
+    ){
+        userService.changeNickName(currentUser.getEmail(), requestDto.getNickname());
+        return  new RsData<>("204", "닉네임이 변경되었습니다.");
+    }
 
 
 }
