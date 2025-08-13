@@ -3,6 +3,7 @@ package com.example.ingredients_ms.domain.user.service;
 import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.email.service.EmailService;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
+import com.example.ingredients_ms.domain.user.dto.request.ExchangePWRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.FindIdRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
@@ -253,5 +254,20 @@ public class UserService {
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
         return sb.toString();
+    }
+
+    public void changePassword(String email, ExchangePWRequestDto requestDto){
+
+        Optional<User> opUser = userRepository.findByEmail(email);
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+
+        user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
+
+        userRepository.save(user);
+
     }
 }

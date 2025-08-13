@@ -1,9 +1,6 @@
 package com.example.ingredients_ms.domain.user.controller;
 
-import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.FindIdRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.FindPwRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
+import com.example.ingredients_ms.domain.user.dto.request.*;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.FindIdResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.ValidUserResponseDto;
@@ -123,5 +120,18 @@ public class UserController {
 
         return new RsData<>("201", "로그아웃에 성공하였습니다.");
     }
+
+    @PostMapping("/exchange/password")
+    public RsData<?> exchangePassword(
+            @CurrentUser SecurityUser currentUser,
+            @RequestBody ExchangePWRequestDto requestDto
+    ){
+
+        userService.changePassword(currentUser.getEmail(), requestDto);
+
+        return new RsData<>("204", "비밀번호가 변경되었습니다.");
+    }
+
+
 
 }
