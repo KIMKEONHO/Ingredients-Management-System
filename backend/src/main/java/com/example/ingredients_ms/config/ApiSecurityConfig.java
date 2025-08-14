@@ -71,6 +71,10 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/*/complaints/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/complaints/users").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*").permitAll()
+
+                        // 식단 관리 api
+                        .requestMatchers(HttpMethod.POST, "/api/*/diet/add").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/**").permitAll()
                 )
                 .csrf(csrf->csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
