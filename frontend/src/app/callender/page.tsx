@@ -51,6 +51,10 @@ export default function CalendarPage() {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast')
 
+  // 수정 모달 상태 추가
+  const [isEditItemModalOpen, setIsEditItemModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<{ mealType: MealType; item: MealItem } | null>(null)
+
   const { days, firstDay } = useMemo(
     () => getDaysInMonth(currentYear, currentMonth),
     [currentYear, currentMonth]
@@ -87,6 +91,18 @@ export default function CalendarPage() {
     setIsAddItemModalOpen(false)
   }
 
+  // 수정 모달 열기 함수 추가
+  const openEditItemModal = (mealType: MealType, item: MealItem) => {
+    setEditingItem({ mealType, item })
+    setIsEditItemModalOpen(true)
+  }
+
+  // 수정 모달 닫기 함수 추가
+  const closeEditItemModal = () => {
+    setIsEditItemModalOpen(false)
+    setEditingItem(null)
+  }
+
   const handleAddItem = (item: Omit<MealItem, 'id'>) => {
     if (!selectedDate) return
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -100,6 +116,24 @@ export default function CalendarPage() {
       return { ...prev, [key]: updated }
     })
     closeAddItemModal()
+  }
+
+  // 메뉴 수정 함수 추가
+  const handleEditItem = (updatedItem: Omit<MealItem, 'id'>) => {
+    if (!selectedDate || !editingItem) return
+    const key = formatDateKey(selectedDate)
+    setMealsByDate(prev => {
+      const existing = prev[key]
+      if (!existing) return prev
+      const updated: DayMeals = {
+        ...existing,
+        [editingItem.mealType]: existing[editingItem.mealType].map(item =>
+          item.id === editingItem.item.id ? { ...item, ...updatedItem } : item
+        ),
+      }
+      return { ...prev, [key]: updated }
+    })
+    closeEditItemModal()
   }
 
   const totalCaloriesForMeal = (mealItems: MealItem[]) =>
@@ -201,6 +235,7 @@ export default function CalendarPage() {
           meals={mealsByDate[formatDateKey(selectedDate)] ?? { breakfast: [], lunch: [], dinner: [] }}
           onClose={closeDayModal}
           onAdd={(mealType) => openAddItemModal(mealType)}
+          onEdit={(mealType, item) => openEditItemModal(mealType, item)}
           onRemoveItem={(mealType, id) => {
             const key = formatDateKey(selectedDate)
             setMealsByDate(prev => {
@@ -223,6 +258,15 @@ export default function CalendarPage() {
           onSubmit={(name, calories) => handleAddItem({ name, calories })}
         />
       )}
+
+      {isEditItemModalOpen && editingItem && (
+        <EditItemModal
+          mealType={editingItem.mealType}
+          item={editingItem.item}
+          onClose={closeEditItemModal}
+          onSubmit={(name, calories) => handleEditItem({ name, calories })}
+        />
+      )}
     </div>
   )
 }
@@ -232,12 +276,14 @@ function DayModal({
   meals,
   onClose,
   onAdd,
+  onEdit,
   onRemoveItem,
 }: {
   date: Date
   meals: DayMeals
   onClose: () => void
   onAdd: (mealType: MealType) => void
+  onEdit: (mealType: MealType, item: MealItem) => void
   onRemoveItem: (mealType: MealType, id: string) => void
 }) {
   const title = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
@@ -281,13 +327,22 @@ function DayModal({
                           <span className="font-medium mr-2">{item.name}</span>
                           <span className="text-gray-500">{item.calories} kcal</span>
                         </div>
-                        <button
-                          onClick={() => onRemoveItem(section.key, item.id)}
-                          className="text-gray-500 hover:text-red-600"
-                          aria-label="삭제"
-                        >
-                          삭제
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => onEdit(section.key, item)}
+                            className="text-gray-500 hover:text-blue-600"
+                            aria-label="수정"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => onRemoveItem(section.key, item.id)}
+                            className="text-gray-500 hover:text-red-600"
+                            aria-label="삭제"
+                          >
+                            삭제
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}
@@ -358,6 +413,74 @@ function AddItemModal({
               className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
             >
               추가
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 수정 모달 컴포넌트 추가
+function EditItemModal({
+  mealType,
+  item,
+  onClose,
+  onSubmit,
+}: {
+  mealType: MealType
+  item: MealItem
+  onClose: () => void
+  onSubmit: (name: string, calories: number) => void
+}) {
+  const [name, setName] = useState(item.name)
+  const [calories, setCalories] = useState<string>(item.calories.toString())
+
+  const label = mealType === 'breakfast' ? '아침' : mealType === 'lunch' ? '점심' : '저녁'
+
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">{label} 항목 수정</h3>
+            <button onClick={onClose} className="rounded px-2 py-1 text-gray-500 hover:bg-gray-100">닫기</button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1">메뉴</label>
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="예: 닭가슴살 샐러드"
+                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">칼로리 (kcal)</label>
+              <input
+                value={calories}
+                onChange={e => setCalories(e.target.value)}
+                placeholder="예: 350"
+                inputMode="numeric"
+                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <button onClick={onClose} className="px-4 py-2 rounded border hover:bg-gray-50">취소</button>
+            <button
+              onClick={() => {
+                const parsed = Number(calories)
+                if (!name.trim() || Number.isNaN(parsed)) return
+                onSubmit(name.trim(), parsed)
+              }}
+              className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              수정
             </button>
           </div>
         </div>
