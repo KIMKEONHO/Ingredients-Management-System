@@ -1,8 +1,8 @@
 package com.example.ingredients_ms.domain.foodinventory.repository;
 
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
+import com.example.ingredients_ms.domain.foodinventory.entity.FoodStatus;
 import com.example.ingredients_ms.domain.foodinventory.entity.Place;
-import lombok.extern.java.Log;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -18,6 +18,8 @@ public interface FoodInventoryRepository extends JpaRepository<FoodInventory, Lo
     List<FoodInventory> findByUser_IdAndIngredient_Category_IdOrderById(Long userId, Long categoryId);
 
     List<FoodInventory> findByUser_IdAndPlaces(Long userId, Place place);
+
+    List<FoodInventory> findByUser_IdAndStatus(Long userId, FoodStatus status);
 
     boolean existsByUser_IdAndId(Long userId, Long id);
 
