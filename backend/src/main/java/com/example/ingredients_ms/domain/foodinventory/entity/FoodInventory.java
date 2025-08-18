@@ -46,4 +46,9 @@ public class FoodInventory extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ingredient_id")
     private Ingredients ingredient;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private FoodStatus status = FoodStatus.NORMAL;
 }
