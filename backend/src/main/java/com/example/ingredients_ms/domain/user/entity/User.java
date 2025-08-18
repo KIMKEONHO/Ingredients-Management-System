@@ -2,6 +2,7 @@ package com.example.ingredients_ms.domain.user.entity;
 
 import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.complaint.entity.Complaint;
+import com.example.ingredients_ms.domain.diet.entity.Diet;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
 import com.example.ingredients_ms.global.Status;
 import com.example.ingredients_ms.global.entity.BaseEntity;
@@ -72,6 +73,9 @@ public class User extends BaseEntity {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Complaint> complaints = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Diet>  diets = new ArrayList<>();
 
     public Set<GrantedAuthority> getAuthorities() {
         return Set.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

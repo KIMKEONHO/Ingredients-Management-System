@@ -19,7 +19,8 @@ public enum ExceptionCode {
     COMPLAINT_NOT_FOUND(404,"컴플레인을 찾을 수 없습니다."),
     FOOD_INVENTORY_NOT_FOUND(404,"재고를 찾을 수 없습니다."),
     FEEDBACK_NOT_FOUND(404, "피드백을 찾을 수 없습니다."),
-    NON_MATCHED(404,"인증코드가 올바르지 않습니다.")
+    NON_MATCHED(404,"인증코드가 올바르지 않습니다."),
+    DIET_NOT_FOUND(404, "식단이 존재하지 않습니다.")
     ;
 
     @Getter
