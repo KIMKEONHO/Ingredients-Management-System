@@ -3,9 +3,11 @@ package com.example.ingredients_ms.domain.foodinventory.entity;
 import java.util.Arrays;
 
 public enum FoodStatus {
+    // 보관중, 임박, 상함(버림), 먹음
     NORMAL("normal"),
     EXPIRING_SOON("expiring_soon"),
-    EXPIRED("expired"),;
+    EXPIRED("expired"),
+    CONSUMED("consumed");
 
     private final String value;
 
