@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface DietRepository extends JpaRepository<Diet,Long> {
     List<Diet> findAllByUserIdAndDateBetween(Long userId, LocalDateTime start, LocalDateTime end);
+    List<Diet> findByUserIdAndDateBetween(Long userId, LocalDateTime start, LocalDateTime end);
 }
