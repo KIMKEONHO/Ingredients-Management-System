@@ -88,7 +88,7 @@ public class FoodInventoryController {
         Long userId = tokenService.getIdFromToken();
 
         foodInventoryService.deleteFoodInventory(userId,foodInventoryId);
-        return new RsData<>("200", "식품 재고가 성공적으로 삭제되었습니다.", null);
+        return new RsData<>("200", "식품 재고가 성공적으로 삭제되었습니다.");
     }
 
     @GetMapping("/expiring-soon")
