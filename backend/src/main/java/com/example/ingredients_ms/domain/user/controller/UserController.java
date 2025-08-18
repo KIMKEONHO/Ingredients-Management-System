@@ -1,16 +1,16 @@
 package com.example.ingredients_ms.domain.user.controller;
 
-import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.WithdrawRequestDto;
+import com.example.ingredients_ms.domain.user.dto.request.*;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
+import com.example.ingredients_ms.domain.user.dto.response.FindIdResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.ValidUserResponseDto;
-import com.example.ingredients_ms.domain.user.dto.response.WithdrawResponseDto;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.service.UserService;
 import com.example.ingredients_ms.global.jwt.JwtProvider;
 import com.example.ingredients_ms.global.jwt.TokenService;
 import com.example.ingredients_ms.global.rsdata.RsData;
+import com.example.ingredients_ms.global.security.CurrentUser;
+import com.example.ingredients_ms.global.security.SecurityUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
@@ -56,12 +56,28 @@ public class UserController {
         return new RsData<>("200", "로그인하였습니다.", accessToken);
     }
 
+    @GetMapping("/findID")
+    public RsData<?> findID(@RequestBody FindIdRequestDto requestDto) {
+
+        FindIdResponseDto response = userService.findId(requestDto);
+
+        return new RsData<>("200", "ID를 찾았습니다.", response);
+    }
+
+    @GetMapping("/findPW")
+    public RsData<?> findPW(@RequestBody FindPwRequestDto requestDto){
+
+        userService.findPw(requestDto.getEmail());
+
+        return new RsData<>("201","임시 비빌번호를 메일로 전송하였습니다.");
+    }
+
     @DeleteMapping("/withdraw")
-    public RsData<?> withdraw(WithdrawRequestDto withdrawRequestDto) {
+    public RsData<?> withdraw(@CurrentUser SecurityUser currentUser) {
 
-        WithdrawResponseDto response = userService.withdraw(withdrawRequestDto);
+        userService.withdraw(currentUser.getEmail());
 
-        return new RsData<>("200", "회원이 탈퇴되었습니다.", response);
+        return new RsData<>("204", "회원이 탈퇴되었습니다.");
     }
 
     @GetMapping("/me")
@@ -102,7 +118,28 @@ public class UserController {
         refreshCookie.setMaxAge(0);
         res.addCookie(refreshCookie);
 
-        return new RsData<>("200", "로그아웃에 성공하였습니다.");
+        return new RsData<>("201", "로그아웃에 성공하였습니다.");
     }
+
+    @PostMapping("/exchange/password")
+    public RsData<?> exchangePassword(
+            @CurrentUser SecurityUser currentUser,
+            @RequestBody ExchangePWRequestDto requestDto
+    ){
+
+        userService.changePassword(currentUser.getEmail(), requestDto.getPassword());
+
+        return new RsData<>("204", "비밀번호가 변경되었습니다.");
+    }
+
+    @PostMapping("/exchange/nickname")
+    public RsData<?> exchangeNickname(
+            @CurrentUser SecurityUser currentUser,
+            @RequestBody ExchangeNickNameRequestDto requestDto
+    ){
+        userService.changeNickName(currentUser.getEmail(), requestDto.getNickname());
+        return  new RsData<>("204", "닉네임이 변경되었습니다.");
+    }
+
 
 }

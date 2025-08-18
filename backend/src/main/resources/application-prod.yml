@@ -28,7 +28,7 @@ logging:
     org.springframework.transaction.interceptor: INFO
 custom:
   site:
-    name: "BLOG"
+    name: "IMS"
     cookieDomain: "${custom.prod.cookieDomain}"
     frontUrl: "${custom.prod.frontUrl}"
     backUrl: "${custom.prod.backUrl}"
@@ -36,4 +36,4 @@ data:
   redis:
     host: 172.17.0.1
     port: 6379
-    password: ${custom.secret.spring.data.redis.password}
+    password: '${custom.secret.spring.data.redis.password}'
