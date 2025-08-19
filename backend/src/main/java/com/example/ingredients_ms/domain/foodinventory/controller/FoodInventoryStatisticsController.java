@@ -1,5 +1,6 @@
 package com.example.ingredients_ms.domain.foodinventory.controller;
 
+import com.example.ingredients_ms.domain.foodinventory.dto.response.ConsumedRankResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.WasteStatisticsResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.service.FoodInventoryStatisticsService;
 import com.example.ingredients_ms.global.rsdata.RsData;
@@ -30,7 +31,13 @@ public class FoodInventoryStatisticsController {
 
 
     // 가장 많이 소비되는 식재료 통계 기능
-
+    @GetMapping("/most/consumed")
+    public RsData<List<ConsumedRankResponseDto>> getMostConsumedFoodInventoryStatistics(
+            @CurrentUser SecurityUser securityUser
+    ){
+        List<ConsumedRankResponseDto> response = foodInventoryStatisticsService.mostConsumedStatistics(securityUser.getId());
+        return new RsData<>("200-1", "most consumed statistics", response);
+    }
 
 
 
