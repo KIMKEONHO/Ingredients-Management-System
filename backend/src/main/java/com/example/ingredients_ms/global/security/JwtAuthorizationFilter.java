@@ -25,7 +25,15 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     @Override
     @SneakyThrows
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
-        if (List.of("/api/v1/users/login", "/api/v1/users/logout", "/api/v1/users/signup", "/api/v1/email/send","/api/v1/email/verify").contains(request.getRequestURI()) ) {
+        if (List.of(
+                "/api/v1/users/login",
+                "/api/v1/users/logout",
+                "/api/v1/users/signup",
+                "/api/v1/email/send",
+                "/api/v1/email/verify",
+                "/api/v1/users/findPW",
+                "/api/v1/users/findID"
+        ).contains(request.getRequestURI()) ) {
             filterChain.doFilter(request, response);
             return;
         }
