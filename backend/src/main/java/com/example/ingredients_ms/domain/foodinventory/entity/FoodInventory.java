@@ -23,6 +23,9 @@ public class FoodInventory extends BaseEntity {
     @Column(name = "quantity", length = 255, nullable = false)
     private Integer quantity;
 
+    @Column(name = "original_quantity", nullable = false)
+    private Integer originalQuantity; // 처음 구매한 개수
+
     @Column(name = "unit", length = 255, nullable = false)
     private String unit;
 
@@ -46,4 +49,9 @@ public class FoodInventory extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ingredient_id")
     private Ingredients ingredient;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private FoodStatus status = FoodStatus.NORMAL;
 }
