@@ -100,7 +100,7 @@ public class UserController {
         return new RsData<>("200","회원 인증에 성공하였습니다.", responseDto);
     }
 
-    @GetMapping("/logout")
+    @PostMapping("/logout")
     public RsData<?> logout(HttpServletResponse res) {
 
         Cookie cookie = new Cookie("accessToken", null);
