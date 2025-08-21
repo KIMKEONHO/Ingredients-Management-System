@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ComplaintFeedbackService {
 
     private final ComplaintFeedbackRepository complaintFeedbackRepository;
@@ -28,6 +27,7 @@ public class ComplaintFeedbackService {
     private final ComplaintRepository complaintRepository;
 
 
+    @Transactional
     // 피드백 조회
     public List<ComplaintFeedbackResponseDto> getFeedbacks(Long complaintId) {
 
@@ -41,6 +41,7 @@ public class ComplaintFeedbackService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     // 모든 피드백 조회
     public List<ComplaintFeedbackResponseDto> getAllFeedback(){
 
@@ -50,6 +51,7 @@ public class ComplaintFeedbackService {
 
     }
 
+    @Transactional
     // 피드백 생성
     public ComplaintFeedbackResponseDto createFeedback(CreateComplaintFeedbackRequestDto requestDto, long userId, Long complaintId){
 
@@ -70,6 +72,7 @@ public class ComplaintFeedbackService {
         return ComplaintFeedbackResponseDto.fromEntity(complaintFeedbackRepository.save(complaintFeedback));
     }
 
+    @Transactional
     // 피드백 수정
     public ComplaintFeedbackResponseDto updateFeedback(Long feedbackId, UpdateComplaintFeedbackRequestDto requestDto) {
 
@@ -82,6 +85,7 @@ public class ComplaintFeedbackService {
         return ComplaintFeedbackResponseDto.fromEntity(complaintFeedbackRepository.save(feedback));
     }
 
+    @Transactional
     // 피드백 삭제
     public void deleteFeedback(Long feedbackId){
 
