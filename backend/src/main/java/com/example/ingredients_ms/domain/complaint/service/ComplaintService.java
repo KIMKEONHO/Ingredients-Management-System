@@ -113,7 +113,7 @@ public class ComplaintService {
     // 컴플레인 찾기
     public Complaint findComplaint(Long complaintId){
         Optional<Complaint> complaint = complaintRepository.findById(complaintId);
-        if(complaint.isPresent()){
+        if(complaint.isEmpty()){
             throw new BusinessLogicException(ExceptionCode.COMPLAINT_NOT_FOUND);
         }
         return complaint.get();
