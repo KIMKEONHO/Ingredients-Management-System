@@ -30,51 +30,79 @@ public class ApiSecurityConfig {
         http
                 .securityMatcher("/api/**")
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        // 기본 회원가입, 로그인
-                        .requestMatchers(HttpMethod.POST, "/api/*/users/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/*/users/signup").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/*/users/me").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/*/users/logout").permitAll()
-
-                        // 이메일 인증
-                        .requestMatchers(HttpMethod.POST, "/api/*/email/send").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/*/email/verify").permitAll()
-
-                        // 식재료 카테고리 api
-                        .requestMatchers(HttpMethod.POST, "/api/*/category/*").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/category/").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/*/category/*").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/*/category/*").hasRole("ADMIN")
-
-
-                        // 식재료 관리 api
-                        .requestMatchers(HttpMethod.DELETE, "/api/*/ingredient/*").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/ingredient/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/*/ingredient/category/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/*/ingredient/").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/*/ingredient/*").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/*/ingredient/").hasRole("ADMIN")
-
 
                         // 재고 관리 api
-                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/*/inventory/*").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/*/inventory/*").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/*/inventory/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/*/cart/item/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/*/inventory").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/inventory").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/places").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/place").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/my").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/category/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/*/inventory/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/expiring-soon").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/statistics/ingredients").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/inventory/statistics/most/consumed").hasAnyRole("USER","ADMIN")
 
-                        // 컴플레인 관리 api
-                        .requestMatchers(HttpMethod.POST, "/api/*/complaints/*").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*/status/*").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/admin").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/*").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/*/complaints/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/users").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*").permitAll()
+                        // 식재료 api
+                        .requestMatchers(HttpMethod.GET, "/api/*/ingredient/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/*/ingredient/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/*/ingredient/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/ingredient/").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/ingredient/").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/ingredient/category/*").hasAnyRole("USER","ADMIN")
+
+                        // 민원 피드백 api
+                        .requestMatchers(HttpMethod.PUT, "/api/*/feedback/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/*/feedback/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/feedback/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/feedback/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/feedback").hasAnyRole("ADMIN")
+
+                        // 장바구니 아이템 api
+                        .requestMatchers(HttpMethod.GET, "/api/*/cart/item").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/cart/item").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/*/cart/item/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/*/cart/item/*").hasAnyRole("USER","ADMIN")
+
+                        // 유저 관리 api
+                        .requestMatchers(HttpMethod.POST, "/api/*/users/signup").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/users/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/users/exchange/password").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/users/exchange/nickname").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/users/me").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/users/logout").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/users/findPW").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/*/users/findID").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/*/users/withdraw").hasAnyRole("USER","ADMIN")
+
+                        // 이메일 관련 api
+                        .requestMatchers(HttpMethod.POST, "/api/*/email/verify").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/email/send").permitAll()
 
                         // 식단 관리 api
-                        .requestMatchers(HttpMethod.POST, "/api/*/diet/add").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/*/diet/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/diet/add").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/*/diet/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/*/diet/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/*/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/week/statistics").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/month/statistics").hasAnyRole("USER","ADMIN")
+
+                        // 민원 관리 api
+                        .requestMatchers(HttpMethod.POST, "/api/*/complaints/").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*/status").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/users").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/admin").hasAnyRole("ADMIN")
+
+                        // 식재료 카테고리 관리 api
+                        .requestMatchers(HttpMethod.PUT, "/api/*/category/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/*/category/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/category/").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/category/").hasAnyRole("ADMIN")
+
+
                 )
                 .csrf(csrf->csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())

@@ -7,8 +7,9 @@ import com.example.ingredients_ms.domain.foodinventory.entity.Place;
 import com.example.ingredients_ms.domain.foodinventory.service.FoodInventoryService;
 import com.example.ingredients_ms.global.jwt.TokenService;
 import com.example.ingredients_ms.global.rsdata.RsData;
+import com.example.ingredients_ms.global.security.CurrentUser;
+import com.example.ingredients_ms.global.security.SecurityUser;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -87,7 +88,17 @@ public class FoodInventoryController {
         Long userId = tokenService.getIdFromToken();
 
         foodInventoryService.deleteFoodInventory(userId,foodInventoryId);
-        return new RsData<>("200", "식품 재고가 성공적으로 삭제되었습니다.", null);
+        return new RsData<>("200", "식품 재고가 성공적으로 삭제되었습니다.");
+    }
+
+    @GetMapping("/expiring-soon")
+    public RsData<?> getExpiringSoon(
+            @CurrentUser SecurityUser securityUser
+            ){
+
+        List<FoodInventoryResponseDto> response = foodInventoryService.getExpiringSoon(securityUser.getId());
+
+        return new RsData<>("200", "유통기한이 임박한 식품 조회에 성공하였습니다.", response);
     }
 }
 

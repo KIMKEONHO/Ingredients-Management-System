@@ -5,6 +5,7 @@ import com.example.ingredients_ms.domain.foodinventory.dto.request.CreateFoodInv
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
+import com.example.ingredients_ms.domain.foodinventory.entity.FoodStatus;
 import com.example.ingredients_ms.domain.foodinventory.entity.Place;
 import com.example.ingredients_ms.domain.foodinventory.repository.FoodInventoryRepository;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
@@ -125,5 +126,15 @@ public class FoodInventoryService {
         }
 
         foodInventoryRepository.deleteById(foodInventoryId);
+    }
+
+    @Transactional
+    public List<FoodInventoryResponseDto> getExpiringSoon(Long userId) {
+
+        List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdAndStatus(userId, FoodStatus.EXPIRING_SOON);
+
+        return  inventories.stream()
+                .map(FoodInventoryResponseDto::fromEntity)
+                .collect(Collectors.toList());
     }
 }
