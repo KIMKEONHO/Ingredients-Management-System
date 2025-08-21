@@ -3,7 +3,6 @@ package com.example.ingredients_ms.domain.user.service;
 import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.email.service.EmailService;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.FindIdRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.FindIdResponseDto;
@@ -213,9 +212,9 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public FindIdResponseDto findId(FindIdRequestDto requestDto){
+    public FindIdResponseDto findId(String phoneNum, String name){
 
-        Optional<User> user = userRepository.findByPhoneNumAndUserName(requestDto.getPhone(), requestDto.getName());
+        Optional<User> user = userRepository.findByPhoneNumAndUserName(phoneNum, name);
 
         if(user.isEmpty()){
             throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
