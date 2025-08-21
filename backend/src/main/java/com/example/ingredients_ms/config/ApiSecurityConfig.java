@@ -94,7 +94,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*/status/*").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/complaints/users").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/admin").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/all").hasAnyRole("USER","ADMIN")
 
                         // 식재료 카테고리 관리 api
                         .requestMatchers(HttpMethod.PUT, "/api/*/category/*").hasAnyRole("ADMIN")

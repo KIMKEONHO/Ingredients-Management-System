@@ -23,8 +23,7 @@ public class ComplaintController {
     private final ComplaintService complaintService;
 
     // ( 전체 조회 )
-    @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/all")
     public RsData<List<ComplaintDetailResponseDto>> getComplaints(){
 
         List<ComplaintDetailResponseDto> responseDto = complaintService.getAllComplaints();
