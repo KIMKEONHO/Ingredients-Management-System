@@ -4,6 +4,7 @@ import { useGlobalLoginMember } from "../../stores/auth/loginMamber";
 
 export default function Header() {
   const socialLoginForKakaoUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/oauth2/authorization/kakao`;
+  const socialLoginForGoogleUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/oauth2/authorization/google`;
   const redirectUrlAfterSocialLogin = 'http://localhost:3000'
 
   const { isLogin, loginMember, logoutAndHome } = useGlobalLoginMember();
@@ -76,6 +77,13 @@ export default function Header() {
                   href={`${socialLoginForKakaoUrl}?redirectUrl=${redirectUrlAfterSocialLogin}`}
                 >
                   <span className="font-bold">카카오 로그인</span>
+                </Link>
+              </div>
+              <div className="bg-yellow-400 text-black px-4 py-2 rounded-md hover:bg-yellow-500 transition">
+                <Link
+                  href={`${socialLoginForGoogleUrl}?redirectUrl=${redirectUrlAfterSocialLogin}`}
+                >
+                  <span className="font-bold">구글 로그인</span>
                 </Link>
               </div>
               <button className="border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition">
