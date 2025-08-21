@@ -97,6 +97,8 @@ public class FoodInventoryService {
         List<FoodInventory> inventories = foodInventoryRepository
                 .findByUser_IdAndIngredient_Category_IdOrderById(userId, categoryId);
 
+        inventories.forEach(inventory -> inventory.getPlaces().size());
+
         return inventories.stream()
                 .map(FoodInventoryResponseDto::fromEntity)
                 .collect(Collectors.toList());
