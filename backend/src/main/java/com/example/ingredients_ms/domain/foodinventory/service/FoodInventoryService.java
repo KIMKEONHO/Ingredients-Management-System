@@ -48,6 +48,7 @@ public class FoodInventoryService {
                 .boughtDate(requestDto.getBoughtDate())
                 .expirationDate(requestDto.getExpirationDate())
                 .places(requestDto.getPlaces())
+                .originalQuantity(requestDto.getQuantity())
                 .user(user)
                 .ingredient(ingredient)
                 .build();
