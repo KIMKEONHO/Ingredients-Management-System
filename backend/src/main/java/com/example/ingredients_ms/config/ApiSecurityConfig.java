@@ -32,8 +32,8 @@ public class ApiSecurityConfig {
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
 
                         // 재고 관리 api
-                        .requestMatchers(HttpMethod.PUT, "/api/*/inventory").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/*/inventory").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/*/inventory/").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/inventory/").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/inventory/places").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/inventory/place").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/inventory/my").hasAnyRole("USER","ADMIN")
@@ -54,7 +54,7 @@ public class ApiSecurityConfig {
                         // 민원 피드백 api
                         .requestMatchers(HttpMethod.PUT, "/api/*/feedback/*").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/*/feedback/*").hasAnyRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/feedback/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/feedback/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/*/feedback/*").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/feedback").hasAnyRole("ADMIN")
 
@@ -91,7 +91,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/*/complaints/").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*/status").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*/status/*").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/complaints/users").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/complaints/admin").hasAnyRole("ADMIN")
