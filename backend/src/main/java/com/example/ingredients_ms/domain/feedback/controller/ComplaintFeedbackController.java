@@ -46,7 +46,9 @@ public class ComplaintFeedbackController {
     }
 
     @PutMapping("/{feedbackId}")
-    public RsData<?> updateFeedback(@PathVariable Long feedbackId, @RequestBody UpdateComplaintFeedbackRequestDto requestDto){
+    public RsData<?> updateFeedback(
+            @PathVariable Long feedbackId,
+            @RequestBody UpdateComplaintFeedbackRequestDto requestDto){
         ComplaintFeedbackResponseDto responseDto = complaintFeedbackService.updateFeedback(feedbackId, requestDto);
         return new RsData<>("200", "피드백이 성공적으로 수정되었습니다.", responseDto);
     }
