@@ -94,8 +94,12 @@ public class FoodInventoryService {
     // 특정 카테고리의 식재료만 필터링해서 보여줍니다. 오늘은 어떤 요리를 해볼까요?
     @Transactional
     public List<FoodInventoryResponseDto> getFoodInventoriesByCategory(Long userId, Long categoryId) {
+        List<FoodInventory> inventories = foodInventoryRepository
+                .findByUser_IdAndIngredient_Category_IdOrderById(userId, categoryId);
 
-        return foodInventoryRepository.findByUser_IdAndIngredient_Category_IdOrderById(userId, categoryId).stream()
+        inventories.forEach(inventory -> inventory.getPlaces().size());
+
+        return inventories.stream()
                 .map(FoodInventoryResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
