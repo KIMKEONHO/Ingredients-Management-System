@@ -57,14 +57,14 @@ public class UserController {
     }
 
     @GetMapping("/findID")
-    public RsData<?> findID(@RequestBody FindIdRequestDto requestDto) {
+    public RsData<?> findID(@RequestParam String phoneNum, @RequestParam String name) {
 
-        FindIdResponseDto response = userService.findId(requestDto);
+        FindIdResponseDto response = userService.findId(phoneNum, name);
 
         return new RsData<>("200", "ID를 찾았습니다.", response);
     }
 
-    @GetMapping("/findPW")
+    @PostMapping("/findPW")
     public RsData<?> findPW(@RequestBody FindPwRequestDto requestDto){
 
         userService.findPw(requestDto.getEmail());
