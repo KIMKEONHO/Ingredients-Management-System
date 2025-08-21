@@ -70,7 +70,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/*/users/exchange/password").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/*/users/exchange/nickname").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/users/me").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/*/users/logout").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/users/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/users/findPW").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/users/findID").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/*/users/withdraw").hasAnyRole("USER","ADMIN")
