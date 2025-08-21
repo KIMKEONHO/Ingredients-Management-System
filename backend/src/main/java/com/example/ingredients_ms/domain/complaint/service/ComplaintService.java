@@ -28,9 +28,9 @@ public class ComplaintService {
     private final UserRepository userRepository;
 
     @Transactional
-    public CreateComplaintResponseDto createComplaint(CreateComplaintRequestDto requestDto){
+    public CreateComplaintResponseDto createComplaint(Long userId, CreateComplaintRequestDto requestDto){
 
-        Optional<User> opUser = userRepository.findById(requestDto.getUserId());
+        Optional<User> opUser = userRepository.findById(userId);
 
         if(opUser.isEmpty()){
             throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
@@ -43,6 +43,7 @@ public class ComplaintService {
                 .title(requestDto.getTitle())
                 .content(requestDto.getContent())
                 .user(user)
+                .status(ComplaintStatus.PENDING)
                 .category(category)
                 .build();
 
