@@ -23,8 +23,7 @@ public class ComplaintController {
     private final ComplaintService complaintService;
 
     // ( 전체 조회 )
-    @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/all")
     public RsData<List<ComplaintDetailResponseDto>> getComplaints(){
 
         List<ComplaintDetailResponseDto> responseDto = complaintService.getAllComplaints();
@@ -45,11 +44,7 @@ public class ComplaintController {
             @RequestBody CreateComplaintRequestDto requestDto,
             @CurrentUser SecurityUser currentUser){
 
-        requestDto.setUserId(currentUser.getId());
-
-        log.info("userId : {}", currentUser.getId());
-
-        CreateComplaintResponseDto responseDto =  complaintService.createComplaint(requestDto);
+        CreateComplaintResponseDto responseDto =  complaintService.createComplaint(currentUser.getId(), requestDto);
 
         return new RsData<>("201","민원이 생성되었습니다.", responseDto);
     }
