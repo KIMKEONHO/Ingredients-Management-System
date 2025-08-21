@@ -32,8 +32,8 @@ public class ApiSecurityConfig {
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
 
                         // 재고 관리 api
-                        .requestMatchers(HttpMethod.PUT, "/api/*/inventory").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/*/inventory").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/*/inventory/").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/*/inventory/").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/inventory/places").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/inventory/place").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/inventory/my").hasAnyRole("USER","ADMIN")
@@ -54,7 +54,7 @@ public class ApiSecurityConfig {
                         // 민원 피드백 api
                         .requestMatchers(HttpMethod.PUT, "/api/*/feedback/*").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/*/feedback/*").hasAnyRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/feedback/*").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/feedback/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/*/feedback/*").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/feedback").hasAnyRole("ADMIN")
 
@@ -70,8 +70,8 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/*/users/exchange/password").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/*/users/exchange/nickname").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/users/me").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/*/users/logout").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/users/findPW").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/users/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/*/users/findPW").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/users/findID").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/*/users/withdraw").hasAnyRole("USER","ADMIN")
 
@@ -91,10 +91,10 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/*/complaints/").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*/status").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/*/complaints/*/status/*").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/complaints/users").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/admin").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/complaints/all").hasAnyRole("USER","ADMIN")
 
                         // 식재료 카테고리 관리 api
                         .requestMatchers(HttpMethod.PUT, "/api/*/category/*").hasAnyRole("ADMIN")

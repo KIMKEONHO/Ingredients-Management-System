@@ -6,7 +6,6 @@ import lombok.Setter;
 @Getter@Setter
 public class CreateComplaintRequestDto {
 
-    private Long userId;
     private String title;
     private String content;
     private int categoryCode;

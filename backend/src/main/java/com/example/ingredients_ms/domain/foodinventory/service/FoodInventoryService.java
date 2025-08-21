@@ -3,6 +3,7 @@ package com.example.ingredients_ms.domain.foodinventory.service;
 
 import com.example.ingredients_ms.domain.foodinventory.dto.request.CreateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
+import com.example.ingredients_ms.domain.foodinventory.dto.response.ExpiringSoonResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodStatus;
@@ -48,6 +49,7 @@ public class FoodInventoryService {
                 .boughtDate(requestDto.getBoughtDate())
                 .expirationDate(requestDto.getExpirationDate())
                 .places(requestDto.getPlaces())
+                .originalQuantity(requestDto.getQuantity())
                 .user(user)
                 .ingredient(ingredient)
                 .build();
@@ -129,12 +131,20 @@ public class FoodInventoryService {
     }
 
     @Transactional
-    public List<FoodInventoryResponseDto> getExpiringSoon(Long userId) {
-
+    public List<ExpiringSoonResponseDto> getExpiringSoon(Long userId) {
         List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdAndStatus(userId, FoodStatus.EXPIRING_SOON);
-
-        return  inventories.stream()
-                .map(FoodInventoryResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        
+        inventories.forEach(inventory -> inventory.getPlaces().size());
+        
+        return inventories.stream()
+                .map(i -> ExpiringSoonResponseDto.builder()
+                        .ingredientsName(i.getIngredient().getName())
+                        .quantity(i.getQuantity())
+                        .places(i.getPlaces())
+                        .unit(i.getUnit())
+                        .expirationDate(i.getExpirationDate())
+                        .boughtDate(i.getBoughtDate())
+                        .build())
+                .toList();
     }
 }
