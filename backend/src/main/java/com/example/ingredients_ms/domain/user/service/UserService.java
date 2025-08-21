@@ -111,7 +111,7 @@ public class UserService {
         if(user.getStatus() != Status.ACTIVE){
             throw new BusinessLogicException(ExceptionCode.NOT_ACTIVE);
         }
-        user.setStatus(Status.INACTIVE);
+        user.setStatus(Status.WITHDRAWN);
         userRepository.save(user);
 
     }
