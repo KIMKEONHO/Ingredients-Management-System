@@ -2,6 +2,7 @@ package com.example.ingredients_ms.domain.foodinventory.controller;
 
 import com.example.ingredients_ms.domain.foodinventory.dto.request.CreateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
+import com.example.ingredients_ms.domain.foodinventory.dto.response.ExpiringSoonResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.entity.Place;
 import com.example.ingredients_ms.domain.foodinventory.service.FoodInventoryService;
@@ -96,7 +97,7 @@ public class FoodInventoryController {
             @CurrentUser SecurityUser securityUser
             ){
 
-        List<FoodInventoryResponseDto> response = foodInventoryService.getExpiringSoon(securityUser.getId());
+        List<ExpiringSoonResponseDto> response = foodInventoryService.getExpiringSoon(securityUser.getId());
 
         return new RsData<>("200", "유통기한이 임박한 식품 조회에 성공하였습니다.", response);
     }
