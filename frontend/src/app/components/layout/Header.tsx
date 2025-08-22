@@ -49,13 +49,16 @@ export default function Header() {
             FreshTracker
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-gray-600">
-            <Link href="#" className="hover:text-gray-900">
+            <Link href="/callender" className="hover:text-gray-900">
+              식단 관리
+            </Link>
+            <Link href="/statistics" className="hover:text-gray-900">
               재고 통계
             </Link>
             <Link href="#" className="hover:text-gray-900">
               재고 관리
             </Link>
-            <Link href="#" className="hover:text-gray-900">
+            <Link href="/support" className="hover:text-gray-900">
               고객 지원
             </Link>
           </nav>
