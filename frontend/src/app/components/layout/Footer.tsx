@@ -3,8 +3,8 @@ export default function Footer() {
       <footer className="bg-white mt-auto py-10 border-t">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between mb-8">
-            <div className="mb-6 md:mb-0">
-              <div className="flex items-center text-indigo-600 mb-4">
+            <div className="mb-6 md:mb-0 max-w-md">
+              <div className="flex items-center text-indigo-600 mb-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -13,76 +13,75 @@ export default function Footer() {
                 >
                   <path
                     fillRule="evenodd"
-                    d="M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6zm4.5 7.5a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0v-2.25a.75.75 0 0 1 .75-.75zm3.75-1.5a.75.75 0 0 0-1.5 0v4.5a.75.75 0 0 0 1.5 0V12zm2.25-3a.75.75 0 0 1 .75.75v6.75a.75.75 0 0 1-1.5 0V9.75A.75.75 0 0 1 13.5 9zm3.75-1.5a.75.75 0 0 0-1.5 0v9a.75.75 0 0 0 1.5 0v-9z"
+                    d="M4.5 3.75A2.25 2.25 0 0 1 6.75 1.5h10.5a2.25 2.25 0 0 1 2.25 2.25v16.5a.75.75 0 0 1-1.2.6l-4.8-3.6a1.5 1.5 0 0 0-1.8 0l-4.8 3.6a.75.75 0 0 1-1.2-.6V3.75z"
                     clipRule="evenodd"
                   />
                 </svg>
+                <span className="ml-2 text-sm font-semibold text-indigo-700">IMS</span>
               </div>
-              <p className="text-gray-600 text-sm">
-                당신의 이야기를 공유하고 소통하는 공간입니다. 일상의 특별한
-                순간들을 기록하고 다른 사람들과 나눠보세요.
+              <p className="text-gray-700 text-sm leading-6">
+                IMS(Ingredients Management System)는 식재료의 입·출고부터 소진까지
+                전 과정을 관리하고, 소비 데이터를 바탕으로 효율적인 운영과 비용 절감을 돕는
+                식재료 관리 서비스입니다. AI가 재고를 확인해 메뉴를 추천해 드려요.
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
               <div>
-                <h3 className="text-gray-800 font-medium mb-4">고객센터</h3>
+                <h3 className="text-gray-800 font-medium mb-4">기능</h3>
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li>
-                    <a href="#" className="hover:text-indigo-600">
-                      자주 묻는 질문
-                    </a>
+                    <a href="/inventory" className="hover:text-indigo-600">식재료 재고 관리</a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-indigo-600">
-                      1:1 문의
-                    </a>
+                    <a href="/stats" className="hover:text-indigo-600">식재료 소비 통계</a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-indigo-600">
-                      공지사항
-                    </a>
+                    <a href="/cart" className="hover:text-indigo-600">장바구니</a>
+                  </li>
+                  <li>
+                    <a href="/complaints" className="hover:text-indigo-600">민원 센터</a>
+                  </li>
+                  <li>
+                    <a href="/ai/menu" className="hover:text-indigo-600">AI 메뉴 추천</a>
                   </li>
                 </ul>
               </div>
               <div>
-                <h3 className="text-gray-800 font-medium mb-4">팔로우</h3>
-                <div className="flex space-x-3 text-gray-500">
-                  <a href="#" className="hover:text-indigo-600">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-                    </svg>
-                  </a>
-                  <a href="#" className="hover:text-indigo-600">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path d="M22.162 5.656a8.384 8.384 0 0 1-2.402.658A4.196 4.196 0 0 0 21.6 4c-.82.488-1.719.83-2.656 1.015a4.182 4.182 0 0 0-7.126 3.814 11.874 11.874 0 0 1-8.62-4.37 4.168 4.168 0 0 0-.566 2.103c0 1.45.738 2.731 1.86 3.481a4.168 4.168 0 0 1-1.894-.523v.052a4.185 4.185 0 0 0 3.355 4.101 4.21 4.21 0 0 1-1.89.072A4.185 4.185 0 0 0 7.97 16.65a8.394 8.394 0 0 1-6.191 1.732 11.83 11.83 0 0 0 6.41 1.88c7.693 0 11.9-6.373 11.9-11.9 0-.18-.005-.362-.013-.54a8.496 8.496 0 0 0 2.087-2.165v-.001z" />
-                    </svg>
-                  </a>
-                  <a href="#" className="hover:text-indigo-600">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01z" />
-                    </svg>
-                  </a>
-                </div>
+                <h3 className="text-gray-800 font-medium mb-4">고객센터</h3>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li>
+                    <a href="/help/faq" className="hover:text-indigo-600">자주 묻는 질문</a>
+                  </li>
+                  <li>
+                    <a href="/help/contact" className="hover:text-indigo-600">1:1 문의</a>
+                  </li>
+                  <li>
+                    <a href="/notices" className="hover:text-indigo-600">공지사항</a>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-gray-800 font-medium mb-4">기타</h3>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li>
+                    <a href="/docs" className="hover:text-indigo-600">사용 가이드</a>
+                  </li>
+                  <li>
+                    <a href="/status" className="hover:text-indigo-600">서비스 상태</a>
+                  </li>
+                  <li>
+                    <a href="/legal/privacy" className="hover:text-indigo-600">개인정보 처리방침</a>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
-          <div className="pt-8 border-t border-gray-200 text-sm text-gray-500 text-center">
-            © 2024 블로그. All rights reserved.
+          <div className="pt-8 border-t border-gray-200 text-sm text-gray-500 flex flex-col md:flex-row items-center md:justify-between text-center gap-4">
+            <div>© {new Date().getFullYear()} IMS. All rights reserved.</div>
+            <div className="flex items-center gap-4">
+              <a href="mailto:support@ims.app" className="hover:text-indigo-600">support@ims.app</a>
+              <a href="/terms" className="hover:text-indigo-600">이용약관</a>
+            </div>
           </div>
         </div>
       </footer>
