@@ -1,92 +1,123 @@
+"use client";
 
 import Link from "next/link";
 import { useGlobalLoginMember } from "../../stores/auth/loginMamber";
+import { useEffect, useRef, useState } from "react";
 
 export default function Header() {
-  const socialLoginForKakaoUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/oauth2/authorization/kakao`;
-  const socialLoginForGoogleUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/oauth2/authorization/google`;
-  const redirectUrlAfterSocialLogin = 'http://localhost:3000'
-
   const { isLogin, loginMember, logoutAndHome } = useGlobalLoginMember();
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<
+    Array<{ id: number; message: string; read: boolean }>
+  >([]);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    // 초기 더미 알림 데이터 (필요 시 API 연동으로 대체)
+    setNotifications([
+      { id: 1, message: "발주 요청이 승인되었습니다.", read: false },
+      { id: 2, message: "재고 임계값을 초과했습니다.", read: false },
+      { id: 3, message: "이번 주 만료 예정 재료가 있습니다.", read: true },
+    ]);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+    if (isNotifOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isNotifOpen]);
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
 
   return (
     <header className="bg-white p-4 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center gap-6">
-          <div className="text-indigo-600">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-8 h-8"
-            >
-              <path
-                fillRule="evenodd"
-                d="M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6zm4.5 7.5a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0v-2.25a.75.75 0 0 1 .75-.75zm3.75-1.5a.75.75 0 0 0-1.5 0v4.5a.75.75 0 0 0 1.5 0V12zm2.25-3a.75.75 0 0 1 .75.75v6.75a.75.75 0 0 1-1.5 0V9.75A.75.75 0 0 1 13.5 9zm3.75-1.5a.75.75 0 0 0-1.5 0v9a.75.75 0 0 0 1.5 0v-9z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <nav className="flex space-x-6 text-gray-700">
-            <a href="#" className="border-b-2 border-indigo-600 pb-1">
-              홈
-            </a>
-            <a href="#" className="hover:text-indigo-600">
-              카테고리
-            </a>
-            <a href="#" className="hover:text-indigo-600">
-              인기글
-            </a>
-            <a href="#" className="hover:text-indigo-600">
-              태그
-            </a>
+        <div className="flex items-center gap-8">
+          <Link href="/" className="text-2xl font-bold text-green-700">
+            FreshTracker
+          </Link>
+          <nav className="hidden md:flex items-center gap-6 text-gray-600">
+            <Link href="/callender" className="hover:text-gray-900">
+              식단 관리
+            </Link>
+            <Link href="/statistics" className="hover:text-gray-900">
+              재고 통계
+            </Link>
+            <Link href="#" className="hover:text-gray-900">
+              재고 관리
+            </Link>
+            <Link href="/support" className="hover:text-gray-900">
+              고객 지원
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="검색"
-              className="pl-3 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
-            />
-            <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5zM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5z"
-                  clipRule="evenodd"
-                />
-              </svg>
+          <div className="relative text-xl" ref={notifRef}>
+            <button
+              aria-label="알림 보기"
+              className="relative"
+              onClick={() => setIsNotifOpen((prev) => !prev)}
+            >
+              <span role="img" aria-label="bell">🔔</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
+                  {unreadCount}
+                </span>
+              )}
             </button>
+            {isNotifOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-white border rounded-md shadow-lg z-50">
+                <div className="px-3 py-2 border-b text-sm font-semibold">알림</div>
+                <ul className="max-h-64 overflow-auto">
+                  {notifications.length === 0 ? (
+                    <li className="px-3 py-3 text-sm text-gray-500">새 알림이 없습니다.</li>
+                  ) : (
+                    notifications.map((n) => (
+                      <li
+                        key={n.id}
+                        className={`px-3 py-3 text-sm hover:bg-gray-50 ${
+                          n.read ? "text-gray-500" : "text-gray-800"
+                        }`}
+                      >
+                        {n.message}
+                      </li>
+                    ))
+                  )}
+                </ul>
+                <div className="px-3 py-2 border-t text-xs flex items-center justify-between">
+                  <span className="text-gray-500">읽지 않은 알림 {unreadCount}개</span>
+                  <button onClick={markAllAsRead} className="text-green-600 hover:underline">
+                    모두 읽음
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          {/* 카카오 로그인 (필요한 경우 활성화) */}
+          <div className="relative text-xl">
+            <span role="img" aria-label="cart">🛒</span>
+            <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">3</span>
+          </div>
           {isLogin ? (
-            <div className="flex items-center gap-4">
-              <div>{loginMember.nickname}</div>
-              <button onClick={logoutAndHome}>로그아웃</button>
+            <div className="flex items-center gap-3">
+              <span className="text-gray-700">{loginMember.nickname}</span>
+              <button onClick={logoutAndHome} className="text-gray-600 hover:text-gray-900">로그아웃</button>
             </div>
           ) : (
             <>
-              <div className="bg-yellow-400 text-black px-4 py-2 rounded-md hover:bg-yellow-500 transition">
-                <Link
-                  href={`${socialLoginForKakaoUrl}?redirectUrl=${redirectUrlAfterSocialLogin}`}
-                >
-                  <span className="font-bold">카카오 로그인</span>
-                </Link>
-              </div>
-              <div className="bg-yellow-400 text-black px-4 py-2 rounded-md hover:bg-yellow-500 transition">
-                <Link
-                  href={`${socialLoginForGoogleUrl}?redirectUrl=${redirectUrlAfterSocialLogin}`}
-                >
-                  <span className="font-bold">구글 로그인</span>
-                </Link>
-              </div>
-              <button className="border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition">
+              <Link href="/login" className="text-gray-600 hover:text-gray-900">로그인</Link>
+              <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">
                 회원가입
               </button>
             </>
