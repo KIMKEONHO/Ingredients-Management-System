@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Getter @Setter @Builder
 public class DietResponseDto {
 
+    private Long id;
     private String menu;
     private Integer kcal;
     private MealType mealType;
