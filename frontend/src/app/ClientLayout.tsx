@@ -24,16 +24,28 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     }
 
     useEffect(() => {
-        fetch('http://localhost:8090/api/v1/users/me', {
-            credentials: 'include',
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                setLoginMember(data)
-            })
-            .catch((error) => {
-                setNoLoginMember()
-            })
+        const checkAuthStatus = async () => {
+            try {
+                console.log('로그인 상태 확인 중...');
+                const response = await fetch('http://localhost:8090/api/v1/users/me', {
+                    credentials: 'include',
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('로그인 성공:', data);
+                    setLoginMember(data);
+                } else {
+                    console.log('로그인 실패:', response.status);
+                    setNoLoginMember();
+                }
+            } catch (error) {
+                console.error('로그인 상태 확인 중 오류:', error);
+                setNoLoginMember();
+            }
+        };
+
+        checkAuthStatus();
     }, [])
 
     if (isLoginMemberPending) {

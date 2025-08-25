@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { COLOR_PRESETS } from '@/lib/constants/colors';
+import PageHeader from '../components/ui/PageHeader';
+import SectionCard from '../components/ui/SectionCard';
 
 export default function StatisticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('이번 달');
@@ -86,15 +89,17 @@ export default function StatisticsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-purple-50 p-6">
+    <div className={`min-h-screen ${COLOR_PRESETS.STATISTICS_PAGE.background} p-6`}>
       <div className="max-w-7xl mx-auto">
         {/* Main Card Container */}
         <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8">
+          
           {/* Header Card */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 mb-8 text-white">
-            <h1 className="text-3xl font-bold text-white mb-2">식재료 사용 통계</h1>
-            <p className="text-blue-100 mb-6">자주 사용하는 식재료와 소비 패턴을 분석해보세요</p>
-            
+          <PageHeader 
+            title="식재료 사용 통계"
+            description="자주 사용하는 식재료와 소비 패턴을 분석해보세요"
+            variant="statistics"
+          >
             {/* Time Period Selector */}
             <div className="flex justify-end">
               <div className="bg-white/20 backdrop-blur-sm rounded-lg p-1 shadow-sm border border-white/30">
@@ -113,11 +118,10 @@ export default function StatisticsPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </PageHeader>
 
           {/* Summary Statistics Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">요약 통계</h2>
+          <SectionCard title="요약 통계" variant="statistics">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {summaryStats.map((stat, index) => (
                 <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-blue-100 hover:shadow-md transition-shadow">
@@ -132,11 +136,10 @@ export default function StatisticsPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </SectionCard>
 
           {/* Charts Row Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">차트 분석</h2>
+          <SectionCard title="차트 분석" variant="statistics">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Monthly Category Usage */}
               <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
@@ -185,11 +188,10 @@ export default function StatisticsPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </SectionCard>
 
           {/* Weekly Usage Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">주간 사용량</h2>
+          <SectionCard title="주간 사용량" variant="statistics">
             <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">주간 사용량</h3>
               <div className="h-48 flex items-end justify-between gap-2">
@@ -204,11 +206,10 @@ export default function StatisticsPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </SectionCard>
 
           {/* Insights Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">인사이트</h2>
+          <SectionCard title="인사이트" variant="statistics">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {insights.map((insight, index) => (
                 <div key={index} className={`${insight.color} rounded-xl p-6 border border-blue-200 hover:shadow-md transition-shadow`}>
@@ -218,11 +219,10 @@ export default function StatisticsPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </SectionCard>
 
           {/* Top Ingredients Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">자주 사용하는 식재료</h2>
+          <SectionCard title="자주 사용하는 식재료" variant="statistics">
             <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">TOP 6</h3>
@@ -258,7 +258,7 @@ export default function StatisticsPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </SectionCard>
         </div>
       </div>
     </div>

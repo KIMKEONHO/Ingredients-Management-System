@@ -2,6 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useGlobalLoginMember } from '@/app/stores/auth/loginMamber'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { COLOR_PRESETS } from '@/lib/constants/colors'
 
 interface CartItem {
   id: number
@@ -14,6 +18,8 @@ interface CartItem {
 }
 
 export default function CartPage() {
+  const { isLogin, isLoginMemberPending } = useGlobalLoginMember()
+  const router = useRouter()
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: 1,
@@ -53,6 +59,27 @@ export default function CartPage() {
     }
   ])
 
+  // 로그인 상태 확인
+  useEffect(() => {
+    if (!isLoginMemberPending && !isLogin) {
+      console.log('로그인되지 않음, 로그인 페이지로 이동')
+      router.push('/login')
+    }
+  }, [isLogin, isLoginMemberPending, router])
+
+  // 로딩 중이거나 로그인되지 않은 경우
+  if (isLoginMemberPending) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-2xl font-bold">로딩 중...</div>
+      </div>
+    )
+  }
+
+  if (!isLogin) {
+    return null
+  }
+
   const updateQuantity = (id: number, newQuantity: number) => {
     if (newQuantity < 1) return
     setCartItems(items =>
@@ -69,12 +96,12 @@ export default function CartPage() {
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen ${COLOR_PRESETS.CART_PAGE.background}`}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className={`${COLOR_PRESETS.CART_PAGE.header} shadow-sm border-b ${COLOR_PRESETS.CART_PAGE.border}`}>
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700">
+            <Link href="/" className={`flex items-center gap-2 ${COLOR_PRESETS.CART_PAGE.accent} hover:text-blue-700`}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
                 <path d="M11.47 3.84a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.06l-8.69-8.69a.75.75 0 0 0-1.06 0Z"/>
                 <path d="m12 15.75-7.304-7.304a.75.75 0 0 0-1.06 1.06L12 18.75l8.364-8.364a.75.75 0 0 0-1.06-1.06L12 15.75Z"/>
@@ -91,8 +118,8 @@ export default function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm border">
-              <div className="px-6 py-4 border-b border-gray-200">
+            <div className={`${COLOR_PRESETS.CART_PAGE.card} rounded-lg shadow-sm ${COLOR_PRESETS.CART_PAGE.border}`}>
+              <div className={`px-6 py-4 border-b ${COLOR_PRESETS.CART_PAGE.border}`}>
                 <h2 className="text-lg font-semibold text-gray-900">장바구니 상품 ({cartItems.length}개)</h2>
               </div>
               
@@ -103,17 +130,17 @@ export default function CartPage() {
                     <path d="M6.75 21a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm10.5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/>
                   </svg>
                   <p className="text-gray-500 text-lg">장바구니가 비어있습니다</p>
-                  <Link href="/" className="inline-flex items-center gap-2 mt-4 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">
+                  <Link href="/" className={`inline-flex items-center gap-2 mt-4 px-6 py-2 ${COLOR_PRESETS.CART_PAGE.button} text-white rounded-lg transition`}>
                     쇼핑 계속하기
                   </Link>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-blue-100">
                   {cartItems.map((item) => (
                     <div key={item.id} className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="flex-shrink-0">
-                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <div className="w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center">
                             <img src={item.image} alt={item.name} className="w-8 h-8" />
                           </div>
                         </div>
@@ -138,7 +165,7 @@ export default function CartPage() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition"
+                                className="w-8 h-8 rounded-full border border-blue-200 flex items-center justify-center hover:bg-blue-50 transition"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
                                   <path d="M5 12a.75.75 0 0 1 .75-.75h12.5a.75.75 0 0 1 0 1.5H5.75A.75.75 0 0 1 5 12Z"/>
@@ -147,7 +174,7 @@ export default function CartPage() {
                               <span className="w-12 text-center text-sm font-medium text-gray-900">{item.quantity}</span>
                               <button
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition"
+                                className="w-8 h-8 rounded-full border border-blue-200 flex items-center justify-center hover:bg-blue-50 transition"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
                                   <path d="M12 4.5a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V5.25A.75.75 0 0 1 12 4.5Z"/>
@@ -171,8 +198,8 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border sticky top-8">
-              <div className="px-6 py-4 border-b border-gray-200">
+            <div className={`${COLOR_PRESETS.CART_PAGE.card} rounded-lg shadow-sm ${COLOR_PRESETS.CART_PAGE.border} sticky top-8`}>
+              <div className={`px-6 py-4 border-b ${COLOR_PRESETS.CART_PAGE.border}`}>
                 <h2 className="text-lg font-semibold text-gray-900">주문 요약</h2>
               </div>
               
@@ -189,24 +216,24 @@ export default function CartPage() {
                 
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">배송비</span>
-                  <span className="font-medium text-emerald-600">무료</span>
+                  <span className={`font-medium ${COLOR_PRESETS.CART_PAGE.accent}`}>무료</span>
                 </div>
                 
-                <div className="border-t border-gray-200 pt-4">
+                <div className={`border-t ${COLOR_PRESETS.CART_PAGE.border} pt-4`}>
                   <div className="flex justify-between text-lg font-semibold">
                     <span>총 결제 금액</span>
-                    <span className="text-emerald-600">{totalPrice.toLocaleString()}원</span>
+                    <span className={COLOR_PRESETS.CART_PAGE.accent}>{totalPrice.toLocaleString()}원</span>
                   </div>
                 </div>
               </div>
               
-              <div className="px-6 py-4 border-t border-gray-200">
-                <button className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-emerald-700 transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+              <div className={`px-6 py-4 border-t ${COLOR_PRESETS.CART_PAGE.border}`}>
+                <button className={`w-full ${COLOR_PRESETS.CART_PAGE.button} text-white py-3 px-4 rounded-lg font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}>
                   주문하기
                 </button>
                 
                 <div className="mt-3 text-center">
-                  <Link href="/" className="text-sm text-emerald-600 hover:text-emerald-700">
+                  <Link href="/" className={`text-sm ${COLOR_PRESETS.CART_PAGE.accent} hover:text-blue-700`}>
                     쇼핑 계속하기
                   </Link>
                 </div>
