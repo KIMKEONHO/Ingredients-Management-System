@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { COLOR_PRESETS } from '@/lib/constants/colors'
+import { DietService, MonthlyDiet, DietItem } from '@/lib/api/services/dietService'
 
 type MealType = 'breakfast' | 'lunch' | 'dinner'
 
@@ -23,7 +24,9 @@ function formatDateKey(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  const dateKey = `${y}-${m}-${d}`
+  console.log(`[DEBUG] formatDateKey: ${date.toISOString()} -> ${dateKey}`)
+  return dateKey
 }
 
 function getDaysInMonth(year: number, monthIndexZeroBased: number) {
@@ -40,11 +43,34 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
 }
 
+// 백엔드 데이터를 프론트엔드 형식으로 변환하는 함수 (DietService에서 이미 변환됨)
+function transformBackendData(backendData: MonthlyDiet): MealsByDate {
+  console.log('[DEBUG] transformBackendData 호출됨, 입력 데이터:', backendData)
+  
+  // DietService에서 이미 변환된 데이터이므로 그대로 반환
+  // 단, 날짜 키가 올바른지 확인
+  const transformedData: MealsByDate = {}
+  
+  Object.keys(backendData).forEach(dateKey => {
+    // 날짜 키가 올바른 형식인지 확인하고 변환
+    const dateObj = new Date(dateKey + 'T00:00:00')
+    const normalizedDateKey = dateObj.toLocaleDateString('en-CA') // YYYY-MM-DD 형식
+    
+    transformedData[normalizedDateKey] = backendData[dateKey]
+  })
+  
+  console.log('[DEBUG] 정규화된 날짜 키:', Object.keys(transformedData))
+  return transformedData
+}
+
 export default function CalendarPage() {
   const today = new Date()
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear())
   const [currentMonth, setCurrentMonth] = useState<number>(today.getMonth()) // 0-11
   const [mealsByDate, setMealsByDate] = useState<MealsByDate>({})
+  
+  // 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState(false)
 
   const [isDayModalOpen, setIsDayModalOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -71,6 +97,37 @@ export default function CalendarPage() {
       year: 'numeric',
       month: 'long',
     })
+  }, [currentYear, currentMonth])
+
+  // 월이 변경될 때마다 해당 월의 식단 데이터를 가져오는 함수
+  const loadMonthlyDiet = async (year: number, month: number) => {
+    setIsLoading(true)
+    try {
+      // month는 0-11이므로 1-12로 변환
+      const monthNumber = month + 1
+      console.log(`[DEBUG] ${year}년 ${monthNumber}월 식단 데이터 요청 중...`)
+      
+      const backendData = await DietService.getMonthlyDiet(year, monthNumber)
+      console.log('[DEBUG] DietService에서 받은 데이터:', backendData)
+      console.log('[DEBUG] 데이터 키들:', Object.keys(backendData))
+      
+      const transformedData = transformBackendData(backendData)
+      console.log('[DEBUG] 최종 변환된 데이터:', transformedData)
+      console.log('[DEBUG] 변환된 데이터의 날짜 키들:', Object.keys(transformedData))
+      
+      setMealsByDate(transformedData)
+      
+    } catch (error) {
+      console.error('월별 식단 로드 실패:', error)
+      setMealsByDate({})
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 월이 변경될 때마다 데이터 로드
+  useEffect(() => {
+    loadMonthlyDiet(currentYear, currentMonth)
   }, [currentYear, currentMonth])
 
   const openDayModal = (date: Date) => {
@@ -104,43 +161,89 @@ export default function CalendarPage() {
     setEditingItem(null)
   }
 
-  const handleAddItem = ({ name, calories }: { name: string; calories: number }) => {
+  const handleAddItem = async ({ name, calories }: { name: string; calories: number }) => {
     if (!selectedDate) return
-    const key = formatDateKey(selectedDate)
-    const newItem: MealItem = {
-      id: Date.now().toString(),
-      name,
-      calories,
-    }
-    setMealsByDate(prev => {
-      const existing = prev[key]
-      const updated: DayMeals = {
-        breakfast: existing?.breakfast ?? [],
-        lunch: existing?.lunch ?? [],
-        dinner: existing?.dinner ?? [],
-        [selectedMealType]: [...(existing?.[selectedMealType] ?? []), newItem],
+    
+    console.log('[DEBUG] handleAddItem 시작:', { name, calories, selectedDate, selectedMealType })
+    
+    try {
+      const dateKey = formatDateKey(selectedDate)
+      const monthNumber = selectedDate.getMonth() + 1
+      
+      console.log('[DEBUG] 요청할 데이터:', { dateKey, monthNumber, selectedMealType })
+      
+      // 백엔드에 식단 항목 추가
+      const newItem = await DietService.addDietItem(
+        dateKey,
+        selectedMealType,
+        name,
+        calories
+      )
+      
+      console.log('[DEBUG] 백엔드 응답:', newItem)
+      
+      if (newItem) {
+        console.log('[DEBUG] 식단 추가 성공, 모달 닫기 시작')
+        
+        // 성공적으로 추가된 경우 모달 닫고 데이터 새로고침
+        setIsAddItemModalOpen(false)
+        setIsDayModalOpen(false)
+        setSelectedDate(null)
+        
+        console.log('[DEBUG] 모달 상태 초기화 완료, 데이터 새로고침 시작')
+        
+        // 데이터 새로고침
+        await loadMonthlyDiet(currentYear, currentMonth)
+        
+        console.log('[DEBUG] 데이터 새로고침 완료')
+      } else {
+        console.log('[DEBUG] 식단 추가 실패: newItem이 null')
+        // 사용자에게 에러 메시지 표시 (선택사항)
+        alert('식단 추가에 실패했습니다. 다시 시도해주세요.')
       }
-      return { ...prev, [key]: updated }
-    })
-    closeAddItemModal()
+    } catch (error) {
+      console.error('식단 항목 추가 실패:', error)
+      // 에러 처리 (사용자에게 알림 등)
+    }
   }
 
   // 수정 처리 함수 추가
-  const handleEditItem = ({ name, calories }: { name: string; calories: number }) => {
+  const handleEditItem = async ({ name, calories }: { name: string; calories: number }) => {
     if (!editingItem) return
-    const key = formatDateKey(selectedDate!)
-    setMealsByDate(prev => {
-      const existing = prev[key]
-      if (!existing) return prev
-      const updated: DayMeals = {
-        ...existing,
-        [editingItem.mealType]: existing[editingItem.mealType].map(item =>
-          item.id === editingItem.item.id ? { ...item, name, calories } : item
-        ),
+    
+    try {
+      // 백엔드에 식단 항목 수정
+      const updatedItem = await DietService.updateDietItem(
+        editingItem.item.id,
+        name,
+        calories
+      )
+      
+      if (updatedItem) {
+        // 성공적으로 수정된 경우 모달 닫고 데이터 새로고침
+        closeEditItemModal()
+        await loadMonthlyDiet(currentYear, currentMonth)
       }
-      return { ...prev, [key]: updated }
-    })
-    closeEditItemModal()
+    } catch (error) {
+      console.error('식단 항목 수정 실패:', error)
+      // 에러 처리 (사용자에게 알림 등)
+    }
+  }
+
+  // 삭제 처리 함수 수정
+  const handleRemoveItem = async (mealType: MealType, id: string) => {
+    try {
+      // 백엔드에 식단 항목 삭제
+      const success = await DietService.deleteDietItem(id)
+      
+      if (success) {
+        // 성공적으로 삭제된 경우 데이터 새로고침
+        await loadMonthlyDiet(currentYear, currentMonth)
+      }
+    } catch (error) {
+      console.error('식단 항목 삭제 실패:', error)
+      // 에러 처리 (사용자에게 알림 등)
+    }
   }
 
   return (
@@ -206,8 +309,21 @@ export default function CalendarPage() {
 
             {/* Actual days */}
             {days.map(date => {
-              const meals = mealsByDate[formatDateKey(date)]
-              const total = meals ? Object.values(meals).reduce((sum: number, meal: MealItem[]) => sum + meal.reduce((s: number, item: MealItem) => s + item.calories, 0), 0) : 0
+              const dateKey = formatDateKey(date)
+              const meals = mealsByDate[dateKey]
+              
+              // 디버깅을 위한 로그 추가
+              if (meals) {
+                console.log(`[DEBUG] ${dateKey} 날짜의 meals:`, meals)
+              }
+              
+              const total = meals ? Object.values(meals).reduce((sum: number, meal: MealItem[]) => {
+                const mealTotal = meal.reduce((s: number, item: MealItem) => s + item.calories, 0)
+                console.log(`[DEBUG] ${dateKey} 식사별 칼로리 합계:`, mealTotal)
+                return sum + mealTotal
+              }, 0) : 0
+
+              console.log(`[DEBUG] ${dateKey} 총 칼로리:`, total)
 
               return (
                 <button
@@ -217,6 +333,7 @@ export default function CalendarPage() {
                     'border rounded h-28 p-2 text-left hover:ring-2 hover:ring-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all',
                     formatDateKey(date) === formatDateKey(today) && `${COLOR_PRESETS.CALENDAR_PAGE.today} border-blue-400`
                   )}
+                  disabled={isLoading}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-semibold">{date.getDate()}</span>
@@ -224,10 +341,15 @@ export default function CalendarPage() {
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{total} kcal</span>
                     )}
                   </div>
-                  {meals ? (
+                  {isLoading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : meals ? (
                     <div className="space-y-1 overflow-hidden">
                       {(['breakfast', 'lunch', 'dinner'] as MealType[]).map(mt => {
                         const count = meals[mt].length
+                        console.log(`[DEBUG] ${dateKey} ${mt} 개수:`, count)
                         if (!count) return null
                         const label = mt === 'breakfast' ? '아침' : mt === 'lunch' ? '점심' : '저녁'
                         return (
@@ -254,18 +376,7 @@ export default function CalendarPage() {
             onClose={closeDayModal}
             onAdd={(mealType) => openAddItemModal(mealType)}
             onEdit={(mealType, item) => openEditItemModal(mealType, item)}
-            onRemoveItem={(mealType, id) => {
-              const key = formatDateKey(selectedDate)
-              setMealsByDate(prev => {
-                const existing = prev[key]
-                if (!existing) return prev
-                const updated: DayMeals = {
-                  ...existing,
-                  [mealType]: existing[mealType].filter(it => it.id !== id),
-                }
-                return { ...prev, [key]: updated }
-              })
-            }}
+            onRemoveItem={handleRemoveItem}
           />
         )}
 
@@ -431,8 +542,13 @@ function AddItemModal({
             <button
               onClick={() => {
                 const caloriesNum = parseInt(calories)
+                console.log('[DEBUG] AddItemModal 추가 버튼 클릭:', { name, calories, caloriesNum })
                 if (name.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
+                  console.log('[DEBUG] onSubmit 호출 시작')
                   onSubmit(name.trim(), caloriesNum)
+                  console.log('[DEBUG] onSubmit 호출 완료')
+                } else {
+                  console.log('[DEBUG] 유효성 검사 실패:', { name: name.trim(), caloriesNum, isValid: !isNaN(caloriesNum) && caloriesNum > 0 })
                 }
               }}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
