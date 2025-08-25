@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { COLOR_PRESETS } from '@/lib/constants/colors'
 
 type MealType = 'breakfast' | 'lunch' | 'dinner'
 
@@ -103,32 +104,38 @@ export default function CalendarPage() {
     setEditingItem(null)
   }
 
-  const handleAddItem = (item: Omit<MealItem, 'id'>) => {
+  const handleAddItem = ({ name, calories }: { name: string; calories: number }) => {
     if (!selectedDate) return
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const key = formatDateKey(selectedDate)
+    const newItem: MealItem = {
+      id: Date.now().toString(),
+      name,
+      calories,
+    }
     setMealsByDate(prev => {
-      const existing = prev[key] ?? { breakfast: [], lunch: [], dinner: [] }
+      const existing = prev[key]
       const updated: DayMeals = {
-        ...existing,
-        [selectedMealType]: [...existing[selectedMealType], { id, ...item }],
+        breakfast: existing?.breakfast ?? [],
+        lunch: existing?.lunch ?? [],
+        dinner: existing?.dinner ?? [],
+        [selectedMealType]: [...(existing?.[selectedMealType] ?? []), newItem],
       }
       return { ...prev, [key]: updated }
     })
     closeAddItemModal()
   }
 
-  // 메뉴 수정 함수 추가
-  const handleEditItem = (updatedItem: Omit<MealItem, 'id'>) => {
-    if (!selectedDate || !editingItem) return
-    const key = formatDateKey(selectedDate)
+  // 수정 처리 함수 추가
+  const handleEditItem = ({ name, calories }: { name: string; calories: number }) => {
+    if (!editingItem) return
+    const key = formatDateKey(selectedDate!)
     setMealsByDate(prev => {
       const existing = prev[key]
       if (!existing) return prev
       const updated: DayMeals = {
         ...existing,
         [editingItem.mealType]: existing[editingItem.mealType].map(item =>
-          item.id === editingItem.item.id ? { ...item, ...updatedItem } : item
+          item.id === editingItem.item.id ? { ...item, name, calories } : item
         ),
       }
       return { ...prev, [key]: updated }
@@ -136,137 +143,149 @@ export default function CalendarPage() {
     closeEditItemModal()
   }
 
-  const totalCaloriesForMeal = (mealItems: MealItem[]) =>
-    mealItems.reduce((sum, it) => sum + (Number(it.calories) || 0), 0)
-
-  const totalCaloriesForDate = (key: string) => {
-    const meals = mealsByDate[key]
-    if (!meals) return 0
-    return (
-      totalCaloriesForMeal(meals.breakfast) +
-      totalCaloriesForMeal(meals.lunch) +
-      totalCaloriesForMeal(meals.dinner)
-    )
-  }
-
-  const goPrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentYear(y => y - 1)
-      setCurrentMonth(11)
-    } else {
-      setCurrentMonth(m => m - 1)
-    }
-  }
-
-  const goNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentYear(y => y + 1)
-      setCurrentMonth(0)
-    } else {
-      setCurrentMonth(m => m + 1)
-    }
-  }
-
-  const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토']
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <button onClick={goPrevMonth} className="px-3 py-2 rounded border hover:bg-gray-50">이전</button>
-        <div className="text-xl font-semibold">{monthLabel}</div>
-        <button onClick={goNextMonth} className="px-3 py-2 rounded border hover:bg-gray-50">다음</button>
-      </div>
+    <div className={`min-h-screen ${COLOR_PRESETS.CALENDAR_PAGE.background} p-6`}>
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className={`${COLOR_PRESETS.CALENDAR_PAGE.header} rounded-xl shadow-sm ${COLOR_PRESETS.CALENDAR_PAGE.border} p-6 mb-6`}>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-gray-900">식단 캘린더</h1>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => {
+                  if (currentMonth === 0) {
+                    setCurrentYear(prev => prev - 1)
+                    setCurrentMonth(11)
+                  } else {
+                    setCurrentMonth(prev => prev - 1)
+                  }
+                }}
+                className={`p-2 rounded-lg ${COLOR_PRESETS.CALENDAR_PAGE.hover} transition-colors`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h2 className="text-xl font-semibold text-gray-700 min-w-[120px] text-center">{monthLabel}</h2>
+              <button
+                onClick={() => {
+                  if (currentMonth === 11) {
+                    setCurrentYear(prev => prev + 1)
+                    setCurrentMonth(0)
+                  } else {
+                    setCurrentMonth(prev => prev + 1)
+                  }
+                }}
+                className={`p-2 rounded-lg ${COLOR_PRESETS.CALENDAR_PAGE.hover} transition-colors`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
 
-      <div className="grid grid-cols-7 gap-2 text-center text-sm text-gray-600 mb-2">
-        {weekdayLabels.map(w => (
-          <div key={w} className="py-2 font-medium">{w}</div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-2">
-        {Array.from({ length: leadingEmptyCells }).map((_, i) => (
-          <div key={`empty-${i}`} className="border rounded h-28 bg-gray-50" />
-        ))}
-
-        {days.map(date => {
-          const key = formatDateKey(date)
-          const meals = mealsByDate[key]
-          const total = totalCaloriesForDate(key)
-          return (
-            <button
-              key={key}
-              onClick={() => openDayModal(date)}
-              className={cx(
-                'border rounded h-28 p-2 text-left hover:ring-2 hover:ring-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                formatDateKey(date) === formatDateKey(today) && 'border-indigo-400'
-              )}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold">{date.getDate()}</span>
-                {total > 0 && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">{total} kcal</span>
-                )}
+        {/* Calendar Grid */}
+        <div className={`${COLOR_PRESETS.CALENDAR_PAGE.card} rounded-xl shadow-sm ${COLOR_PRESETS.CALENDAR_PAGE.border} p-6`}>
+          {/* Day Headers */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['일', '월', '화', '수', '목', '금', '토'].map(day => (
+              <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                {day}
               </div>
-              {meals ? (
-                <div className="space-y-1 overflow-hidden">
-                  {(['breakfast', 'lunch', 'dinner'] as MealType[]).map(mt => {
-                    const count = meals[mt].length
-                    if (!count) return null
-                    const label = mt === 'breakfast' ? '아침' : mt === 'lunch' ? '점심' : '저녁'
-                    return (
-                      <div key={mt} className="text-[11px] truncate">
-                        <span className="px-1 rounded bg-gray-100 text-gray-700 mr-1">{label}</span>
-                        <span className="text-gray-600">{count}개</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-xs text-gray-400">클릭하여 추가</div>
-              )}
-            </button>
-          )
-        })}
+            ))}
+          </div>
+
+          {/* Calendar Days */}
+          <div className="grid grid-cols-7 gap-1">
+            {/* Leading empty cells */}
+            {Array.from({ length: leadingEmptyCells }, (_, i) => (
+              <div key={`empty-${i}`} className="h-28" />
+            ))}
+
+            {/* Actual days */}
+            {days.map(date => {
+              const meals = mealsByDate[formatDateKey(date)]
+              const total = meals ? Object.values(meals).reduce((sum: number, meal: MealItem[]) => sum + meal.reduce((s: number, item: MealItem) => s + item.calories, 0), 0) : 0
+
+              return (
+                <button
+                  key={date.getTime()}
+                  onClick={() => openDayModal(date)}
+                  className={cx(
+                    'border rounded h-28 p-2 text-left hover:ring-2 hover:ring-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all',
+                    formatDateKey(date) === formatDateKey(today) && `${COLOR_PRESETS.CALENDAR_PAGE.today} border-blue-400`
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-semibold">{date.getDate()}</span>
+                    {total > 0 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{total} kcal</span>
+                    )}
+                  </div>
+                  {meals ? (
+                    <div className="space-y-1 overflow-hidden">
+                      {(['breakfast', 'lunch', 'dinner'] as MealType[]).map(mt => {
+                        const count = meals[mt].length
+                        if (!count) return null
+                        const label = mt === 'breakfast' ? '아침' : mt === 'lunch' ? '점심' : '저녁'
+                        return (
+                          <div key={mt} className="text-[11px] truncate">
+                            <span className="px-1 rounded bg-blue-100 text-blue-700 mr-1">{label}</span>
+                            <span className="text-gray-600">{count}개</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-xs text-gray-400">클릭하여 추가</div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {isDayModalOpen && selectedDate && (
+          <DayModal
+            date={selectedDate}
+            meals={mealsByDate[formatDateKey(selectedDate)] ?? { breakfast: [], lunch: [], dinner: [] }}
+            onClose={closeDayModal}
+            onAdd={(mealType) => openAddItemModal(mealType)}
+            onEdit={(mealType, item) => openEditItemModal(mealType, item)}
+            onRemoveItem={(mealType, id) => {
+              const key = formatDateKey(selectedDate)
+              setMealsByDate(prev => {
+                const existing = prev[key]
+                if (!existing) return prev
+                const updated: DayMeals = {
+                  ...existing,
+                  [mealType]: existing[mealType].filter(it => it.id !== id),
+                }
+                return { ...prev, [key]: updated }
+              })
+            }}
+          />
+        )}
+
+        {isAddItemModalOpen && selectedDate && (
+          <AddItemModal
+            mealType={selectedMealType}
+            onClose={closeAddItemModal}
+            onSubmit={(name, calories) => handleAddItem({ name, calories })}
+          />
+        )}
+
+        {isEditItemModalOpen && editingItem && (
+          <EditItemModal
+            mealType={editingItem.mealType}
+            item={editingItem.item}
+            onClose={closeEditItemModal}
+            onSubmit={(name, calories) => handleEditItem({ name, calories })}
+          />
+        )}
       </div>
-
-      {isDayModalOpen && selectedDate && (
-        <DayModal
-          date={selectedDate}
-          meals={mealsByDate[formatDateKey(selectedDate)] ?? { breakfast: [], lunch: [], dinner: [] }}
-          onClose={closeDayModal}
-          onAdd={(mealType) => openAddItemModal(mealType)}
-          onEdit={(mealType, item) => openEditItemModal(mealType, item)}
-          onRemoveItem={(mealType, id) => {
-            const key = formatDateKey(selectedDate)
-            setMealsByDate(prev => {
-              const existing = prev[key]
-              if (!existing) return prev
-              const updated: DayMeals = {
-                ...existing,
-                [mealType]: existing[mealType].filter(it => it.id !== id),
-              }
-              return { ...prev, [key]: updated }
-            })
-          }}
-        />
-      )}
-
-      {isAddItemModalOpen && selectedDate && (
-        <AddItemModal
-          mealType={selectedMealType}
-          onClose={closeAddItemModal}
-          onSubmit={(name, calories) => handleAddItem({ name, calories })}
-        />
-      )}
-
-      {isEditItemModalOpen && editingItem && (
-        <EditItemModal
-          mealType={editingItem.mealType}
-          item={editingItem.item}
-          onClose={closeEditItemModal}
-          onSubmit={(name, calories) => handleEditItem({ name, calories })}
-        />
-      )}
     </div>
   )
 }
@@ -308,11 +327,11 @@ function DayModal({
           <div className="space-y-4">
             {sections.map(section => (
               <div key={section.key} className="border rounded">
-                <div className="flex items-center justify-between p-3 border-b bg-gray-50">
+                <div className="flex items-center justify-between p-3 border-b bg-blue-50">
                   <div className="font-medium">{section.label}</div>
                   <button
                     onClick={() => onAdd(section.key)}
-                    className="text-indigo-600 text-sm px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-50"
+                    className="text-blue-600 text-sm px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
                   >
                     + 추가
                   </button>
@@ -387,7 +406,7 @@ function AddItemModal({
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="예: 닭가슴살 샐러드"
-                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -397,20 +416,26 @@ function AddItemModal({
                 onChange={e => setCalories(e.target.value)}
                 placeholder="예: 350"
                 inputMode="numeric"
-                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2">
-            <button onClick={onClose} className="px-4 py-2 rounded border hover:bg-gray-50">취소</button>
+          <div className="flex gap-2 mt-6">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+            >
+              취소
+            </button>
             <button
               onClick={() => {
-                const parsed = Number(calories)
-                if (!name.trim() || Number.isNaN(parsed)) return
-                onSubmit(name.trim(), parsed)
+                const caloriesNum = parseInt(calories)
+                if (name.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
+                  onSubmit(name.trim(), caloriesNum)
+                }
               }}
-              className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               추가
             </button>
@@ -421,7 +446,6 @@ function AddItemModal({
   )
 }
 
-// 수정 모달 컴포넌트 추가
 function EditItemModal({
   mealType,
   item,
@@ -455,7 +479,7 @@ function EditItemModal({
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="예: 닭가슴살 샐러드"
-                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -465,20 +489,26 @@ function EditItemModal({
                 onChange={e => setCalories(e.target.value)}
                 placeholder="예: 350"
                 inputMode="numeric"
-                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2">
-            <button onClick={onClose} className="px-4 py-2 rounded border hover:bg-gray-50">취소</button>
+          <div className="flex gap-2 mt-6">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+            >
+              취소
+            </button>
             <button
               onClick={() => {
-                const parsed = Number(calories)
-                if (!name.trim() || Number.isNaN(parsed)) return
-                onSubmit(name.trim(), parsed)
+                const caloriesNum = parseInt(calories)
+                if (name.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
+                  onSubmit(name.trim(), caloriesNum)
+                }
               }}
-              className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               수정
             </button>
