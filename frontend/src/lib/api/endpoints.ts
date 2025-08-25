@@ -34,9 +34,14 @@ export const API_ENDPOINTS = {
     // 식단 관련
     DIET: {
       BASE: '/diet',
+      ADD: '/diet/add', // 식단 추가
       PLANS: '/diet/plans',
       CALENDAR: '/diet/calendar',
+      MONTHLY: '/diet/:year/:month', // 월별 식단 조회
+      ITEM: '/diet/:id', // 개별 식단 항목 (수정/삭제)
     },
+
+    
   } as const;
   
   // API URL 생성 헬퍼 함수
