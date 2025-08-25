@@ -62,9 +62,9 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 
     // JSON 처리
-//    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-//    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-//    implementation("com.google.code.gson:gson")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.google.code.gson:gson")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
