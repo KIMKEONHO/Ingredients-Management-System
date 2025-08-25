@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { COLOR_PRESETS } from "@/lib/constants/colors";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,16 +11,16 @@ export default function LoginPage() {
   const redirectUrlAfterSocialLogin = 'http://localhost:3000';
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-50 to-lime-100 flex items-center justify-center px-4">
-      <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl ring-1 ring-black/5">
+    <main className={`min-h-screen ${COLOR_PRESETS.LOGIN_PAGE.background} flex items-center justify-center px-4`}>
+      <div className={`w-full max-w-xl rounded-2xl ${COLOR_PRESETS.LOGIN_PAGE.card} p-6 shadow-xl ring-1 ring-black/5`}>
         <section className="w-full max-w-lg mx-auto">
         <div className="mb-6 text-center">
-          <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-green-600 text-white font-bold">FM</div>
-          <h1 className="mt-4 text-3xl font-bold text-green-800">로그인</h1>
-          <p className="mt-1 text-sm text-green-700/70">계정에 로그인하세요</p>
+          <div className={`mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full ${COLOR_PRESETS.LOGIN_PAGE.button} text-white font-bold`}>FM</div>
+          <h1 className={`mt-4 text-3xl font-bold ${COLOR_PRESETS.LOGIN_PAGE.accent}`}>로그인</h1>
+          <p className="mt-1 text-sm text-blue-700/70">계정에 로그인하세요</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-8 shadow-xl ring-1 ring-black/5">
+        <div className={`rounded-2xl ${COLOR_PRESETS.LOGIN_PAGE.card} p-8 shadow-xl ring-1 ring-black/5`}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -44,7 +45,7 @@ export default function LoginPage() {
                 <input
                   type="text"
                   placeholder="이메일 또는 아이디를 입력하세요"
-                  className="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className={`w-full rounded-lg border ${COLOR_PRESETS.LOGIN_PAGE.border} pl-10 pr-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 ${COLOR_PRESETS.LOGIN_PAGE.focus}`}
                 />
               </div>
             </div>
@@ -67,7 +68,7 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="비밀번호를 입력하세요"
-                  className="w-full rounded-lg border border-gray-300 pl-10 pr-10 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className={`w-full rounded-lg border ${COLOR_PRESETS.LOGIN_PAGE.border} pl-10 pr-10 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 ${COLOR_PRESETS.LOGIN_PAGE.focus}`}
                 />
                 <button
                   type="button"
@@ -100,31 +101,31 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="mt-2 w-full rounded-lg bg-green-600 py-2.5 text-white font-semibold shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={`mt-2 w-full rounded-lg ${COLOR_PRESETS.LOGIN_PAGE.button} py-2.5 text-white font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
             >
               로그인
             </button>
 
             <div className="flex items-center justify-between text-xs text-gray-500">
-              <Link href="#" className="hover:text-green-700">
+              <Link href="#" className={COLOR_PRESETS.LOGIN_PAGE.hover}>
                 아이디 찾기
               </Link>
               <span className="text-gray-300">|</span>
-              <Link href="#" className="hover:text-green-700">
+              <Link href="#" className={COLOR_PRESETS.LOGIN_PAGE.hover}>
                 비밀번호 찾기
               </Link>
               <span className="text-gray-300">|</span>
-              <Link href="#" className="hover:text-green-700">
+              <Link href="#" className={COLOR_PRESETS.LOGIN_PAGE.hover}>
                 회원가입
               </Link>
             </div>
 
             <div className="relative py-1">
               <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                <div className="w-full border-t border-gray-200" />
+                <div className={`w-full border-t ${COLOR_PRESETS.LOGIN_PAGE.border}`} />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-white px-3 text-xs text-gray-400">또는</span>
+                <span className={`${COLOR_PRESETS.LOGIN_PAGE.card} px-3 text-xs text-gray-400`}>또는</span>
               </div>
             </div>
 
@@ -149,7 +150,7 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center text-xs text-gray-500">
           <span>로그인에 문제가 있으신가요? </span>
-          <Link href="#" className="font-medium text-green-700 hover:underline">
+          <Link href="#" className={`font-medium ${COLOR_PRESETS.LOGIN_PAGE.accent} hover:underline`}>
             고객지원
           </Link>
         </div>

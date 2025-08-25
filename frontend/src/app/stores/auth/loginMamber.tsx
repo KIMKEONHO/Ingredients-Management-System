@@ -6,6 +6,7 @@ type Member = {
   createDate: string;
   modifyDate: string;
   nickname: string;
+  roles?: string[]; // roles 필드 추가
 };
 
 export const LoginMemberContext = createContext<{
@@ -30,6 +31,7 @@ function createEmptyMember(): Member {
     createDate: "",
     modifyDate: "",
     nickname: "",
+    roles: [], // 기본값으로 빈 배열 설정
   };
 }
 
@@ -45,11 +47,16 @@ export function useLoginMember() {
   };
 
   const setLoginMember = (member: Member) => {
-    _setLoginMember(member);
+    console.log('로그인 멤버 설정:', member);
+    _setLoginMember({
+      ...member,
+      roles: member.roles || ['USER'] // roles가 없으면 기본값으로 USER 설정
+    });
     setLoginMemberPending(false);
   };
 
   const setNoLoginMember = () => {
+    console.log('로그인 멤버 제거');
     setLoginMemberPending(false);
   };
 
