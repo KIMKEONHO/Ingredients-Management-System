@@ -1,4 +1,4 @@
-import { COLOR_PRESETS } from '@/lib/constants/colors';
+import { COLOR_PRESETS, COLORS } from '@/lib/constants/colors';
 
 interface PageHeaderProps {
   title: string;
@@ -15,8 +15,10 @@ export default function PageHeader({
 }: PageHeaderProps) {
   const preset = COLOR_PRESETS[variant.toUpperCase() as keyof typeof COLOR_PRESETS] || COLOR_PRESETS.MAIN_PAGE;
 
+  const headerClass = 'header' in preset ? preset.header : COLORS.BACKGROUNDS.HEADER;
+  
   return (
-    <div className={`${preset.header} rounded-xl p-6 mb-8 text-white`}>
+    <div className={`${headerClass} rounded-xl p-6 mb-8 text-white`}>
       <h1 className="text-3xl font-bold text-white mb-2">{title}</h1>
       {description && (
         <p className="text-blue-100 mb-6">{description}</p>

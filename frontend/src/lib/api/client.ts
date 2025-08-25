@@ -1,11 +1,11 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 
 // API 기본 설정
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
 const API_VERSION = '/api/v1';
 
 class ApiClient {
-  private client: AxiosInstance;
+  private client: ReturnType<typeof axios.create>;
 
   constructor() {
     this.client = axios.create({
@@ -19,16 +19,16 @@ class ApiClient {
 
     // 응답 인터셉터
     this.client.interceptors.response.use(
-      (response: AxiosResponse) => {
+      (response) => {
         return response;
       },
       (error) => {
         // 401 Unauthorized 에러 처리
-        if (error.response?.status === 401) {
+        if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'status' in error.response && error.response.status === 401) {
           this.handleUnauthorized();
         }
         // 403 Forbidden 에러 처리
-        if (error.response?.status === 403) {
+        if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'status' in error.response && error.response.status === 403) {
           this.handleForbidden();
         }
         return Promise.reject(error);
@@ -37,31 +37,31 @@ class ApiClient {
   }
 
   // GET 요청
-  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async get<T>(url: string, config?: Parameters<typeof this.client.get>[1]): Promise<T> {
     const response = await this.client.get<T>(url, config);
     return response.data;
   }
 
   // POST 요청
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async post<T>(url: string, data?: unknown, config?: Parameters<typeof this.client.post>[2]): Promise<T> {
     const response = await this.client.post<T>(url, data, config);
     return response.data;
   }
 
   // PUT 요청
-  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async put<T>(url: string, data?: unknown, config?: Parameters<typeof this.client.put>[2]): Promise<T> {
     const response = await this.client.put<T>(url, data, config);
     return response.data;
   }
 
   // DELETE 요청
-  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async delete<T>(url: string, config?: Parameters<typeof this.client.delete>[1]): Promise<T> {
     const response = await this.client.delete<T>(url, config);
     return response.data;
   }
 
   // PATCH 요청
-  async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async patch<T>(url: string, data?: unknown, config?: Parameters<typeof this.client.patch>[2]): Promise<T> {
     const response = await this.client.patch<T>(url, data, config);
     return response.data;
   }
