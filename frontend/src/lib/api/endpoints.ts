@@ -39,6 +39,8 @@ export const API_ENDPOINTS = {
       CALENDAR: '/diet/calendar',
       MONTHLY: '/diet/:year/:month', // 월별 식단 조회
       ITEM: '/diet/:id', // 개별 식단 항목 (수정/삭제)
+      MONTH_STATISTICS: '/diet/month/statistics', // 월간 칼로리 통계
+      WEEK_STATISTICS: '/diet/week/statistics', // 주간 칼로리 통계
     },
 
     
