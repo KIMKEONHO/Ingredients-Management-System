@@ -41,6 +41,14 @@ export default function Header() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  const handleFeatureClick = (e: React.MouseEvent, featurePath: string) => {
+    if (!isLogin) {
+      e.preventDefault();
+      // 로그인 페이지로 이동
+      window.location.href = '/login';
+    }
+  };
+
   return (
     <header className="bg-white p-4 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
@@ -49,10 +57,18 @@ export default function Header() {
             FreshTracker
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-gray-600">
-            <Link href="/callender" className="hover:text-gray-900">
+            <Link 
+              href="/callender" 
+              className="hover:text-gray-900"
+              onClick={(e) => handleFeatureClick(e, '/callender')}
+            >
               식단 관리
             </Link>
-            <Link href="/statistics" className="hover:text-gray-900">
+            <Link 
+              href="/statistics" 
+              className="hover:text-gray-900"
+              onClick={(e) => handleFeatureClick(e, '/statistics')}
+            >
               재고 통계
             </Link>
             <Link href="/inventory" className="hover:text-gray-900">
@@ -105,10 +121,10 @@ export default function Header() {
               </div>
             )}
           </div>
-          <div className="relative text-xl">
+          <Link href="/cart" className="relative text-xl">
             <span role="img" aria-label="cart">🛒</span>
             <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">3</span>
-          </div>
+          </Link>
           {isLogin ? (
             <div className="flex items-center gap-3">
               <span className="text-gray-700">{loginMember.nickname}</span>
@@ -122,9 +138,9 @@ export default function Header() {
           ) : (
             <>
               <Link href="/login" className="text-gray-600 hover:text-gray-900">로그인</Link>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">
+              <Link href="/signup" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">
                 회원가입
-              </button>
+              </Link>
             </>
           )}
         </div>
