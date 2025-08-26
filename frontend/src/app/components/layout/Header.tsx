@@ -55,7 +55,7 @@ export default function Header() {
             <Link href="/statistics" className="hover:text-gray-900">
               재고 통계
             </Link>
-            <Link href="#" className="hover:text-gray-900">
+            <Link href="/inventory" className="hover:text-gray-900">
               재고 관리
             </Link>
             <Link href="/support" className="hover:text-gray-900">
