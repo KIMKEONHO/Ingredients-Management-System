@@ -1,14 +1,84 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { COLOR_PRESETS } from '@/lib/constants/colors';
 import PageHeader from '../components/ui/PageHeader';
 import SectionCard from '../components/ui/SectionCard';
+import { DietService, MonthStatisticsResponseDto, WeekStatisticsResponseDto } from '@/lib/api/services/dietService';
 
 export default function StatisticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('이번 달');
+  const [monthStats, setMonthStats] = useState<MonthStatisticsResponseDto | null>(null);
+  const [weekStats, setWeekStats] = useState<WeekStatisticsResponseDto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false); // 중복 로드 방지
+  const [retryCount, setRetryCount] = useState(0); // 재시도 횟수
 
   const timePeriods = ['이번 주', '이번 달', '지난 3개월', '올해'];
+
+  // 식단 통계 데이터 로드
+  useEffect(() => {
+    // 이미 로드된 경우 중복 실행 방지
+    if (hasLoaded) return;
+
+    const loadDietStatistics = async () => {
+      try {
+        setIsLoading(true);
+        
+        // API 요청 전에 약간의 지연을 두어 인증 토큰이 준비되도록 함
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        console.log('[DEBUG] 식단 통계 로드 시작, 재시도 횟수:', retryCount);
+        
+        const [monthData, weekData] = await Promise.all([
+          DietService.getMonthStatistics(),
+          DietService.getWeekStatistics()
+        ]);
+        
+        console.log('[DEBUG] 식단 통계 로드 성공:', { monthData, weekData });
+        
+        setMonthStats(monthData);
+        setWeekStats(weekData);
+        setHasLoaded(true); // 로드 완료 표시
+      } catch (error) {
+        console.error('식단 통계 로드 실패:', error);
+        
+        // 재시도 횟수가 2회 미만일 때만 재시도
+        if (retryCount < 2) {
+          console.log('[DEBUG] 재시도 시작, 1초 후 실행...');
+          setRetryCount(prev => prev + 1);
+          
+          setTimeout(async () => {
+            try {
+              console.log('[DEBUG] 재시도 실행 중...');
+              const [monthData, weekData] = await Promise.all([
+                DietService.getMonthStatistics(),
+                DietService.getWeekStatistics()
+              ]);
+              
+              console.log('[DEBUG] 재시도 성공:', { monthData, weekData });
+              
+              setMonthStats(monthData);
+              setWeekStats(weekData);
+              setHasLoaded(true);
+            } catch (retryError) {
+              console.error('재시도 실패:', retryError);
+            } finally {
+              setIsLoading(false);
+            }
+          }, 1000);
+          
+          return; // 첫 번째 시도 실패 시 여기서 종료
+        } else {
+          console.log('[DEBUG] 최대 재시도 횟수 도달, 로딩 종료');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDietStatistics();
+  }, [hasLoaded, retryCount]); // hasLoaded와 retryCount를 의존성으로 추가
 
   const summaryStats = [
     {
@@ -35,12 +105,16 @@ export default function StatisticsPage() {
       )
     },
     {
-      title: '가장 많이 사용',
-      value: '양파',
-      trend: '+45회 사용',
-      trendColor: 'text-purple-600',
+      title: '이번 달 평균 칼로리',
+      value: monthStats ? `${Math.round(monthStats.averageKcal)}kcal` : '로딩 중...',
+      trend: monthStats && monthStats.diffRate 
+        ? `${monthStats.diffRate > 0 ? '+' : ''}${Math.round(monthStats.diffRate)}% ${monthStats.diffRate > 0 ? '증가' : '감소'}`
+        : '변화 없음',
+      trendColor: monthStats && monthStats.diffRate 
+        ? monthStats.diffRate > 0 ? 'text-red-600' : 'text-green-600'
+        : 'text-gray-600',
       icon: (
-        <svg className="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+        <svg className="w-8 h-8 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
         </svg>
       )
@@ -85,7 +159,22 @@ export default function StatisticsPage() {
       description: '주말에 더 다양한 식재료를 사용하는 경향이 있습니다. 특별한 요리에 도전해보세요!',
       icon: '🍳',
       color: 'bg-blue-50 border-blue-200'
-    }
+    },
+    // 식단 관련 인사이트 추가
+    ...(monthStats && monthStats.diffRate !== null ? [{
+      title: monthStats.diffRate > 0 ? '칼로리 섭취 증가' : '칼로리 섭취 감소',
+      description: monthStats.diffRate > 0 
+        ? `지난달 대비 ${Math.round(monthStats.diffRate)}% 칼로리 섭취가 증가했습니다. 균형 잡힌 식단을 유지해보세요!`
+        : `지난달 대비 ${Math.round(Math.abs(monthStats.diffRate))}% 칼로리 섭취가 감소했습니다. 건강한 다이어트를 하고 계시네요!`,
+      icon: monthStats.diffRate > 0 ? '📈' : '📉',
+      color: monthStats.diffRate > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
+    }] : []),
+    ...(weekStats.length > 0 ? [{
+      title: '주간 칼로리 패턴',
+      description: `최근 7일간 평균 ${Math.round(weekStats.reduce((sum, stat) => sum + stat.averageKcal, 0) / weekStats.length)}kcal를 섭취하고 있습니다.`,
+      icon: '📊',
+      color: 'bg-indigo-50 border-indigo-200'
+    }] : [])
   ];
 
   return (
@@ -190,21 +279,110 @@ export default function StatisticsPage() {
             </div>
           </SectionCard>
 
-          {/* Weekly Usage Card */}
-          <SectionCard title="주간 사용량" variant="statistics">
+          {/* Monthly Diet Statistics Card */}
+          <SectionCard title="월간 식단 통계" variant="statistics">
             <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">주간 사용량</h3>
-              <div className="h-48 flex items-end justify-between gap-2">
-                {['월', '화', '수', '목', '금', '토', '일'].map((day, index) => (
-                  <div key={day} className="flex-1 flex flex-col items-center">
-                    <div 
-                      className="w-full bg-gradient-to-t from-blue-500 to-purple-500 rounded-t-sm"
-                      style={{ height: `${Math.random() * 20 + 10}px` }}
-                    ></div>
-                    <span className="text-sm text-gray-600 mt-2">{day}</span>
+              {isLoading ? (
+                <div className="h-32 flex items-center justify-center">
+                  <div className="text-gray-500">로딩 중...</div>
+                </div>
+              ) : monthStats ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* 이번 달 평균 칼로리 */}
+                  <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg border border-orange-200">
+                    <div className="text-2xl mb-2">🔥</div>
+                    <h4 className="font-semibold text-gray-900 mb-2">이번 달 평균</h4>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {Math.round(monthStats.averageKcal)}kcal
+                    </p>
                   </div>
-                ))}
-              </div>
+
+                  {/* 지난달 대비 변화 */}
+                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                    <div className="text-2xl mb-2">📊</div>
+                    <h4 className="font-semibold text-gray-900 mb-2">지난달 대비</h4>
+                    {monthStats.diffFromLast !== null ? (
+                      <p className={`text-2xl font-bold ${
+                        monthStats.diffFromLast > 0 ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        {monthStats.diffFromLast > 0 ? '+' : ''}{Math.round(monthStats.diffFromLast)}kcal
+                      </p>
+                    ) : (
+                      <p className="text-lg text-gray-500">변화 없음</p>
+                    )}
+                  </div>
+
+                  {/* 변화율 */}
+                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200">
+                    <div className="text-2xl mb-2">📈</div>
+                    <h4 className="font-semibold text-gray-900 mb-2">변화율</h4>
+                    {monthStats.diffRate !== null ? (
+                      <p className={`text-2xl font-bold ${
+                        monthStats.diffRate > 0 ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        {monthStats.diffRate > 0 ? '+' : ''}{Math.round(monthStats.diffRate)}%
+                      </p>
+                    ) : (
+                      <p className="text-lg text-gray-500">변화 없음</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="h-32 flex items-center justify-center">
+                  <div className="text-gray-500">데이터를 불러올 수 없습니다</div>
+                </div>
+              )}
+            </div>
+          </SectionCard>
+
+          {/* Weekly Usage Card */}
+          <SectionCard title="주간 칼로리 추이" variant="statistics">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 7일 칼로리 섭취량</h3>
+              {isLoading ? (
+                <div className="h-48 flex items-center justify-center">
+                  <div className="text-gray-500">로딩 중...</div>
+                </div>
+              ) : weekStats.length > 0 ? (
+                <div className="h-48 flex items-end justify-between gap-2">
+                  {weekStats.map((stat, index) => {
+                    const date = new Date(stat.date);
+                    const dayName = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+                    const maxKcal = Math.max(...weekStats.map(s => s.averageKcal));
+                    const height = maxKcal > 0 ? (stat.averageKcal / maxKcal) * 100 : 0;
+                    
+                    return (
+                      <div key={index} className="flex-1 flex flex-col items-center">
+                        <div className="w-full bg-gradient-to-t from-orange-500 to-red-500 rounded-t-sm relative group">
+                          <div 
+                            className="w-full bg-gradient-to-t from-orange-500 to-red-500 rounded-t-sm transition-all duration-300"
+                            style={{ height: `${Math.max(height, 10)}px` }}
+                          ></div>
+                          {/* 툴팁 */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            {Math.round(stat.averageKcal)}kcal
+                          </div>
+                        </div>
+                        <span className="text-sm text-gray-600 mt-2">{dayName}</span>
+                        <span className="text-xs text-gray-500">{date.getMonth() + 1}/{date.getDate()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="h-48 flex items-center justify-center">
+                  <div className="text-gray-500">데이터가 없습니다</div>
+                </div>
+              )}
+              {weekStats.length > 0 && (
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    주간 평균: <span className="font-semibold text-orange-600">
+                      {Math.round(weekStats.reduce((sum, stat) => sum + stat.averageKcal, 0) / weekStats.length)}kcal
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </SectionCard>
 

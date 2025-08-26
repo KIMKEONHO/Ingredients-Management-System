@@ -56,7 +56,7 @@ public class DietController {
     public RsData<?> updateDiet(
             @CurrentUser SecurityUser securityUser,
             @RequestBody CreateDietRequestDto requestDto,
-            @RequestParam Long dietId
+            @PathVariable Long dietId
     ){
 
         dietService.updateDiet(securityUser.getId(), requestDto, dietId);
@@ -68,7 +68,7 @@ public class DietController {
     @DeleteMapping("/{dietId}")
     public RsData<?> deleteDiet(
             @CurrentUser SecurityUser securityUser,
-            @RequestParam Long dietId
+            @PathVariable Long dietId
     ){
 
         dietService.deleteDiet(securityUser.getId(), dietId);

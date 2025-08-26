@@ -3,6 +3,7 @@ import { API_ENDPOINTS, createApiUrl } from '../endpoints';
 
 // 백엔드 응답 구조에 맞는 타입 정의
 export interface BackendDietItem {
+  id: number; // 백엔드에서 Long 타입으로 전송
   menu: string;
   kcal: number;
   mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER';
@@ -16,7 +17,7 @@ export interface BackendApiResponse<T> {
 }
 
 export interface DietItem {
-  id: string;
+  id: number; // 백엔드에서 받은 실제 ID 사용
   name: string;
   calories: number;
   mealType: 'breakfast' | 'lunch' | 'dinner';
@@ -31,7 +32,41 @@ export interface MonthlyDiet {
   };
 }
 
+// 백엔드 통계 DTO 구조에 맞는 인터페이스
+export interface WeekStatisticsResponseDto {
+  date: string; // yyyy-MM-dd 형식
+  averageKcal: number;
+}
+
+export interface MonthStatisticsResponseDto {
+  month: number;
+  averageKcal: number;
+  diffFromLast: number | null; // 지난달 대비 차이
+  diffRate: number | null; // 지난달 대비 변화율
+}
+
 export class DietService {
+  /**
+   * API 클라이언트가 준비되었는지 확인합니다.
+   */
+  private static isApiClientReady(): boolean {
+    // apiClient가 존재하고 필요한 메서드들을 가지고 있는지 확인
+    return !!(apiClient && typeof apiClient.get === 'function');
+  }
+
+  /**
+   * API 요청 전 기본 검증을 수행합니다.
+   */
+  private static async validateBeforeRequest(): Promise<boolean> {
+    if (!this.isApiClientReady()) {
+      console.error('[DEBUG] API 클라이언트가 준비되지 않음');
+      return false;
+    }
+    
+    // 추가 검증 로직이 필요하다면 여기에 추가
+    return true;
+  }
+
   /**
    * 특정 연도와 월의 식단을 가져옵니다.
    * @param year 연도 (예: 2024)
@@ -105,7 +140,7 @@ export class DietService {
       
       // DietItem 형식으로 변환하여 추가
       const dietItem: DietItem = {
-        id: String(Math.random()), // 임시 ID 생성
+        id: item.id, // 백엔드에서 받은 실제 ID 사용
         name: item.menu,
         calories: item.kcal,
         mealType: mealType,
@@ -174,7 +209,7 @@ export class DietService {
         console.log('[DEBUG] 식단 추가 성공:', response.msg);
         // data가 없으므로 임시 DietItem 객체 반환
         return {
-          id: String(Date.now()), // 임시 ID
+          id: response.data?.id || Date.now(), // 백엔드에서 받은 실제 ID 사용, 없으면 임시 ID
           name: requestData.menu,
           calories: requestData.kcal,
           mealType: requestData.mealType === 'breakfast' ? 'breakfast' : 
@@ -196,22 +231,42 @@ export class DietService {
    * @param id 식단 항목 ID
    * @param name 메뉴명
    * @param calories 칼로리
+   * @param mealType 식사 타입 (기존 값 유지)
+   * @param date 날짜 (기존 값 유지)
    * @returns 수정된 식단 항목
    */
   static async updateDietItem(
-    id: string,
+    id: number,
     name: string,
-    calories: number
+    calories: number,
+    mealType?: 'breakfast' | 'lunch' | 'dinner',
+    date?: string
   ): Promise<DietItem | null> {
     try {
-      const url = createApiUrl(API_ENDPOINTS.DIET.ITEM, { id });
-      const response = await apiClient.put<BackendApiResponse<DietItem>>(url, {
-        name,
-        calories
-      });
+      // 백엔드에서 @PathVariable을 사용하므로 URL 경로 파라미터로 전송
+      const url = `${API_ENDPOINTS.DIET.BASE}/${id}`;
       
-      if (response.resultCode === '200' && response.data) {
-        return response.data;
+      // 백엔드 CreateDietRequestDto 형식에 맞춰 데이터 전송
+      const requestData = {
+        menu: name,
+        kcal: calories,
+        date: date ? new Date(date + 'T12:00:00').toISOString() : new Date().toISOString(),
+        mealType: mealType || 'breakfast'
+      };
+      
+      const response = await apiClient.patch<BackendApiResponse<DietItem>>(url, requestData);
+      
+      // 백엔드에서 204를 성공 코드로 사용
+      if (response.resultCode === '204' && response.msg) {
+        console.log('[DEBUG] 식단 수정 성공:', response.msg);
+        // 수정된 데이터를 반환 (백엔드에서 data를 포함하지 않는 경우)
+        return {
+          id: id,
+          name: name,
+          calories: calories,
+          mealType: mealType || 'breakfast',
+          date: date || new Date().toLocaleDateString('en-CA')
+        };
       }
       
       return null;
@@ -226,14 +281,88 @@ export class DietService {
    * @param id 식단 항목 ID
    * @returns 삭제 성공 여부
    */
-  static async deleteDietItem(id: string): Promise<boolean> {
+  static async deleteDietItem(id: number): Promise<boolean> {
     try {
-      const url = createApiUrl(API_ENDPOINTS.DIET.ITEM, { id });
+      // 백엔드에서 @PathVariable을 사용하므로 URL 경로 파라미터로 전송
+      const url = `${API_ENDPOINTS.DIET.BASE}/${id}`;
       const response = await apiClient.delete<BackendApiResponse<void>>(url);
-      return response.resultCode === '200';
+      
+      // 백엔드에서 204를 성공 코드로 사용 (삭제는 보통 204 No Content)
+      if (response.resultCode === '204') {
+        console.log('[DEBUG] 식단 삭제 성공');
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('식단 항목 삭제 실패:', error);
       return false;
+    }
+  }
+
+  /**
+   * 월간 칼로리 통계를 가져옵니다.
+   * @returns 월간 통계 데이터
+   */
+  static async getMonthStatistics(): Promise<MonthStatisticsResponseDto | null> {
+    try {
+      console.log('[DEBUG] getMonthStatistics 요청 시작');
+      
+      // API 클라이언트 상태 검증
+      if (!await this.validateBeforeRequest()) {
+        console.log('[DEBUG] getMonthStatistics - API 클라이언트 검증 실패');
+        return null;
+      }
+      
+      const response = await apiClient.get<BackendApiResponse<MonthStatisticsResponseDto>>(
+        API_ENDPOINTS.DIET.MONTH_STATISTICS
+      );
+      
+      console.log('[DEBUG] getMonthStatistics 응답:', response);
+      
+      if (response.resultCode === '200' && response.data) {
+        console.log('[DEBUG] getMonthStatistics 성공:', response.data);
+        return response.data;
+      }
+      
+      console.log('[DEBUG] getMonthStatistics 실패 - resultCode:', response.resultCode);
+      return null;
+    } catch (error) {
+      console.error('월간 통계 조회 실패:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 주간 칼로리 통계를 가져옵니다.
+   * @returns 주간 통계 데이터 배열 (최근 7일)
+   */
+  static async getWeekStatistics(): Promise<WeekStatisticsResponseDto[]> {
+    try {
+      console.log('[DEBUG] getWeekStatistics 요청 시작');
+      
+      // API 클라이언트 상태 검증
+      if (!await this.validateBeforeRequest()) {
+        console.log('[DEBUG] getWeekStatistics - API 클라이언트 검증 실패');
+        return [];
+      }
+      
+      const response = await apiClient.get<BackendApiResponse<WeekStatisticsResponseDto[]>>(
+        API_ENDPOINTS.DIET.WEEK_STATISTICS
+      );
+      
+      console.log('[DEBUG] getWeekStatistics 응답:', response);
+      
+      if (response.resultCode === '200' && response.data) {
+        console.log('[DEBUG] getWeekStatistics 성공:', response.data);
+        return response.data;
+      }
+      
+      console.log('[DEBUG] getWeekStatistics 실패 - resultCode:', response.resultCode);
+      return [];
+    } catch (error) {
+      console.error('주간 통계 조회 실패:', error);
+      return [];
     }
   }
 }

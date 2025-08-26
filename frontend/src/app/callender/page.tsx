@@ -7,7 +7,7 @@ import { DietService, MonthlyDiet, DietItem } from '@/lib/api/services/dietServi
 type MealType = 'breakfast' | 'lunch' | 'dinner'
 
 interface MealItem {
-  id: string
+  id: number
   name: string
   calories: number
 }
@@ -212,17 +212,24 @@ export default function CalendarPage() {
     if (!editingItem) return
     
     try {
-      // 백엔드에 식단 항목 수정
+      // 백엔드에 식단 항목 수정 (기존 mealType과 date 유지)
       const updatedItem = await DietService.updateDietItem(
         editingItem.item.id,
         name,
-        calories
+        calories,
+        editingItem.mealType,
+        selectedDate ? formatDateKey(selectedDate) : undefined
       )
       
       if (updatedItem) {
         // 성공적으로 수정된 경우 모달 닫고 데이터 새로고침
         closeEditItemModal()
         await loadMonthlyDiet(currentYear, currentMonth)
+        // 성공 메시지 표시
+        alert('식단이 성공적으로 수정되었습니다.')
+      } else {
+        // 실패 메시지 표시
+        alert('식단 수정에 실패했습니다. 다시 시도해주세요.')
       }
     } catch (error) {
       console.error('식단 항목 수정 실패:', error)
@@ -231,7 +238,7 @@ export default function CalendarPage() {
   }
 
   // 삭제 처리 함수 수정
-  const handleRemoveItem = async (mealType: MealType, id: string) => {
+  const handleRemoveItem = async (mealType: MealType, id: number) => {
     try {
       // 백엔드에 식단 항목 삭제
       const success = await DietService.deleteDietItem(id)
@@ -239,6 +246,11 @@ export default function CalendarPage() {
       if (success) {
         // 성공적으로 삭제된 경우 데이터 새로고침
         await loadMonthlyDiet(currentYear, currentMonth)
+        // 성공 메시지 표시
+        alert('식단이 성공적으로 삭제되었습니다.')
+      } else {
+        // 실패 메시지 표시
+        alert('식단 삭제에 실패했습니다. 다시 시도해주세요.')
       }
     } catch (error) {
       console.error('식단 항목 삭제 실패:', error)
@@ -414,7 +426,7 @@ function DayModal({
   onClose: () => void
   onAdd: (mealType: MealType) => void
   onEdit: (mealType: MealType, item: MealItem) => void
-  onRemoveItem: (mealType: MealType, id: string) => void
+  onRemoveItem: (mealType: MealType, id: number) => void
 }) {
   const title = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
     date.getDate()
@@ -542,13 +554,10 @@ function AddItemModal({
             <button
               onClick={() => {
                 const caloriesNum = parseInt(calories)
-                console.log('[DEBUG] AddItemModal 추가 버튼 클릭:', { name, calories, caloriesNum })
                 if (name.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
-                  console.log('[DEBUG] onSubmit 호출 시작')
                   onSubmit(name.trim(), caloriesNum)
-                  console.log('[DEBUG] onSubmit 호출 완료')
                 } else {
-                  console.log('[DEBUG] 유효성 검사 실패:', { name: name.trim(), caloriesNum, isValid: !isNaN(caloriesNum) && caloriesNum > 0 })
+                  alert('올바른 값을 입력해주세요.')
                 }
               }}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -577,6 +586,16 @@ function EditItemModal({
   const [calories, setCalories] = useState<string>(item.calories.toString())
 
   const label = mealType === 'breakfast' ? '아침' : mealType === 'lunch' ? '점심' : '저녁'
+  
+  // 수정 시 유효성 검사 추가
+  const handleSubmit = () => {
+    const caloriesNum = parseInt(calories)
+    if (name.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
+      onSubmit(name.trim(), caloriesNum)
+    } else {
+      alert('올바른 값을 입력해주세요.')
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50">
@@ -618,12 +637,7 @@ function EditItemModal({
               취소
             </button>
             <button
-              onClick={() => {
-                const caloriesNum = parseInt(calories)
-                if (name.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
-                  onSubmit(name.trim(), caloriesNum)
-                }
-              }}
+              onClick={handleSubmit}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               수정

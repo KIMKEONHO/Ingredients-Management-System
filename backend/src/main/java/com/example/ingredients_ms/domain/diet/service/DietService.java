@@ -77,6 +77,7 @@ public class DietService {
 
         return diets.stream()
                 .map(d -> DietResponseDto.builder()
+                        .id(d.getId())
                         .menu(d.getMenu())
                         .kcal(d.getKcal())
                         .mealType(d.getMealType())
