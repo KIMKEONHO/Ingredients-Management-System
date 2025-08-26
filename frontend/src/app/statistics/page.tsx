@@ -5,6 +5,7 @@ import { COLOR_PRESETS } from '@/lib/constants/colors';
 import PageHeader from '../components/ui/PageHeader';
 import SectionCard from '../components/ui/SectionCard';
 import { DietService, MonthStatisticsResponseDto, WeekStatisticsResponseDto } from '@/lib/api/services/dietService';
+import { UserGuard } from '@/lib/auth/authGuard';
 
 export default function StatisticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('이번 달');
@@ -178,267 +179,269 @@ export default function StatisticsPage() {
   ];
 
   return (
-    <div className={`min-h-screen ${COLOR_PRESETS.STATISTICS_PAGE.background} p-6`}>
-      <div className="max-w-7xl mx-auto">
-        {/* Main Card Container */}
-        <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8">
-          
-          {/* Header Card */}
-          <PageHeader 
-            title="식재료 사용 통계"
-            description="자주 사용하는 식재료와 소비 패턴을 분석해보세요"
-            variant="statistics"
-          >
-            {/* Time Period Selector */}
-            <div className="flex justify-end">
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-1 shadow-sm border border-white/30">
-                {timePeriods.map((period) => (
-                  <button
-                    key={period}
-                    onClick={() => setSelectedPeriod(period)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      selectedPeriod === period
-                        ? 'bg-white text-blue-600'
-                        : 'text-white hover:text-blue-100'
-                    }`}
-                  >
-                    {period}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </PageHeader>
-
-          {/* Summary Statistics Card */}
-          <SectionCard title="요약 통계" variant="statistics">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {summaryStats.map((stat, index) => (
-                <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-blue-100 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-4">
-                    {stat.icon}
-                    <span className={`text-sm font-medium ${stat.trendColor}`}>
-                      {stat.trend}
-                    </span>
-                  </div>
-                  <h3 className="text-gray-600 text-sm mb-2">{stat.title}</h3>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-
-          {/* Charts Row Card */}
-          <SectionCard title="차트 분석" variant="statistics">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Monthly Category Usage */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">월별 카테고리 사용량</h3>
-                <div className="flex gap-2 mb-4">
-                  {['전체', '채소류', '육류', '유제품', '곡물류'].map((category, index) => (
+    <UserGuard>
+      <div className={`min-h-screen ${COLOR_PRESETS.STATISTICS_PAGE.background} p-6`}>
+        <div className="max-w-7xl mx-auto">
+          {/* Main Card Container */}
+          <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8">
+            
+            {/* Header Card */}
+            <PageHeader 
+              title="식재료 사용 통계"
+              description="자주 사용하는 식재료와 소비 패턴을 분석해보세요"
+              variant="statistics"
+            >
+              {/* Time Period Selector */}
+              <div className="flex justify-end">
+                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-1 shadow-sm border border-white/30">
+                  {timePeriods.map((period) => (
                     <button
-                      key={category}
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        index === 0
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                      key={period}
+                      onClick={() => setSelectedPeriod(period)}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        selectedPeriod === period
+                          ? 'bg-white text-blue-600'
+                          : 'text-white hover:text-blue-100'
                       }`}
                     >
-                      {category}
+                      {period}
                     </button>
                   ))}
                 </div>
-                <div className="h-64 bg-gradient-to-b from-blue-50 to-purple-50 rounded-lg flex items-end justify-center p-4 border border-blue-200">
-                  <div className="text-blue-600 text-sm">차트 영역 (1월~6월)</div>
-                </div>
               </div>
+            </PageHeader>
 
-              {/* Category Ratio */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">카테고리별 비율</h3>
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center border border-blue-200">
-                    <div className="text-blue-600 text-sm">도넛 차트</div>
+            {/* Summary Statistics Card */}
+            <SectionCard title="요약 통계" variant="statistics">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {summaryStats.map((stat, index) => (
+                  <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-blue-100 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      {stat.icon}
+                      <span className={`text-sm font-medium ${stat.trendColor}`}>
+                        {stat.trend}
+                      </span>
+                    </div>
+                    <h3 className="text-gray-600 text-sm mb-2">{stat.title}</h3>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+
+            {/* Charts Row Card */}
+            <SectionCard title="차트 분석" variant="statistics">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Monthly Category Usage */}
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">월별 카테고리 사용량</h3>
+                  <div className="flex gap-2 mb-4">
+                    {['전체', '채소류', '육류', '유제품', '곡물류'].map((category, index) => (
+                      <button
+                        key={category}
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          index === 0
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="h-64 bg-gradient-to-b from-blue-50 to-purple-50 rounded-lg flex items-end justify-center p-4 border border-blue-200">
+                    <div className="text-blue-600 text-sm">차트 영역 (1월~6월)</div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  {[
-                    { label: '채소류', percentage: '35%', color: 'bg-blue-500' },
-                    { label: '육류', percentage: '25%', color: 'bg-purple-500' },
-                    { label: '유제품', percentage: '20%', color: 'bg-blue-400' },
-                    { label: '곡물류', percentage: '15%', color: 'bg-purple-400' },
-                    { label: '기타', percentage: '5%', color: 'bg-blue-300' }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                      <span className="text-sm text-gray-600">{item.label}</span>
-                      <span className="text-sm font-medium text-gray-900 ml-auto">{item.percentage}</span>
+
+                {/* Category Ratio */}
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">카테고리별 비율</h3>
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center border border-blue-200">
+                      <div className="text-blue-600 text-sm">도넛 차트</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { label: '채소류', percentage: '35%', color: 'bg-blue-500' },
+                      { label: '육류', percentage: '25%', color: 'bg-purple-500' },
+                      { label: '유제품', percentage: '20%', color: 'bg-blue-400' },
+                      { label: '곡물류', percentage: '15%', color: 'bg-purple-400' },
+                      { label: '기타', percentage: '5%', color: 'bg-blue-300' }
+                    ].map((item, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
+                        <span className="text-sm text-gray-600">{item.label}</span>
+                        <span className="text-sm font-medium text-gray-900 ml-auto">{item.percentage}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+
+            {/* Monthly Diet Statistics Card */}
+            <SectionCard title="월간 식단 통계" variant="statistics">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
+                {isLoading ? (
+                  <div className="h-32 flex items-center justify-center">
+                    <div className="text-gray-500">로딩 중...</div>
+                  </div>
+                ) : monthStats ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* 이번 달 평균 칼로리 */}
+                    <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg border border-orange-200">
+                      <div className="text-2xl mb-2">🔥</div>
+                      <h4 className="font-semibold text-gray-900 mb-2">이번 달 평균</h4>
+                      <p className="text-2xl font-bold text-orange-600">
+                        {Math.round(monthStats.averageKcal)}kcal
+                      </p>
+                    </div>
+
+                    {/* 지난달 대비 변화 */}
+                    <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                      <div className="text-2xl mb-2">📊</div>
+                      <h4 className="font-semibold text-gray-900 mb-2">지난달 대비</h4>
+                      {monthStats.diffFromLast !== null ? (
+                        <p className={`text-2xl font-bold ${
+                          monthStats.diffFromLast > 0 ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {monthStats.diffFromLast > 0 ? '+' : ''}{Math.round(monthStats.diffFromLast)}kcal
+                        </p>
+                      ) : (
+                        <p className="text-lg text-gray-500">변화 없음</p>
+                      )}
+                    </div>
+
+                    {/* 변화율 */}
+                    <div className="text-center p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200">
+                      <div className="text-2xl mb-2">📈</div>
+                      <h4 className="font-semibold text-gray-900 mb-2">변화율</h4>
+                      {monthStats.diffRate !== null ? (
+                        <p className={`text-2xl font-bold ${
+                          monthStats.diffRate > 0 ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {monthStats.diffRate > 0 ? '+' : ''}{Math.round(monthStats.diffRate)}%
+                        </p>
+                      ) : (
+                        <p className="text-lg text-gray-500">변화 없음</p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-32 flex items-center justify-center">
+                    <div className="text-gray-500">데이터를 불러올 수 없습니다</div>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+
+            {/* Weekly Usage Card */}
+            <SectionCard title="주간 칼로리 추이" variant="statistics">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 7일 칼로리 섭취량</h3>
+                {isLoading ? (
+                  <div className="h-48 flex items-center justify-center">
+                    <div className="text-gray-500">로딩 중...</div>
+                  </div>
+                ) : weekStats.length > 0 ? (
+                  <div className="h-48 flex items-end justify-between gap-2">
+                    {weekStats.map((stat, index) => {
+                      const date = new Date(stat.date);
+                      const dayName = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+                      const maxKcal = Math.max(...weekStats.map(s => s.averageKcal));
+                      const height = maxKcal > 0 ? (stat.averageKcal / maxKcal) * 100 : 0;
+                      
+                      return (
+                        <div key={index} className="flex-1 flex flex-col items-center">
+                          <div className="w-full bg-gradient-to-t from-orange-500 to-red-500 rounded-t-sm relative group">
+                            <div 
+                              className="w-full bg-gradient-to-t from-orange-500 to-red-500 rounded-t-sm transition-all duration-300"
+                              style={{ height: `${Math.max(height, 10)}px` }}
+                            ></div>
+                            {/* 툴팁 */}
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              {Math.round(stat.averageKcal)}kcal
+                            </div>
+                          </div>
+                          <span className="text-sm text-gray-600 mt-2">{dayName}</span>
+                          <span className="text-xs text-gray-500">{date.getMonth() + 1}/{date.getDate()}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="h-48 flex items-center justify-center">
+                    <div className="text-gray-500">데이터가 없습니다</div>
+                  </div>
+                )}
+                {weekStats.length > 0 && (
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-600">
+                      주간 평균: <span className="font-semibold text-orange-600">
+                        {Math.round(weekStats.reduce((sum, stat) => sum + stat.averageKcal, 0) / weekStats.length)}kcal
+                      </span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+
+            {/* Insights Card */}
+            <SectionCard title="인사이트" variant="statistics">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {insights.map((insight, index) => (
+                  <div key={index} className={`${insight.color} rounded-xl p-6 border border-blue-200 hover:shadow-md transition-shadow`}>
+                    <div className="text-3xl mb-3">{insight.icon}</div>
+                    <h4 className="font-semibold text-gray-900 mb-2">{insight.title}</h4>
+                    <p className="text-sm text-gray-600">{insight.description}</p>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+
+            {/* Top Ingredients Card */}
+            <SectionCard title="자주 사용하는 식재료" variant="statistics">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900">TOP 6</h3>
+                  <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                    전체 보기
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {topIngredients.map((ingredient, index) => (
+                    <div key={index} className="border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white hover:border-blue-300">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-2xl">{ingredient.icon}</span>
+                        <div>
+                          <h4 className="font-medium text-gray-900">{ingredient.name}</h4>
+                          <span className="text-sm text-gray-500">{ingredient.category}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">사용 횟수:</span>
+                          <span className="font-medium">{ingredient.usage}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">총 비용:</span>
+                          <span className="font-medium">{ingredient.totalCost}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">평균 가격:</span>
+                          <span className="font-medium">{ingredient.avgPrice}</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
-          </SectionCard>
-
-          {/* Monthly Diet Statistics Card */}
-          <SectionCard title="월간 식단 통계" variant="statistics">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-              {isLoading ? (
-                <div className="h-32 flex items-center justify-center">
-                  <div className="text-gray-500">로딩 중...</div>
-                </div>
-              ) : monthStats ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* 이번 달 평균 칼로리 */}
-                  <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg border border-orange-200">
-                    <div className="text-2xl mb-2">🔥</div>
-                    <h4 className="font-semibold text-gray-900 mb-2">이번 달 평균</h4>
-                    <p className="text-2xl font-bold text-orange-600">
-                      {Math.round(monthStats.averageKcal)}kcal
-                    </p>
-                  </div>
-
-                  {/* 지난달 대비 변화 */}
-                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                    <div className="text-2xl mb-2">📊</div>
-                    <h4 className="font-semibold text-gray-900 mb-2">지난달 대비</h4>
-                    {monthStats.diffFromLast !== null ? (
-                      <p className={`text-2xl font-bold ${
-                        monthStats.diffFromLast > 0 ? 'text-red-600' : 'text-green-600'
-                      }`}>
-                        {monthStats.diffFromLast > 0 ? '+' : ''}{Math.round(monthStats.diffFromLast)}kcal
-                      </p>
-                    ) : (
-                      <p className="text-lg text-gray-500">변화 없음</p>
-                    )}
-                  </div>
-
-                  {/* 변화율 */}
-                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200">
-                    <div className="text-2xl mb-2">📈</div>
-                    <h4 className="font-semibold text-gray-900 mb-2">변화율</h4>
-                    {monthStats.diffRate !== null ? (
-                      <p className={`text-2xl font-bold ${
-                        monthStats.diffRate > 0 ? 'text-red-600' : 'text-green-600'
-                      }`}>
-                        {monthStats.diffRate > 0 ? '+' : ''}{Math.round(monthStats.diffRate)}%
-                      </p>
-                    ) : (
-                      <p className="text-lg text-gray-500">변화 없음</p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="h-32 flex items-center justify-center">
-                  <div className="text-gray-500">데이터를 불러올 수 없습니다</div>
-                </div>
-              )}
-            </div>
-          </SectionCard>
-
-          {/* Weekly Usage Card */}
-          <SectionCard title="주간 칼로리 추이" variant="statistics">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 7일 칼로리 섭취량</h3>
-              {isLoading ? (
-                <div className="h-48 flex items-center justify-center">
-                  <div className="text-gray-500">로딩 중...</div>
-                </div>
-              ) : weekStats.length > 0 ? (
-                <div className="h-48 flex items-end justify-between gap-2">
-                  {weekStats.map((stat, index) => {
-                    const date = new Date(stat.date);
-                    const dayName = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
-                    const maxKcal = Math.max(...weekStats.map(s => s.averageKcal));
-                    const height = maxKcal > 0 ? (stat.averageKcal / maxKcal) * 100 : 0;
-                    
-                    return (
-                      <div key={index} className="flex-1 flex flex-col items-center">
-                        <div className="w-full bg-gradient-to-t from-orange-500 to-red-500 rounded-t-sm relative group">
-                          <div 
-                            className="w-full bg-gradient-to-t from-orange-500 to-red-500 rounded-t-sm transition-all duration-300"
-                            style={{ height: `${Math.max(height, 10)}px` }}
-                          ></div>
-                          {/* 툴팁 */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            {Math.round(stat.averageKcal)}kcal
-                          </div>
-                        </div>
-                        <span className="text-sm text-gray-600 mt-2">{dayName}</span>
-                        <span className="text-xs text-gray-500">{date.getMonth() + 1}/{date.getDate()}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="h-48 flex items-center justify-center">
-                  <div className="text-gray-500">데이터가 없습니다</div>
-                </div>
-              )}
-              {weekStats.length > 0 && (
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-600">
-                    주간 평균: <span className="font-semibold text-orange-600">
-                      {Math.round(weekStats.reduce((sum, stat) => sum + stat.averageKcal, 0) / weekStats.length)}kcal
-                    </span>
-                  </p>
-                </div>
-              )}
-            </div>
-          </SectionCard>
-
-          {/* Insights Card */}
-          <SectionCard title="인사이트" variant="statistics">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {insights.map((insight, index) => (
-                <div key={index} className={`${insight.color} rounded-xl p-6 border border-blue-200 hover:shadow-md transition-shadow`}>
-                  <div className="text-3xl mb-3">{insight.icon}</div>
-                  <h4 className="font-semibold text-gray-900 mb-2">{insight.title}</h4>
-                  <p className="text-sm text-gray-600">{insight.description}</p>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-
-          {/* Top Ingredients Card */}
-          <SectionCard title="자주 사용하는 식재료" variant="statistics">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">TOP 6</h3>
-                <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                  전체 보기
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {topIngredients.map((ingredient, index) => (
-                  <div key={index} className="border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white hover:border-blue-300">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-2xl">{ingredient.icon}</span>
-                      <div>
-                        <h4 className="font-medium text-gray-900">{ingredient.name}</h4>
-                        <span className="text-sm text-gray-500">{ingredient.category}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">사용 횟수:</span>
-                        <span className="font-medium">{ingredient.usage}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">총 비용:</span>
-                        <span className="font-medium">{ingredient.totalCost}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">평균 가격:</span>
-                        <span className="font-medium">{ingredient.avgPrice}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </SectionCard>
+            </SectionCard>
+          </div>
         </div>
       </div>
-    </div>
+    </UserGuard>
   );
 }
