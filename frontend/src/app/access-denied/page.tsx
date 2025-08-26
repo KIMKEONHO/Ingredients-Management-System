@@ -5,7 +5,7 @@ export default function AccessDeniedPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 text-center">
         <div className="bg-white p-8 rounded-lg shadow-md">
-          <div className="text-6xl mb-4">��</div>
+          <div className="text-6xl mb-4">🚫</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             접근 권한이 없습니다
           </h1>
@@ -23,7 +23,13 @@ export default function AccessDeniedPage() {
               href="/login"
               className="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors block"
             >
-              로그인하기
+              일반 사용자 로그인
+            </Link>
+            <Link
+              href="/admin/login"
+              className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors block"
+            >
+              관리자 로그인
             </Link>
           </div>
         </div>
