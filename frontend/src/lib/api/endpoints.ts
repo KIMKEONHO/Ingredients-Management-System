@@ -2,8 +2,8 @@
 export const API_ENDPOINTS = {
     // 인증 관련
     AUTH: {
-      LOGIN: '/auth/login',
-      LOGOUT: '/auth/logout',
+      LOGIN: '/users/login',
+      LOGOUT: '/users/logout',
       ME: '/users/me',
       REGISTER: '/auth/register',
     },
@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
     // 관리자 관련
     ADMIN: {
       BASE: '/admin',
+      LOGIN: '/users/admin/login',
       USERS: '/admin/users',
       STATISTICS: '/admin/statistics',
       COMPLAINTS: '/admin/complaints',

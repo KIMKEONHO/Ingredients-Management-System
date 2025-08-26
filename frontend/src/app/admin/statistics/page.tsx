@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import AdminSidebar from '../components/sidebar';
+import AdminGuard from '@/lib/auth/adminGuard';
 
-export default function AdminStatisticsPage() {
+function AdminStatisticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('이번 달');
 
   const timePeriods = ['이번 주', '이번 달', '지난 3개월', '올해'];
@@ -184,5 +185,13 @@ export default function AdminStatisticsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminStatisticsPageWithGuard() {
+  return (
+    <AdminGuard>
+      <AdminStatisticsPage />
+    </AdminGuard>
   );
 }

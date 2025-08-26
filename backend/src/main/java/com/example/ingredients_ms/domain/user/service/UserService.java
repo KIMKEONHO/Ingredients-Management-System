@@ -101,6 +101,29 @@ public class UserService {
         return user;
     }
 
+    @Transactional
+    public User adminLogin(LoginRequestDto loginRequestDto){
+
+        Optional<User> opUser = userRepository.findByEmail(loginRequestDto.getEmail());
+
+        // USER가 있는 USER인지
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+
+        if(user.getRole() != Role.ADMIN){
+            throw new BusinessLogicException(ExceptionCode.NOT_ADMIN);
+        }
+
+        if (!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
+            throw new BusinessLogicException(ExceptionCode.INCORRECT_PASSWORD);
+        }
+
+        return user;
+    }
+
     public void withdraw(String email) {
 
         Optional<User> opUser = userRepository.findByEmail(email);

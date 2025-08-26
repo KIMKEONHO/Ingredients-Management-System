@@ -15,12 +15,13 @@ interface AxiosError {
   response?: {
     data?: {
       message?: string;
+      msg?: string;
     };
   };
 }
 
 export interface LoginRequest {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -48,13 +49,47 @@ export class AuthService {
   // 로그인
   static async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
     try {
-      const response = await apiClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
+      const response = await apiClient.post<{ resultCode: string; msg: string; data: string }>(API_ENDPOINTS.AUTH.LOGIN, credentials);
       
-      // 쿠키는 자동으로 브라우저에 저장되므로 별도 처리 불필요
-      return { success: true, data: response };
+      // 백엔드 RsData 응답 구조에 맞춰 처리
+      if (response.resultCode === "200") {
+        // 로그인 성공 후 사용자 정보를 가져오기 위해 getCurrentUser 호출
+        const userResult = await this.getCurrentUser();
+        
+        if (userResult.success && userResult.data) {
+          return { 
+            success: true, 
+            data: { 
+              user: {
+                id: userResult.data.id,
+                username: userResult.data.username,
+                nickname: userResult.data.nickname,
+                email: userResult.data.email,
+                roles: userResult.data.roles
+              }
+            } 
+          };
+        } else {
+          // getCurrentUser 실패 시 기본 정보로 반환
+          return { 
+            success: true, 
+            data: { 
+              user: { 
+                id: 1, // 임시 ID
+                username: credentials.email, 
+                nickname: credentials.email.split('@')[0], 
+                email: credentials.email, 
+                roles: ['USER'] 
+              } 
+            } 
+          };
+        }
+      } else {
+        return { success: false, error: response.msg || '로그인에 실패했습니다.' };
+      }
     } catch (error: unknown) {
       const errorMessage = error && typeof error === 'object' && 'response' in error 
-        ? (error as AxiosError)?.response?.data?.message 
+        ? (error as AxiosError)?.response?.data?.msg || (error as AxiosError)?.response?.data?.message
         : '로그인에 실패했습니다.';
       return { 
         success: false, 
@@ -63,12 +98,53 @@ export class AuthService {
     }
   }
 
+  // 관리자 로그인
+  static async adminLogin(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
+    try {
+      const response = await apiClient.post<{ resultCode: string; msg: string; data: string }>(API_ENDPOINTS.ADMIN.LOGIN, credentials);
+      
+      // 백엔드 RsData 응답 구조에 맞춰 처리
+      if (response.resultCode === "200") {
+        // 관리자 로그인 성공 시 바로 관리자 권한으로 사용자 정보 반환
+        // getCurrentUser 호출 없이 credentials 정보로 사용자 객체 생성
+        return { 
+          success: true, 
+          data: { 
+            user: {
+              id: Date.now(), // 임시 ID (백엔드에서 실제 ID를 반환하지 않는 경우)
+              username: credentials.email,
+              nickname: credentials.email.split('@')[0], // 이메일에서 닉네임 추출
+              email: credentials.email,
+              roles: ['ADMIN'] // 관리자 권한 명시적 설정
+            }
+          } 
+        };
+      } else {
+        return { success: false, error: response.msg || '관리자 로그인에 실패했습니다.' };
+      }
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as AxiosError)?.response?.data?.msg || (error as AxiosError)?.response?.data?.message
+        : '관리자 로그인에 실패했습니다.';
+      return { 
+        success: false, 
+        error: errorMessage || '관리자 로그인에 실패했습니다.' 
+      };
+    }
+  }
+
   // 로그아웃
   static async logout(): Promise<ApiResponse<void>> {
     try {
-      await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
       
-      // 쿠키는 백엔드에서 제거하므로 별도 처리 불필요
+      // 백엔드에서 쿠키를 제거하므로 별도 처리 불필요
+      // 로컬 스토리지나 세션 스토리지의 사용자 정보도 정리
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
+      }
+      
       return { success: true };
     } catch (error: unknown) {
       const errorMessage = error && typeof error === 'object' && 'response' in error 

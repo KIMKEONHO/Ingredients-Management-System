@@ -74,6 +74,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/*/users/findPW").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/*/users/findID").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/*/users/withdraw").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST,"/api/*/users/admin/login").permitAll()
 
                         // 이메일 관련 api
                         .requestMatchers(HttpMethod.POST, "/api/*/email/verify").permitAll()
