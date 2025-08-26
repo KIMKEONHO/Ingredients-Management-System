@@ -62,14 +62,26 @@ export function useLoginMember() {
 
   const isLogin = loginMember.id !== 0;
 
-  const logout = (callback: () => void) => {
-    fetch("http://localhost:8090/api/v1/members/logout", {
-      method: "DELETE",
-      credentials: "include",
-    }).then(() => {
+  const logout = async (callback: () => void) => {
+    try {
+      const { AuthService } = await import('@/lib/api/services/authService');
+      const result = await AuthService.logout();
+      
+      if (result.success) {
+        removeLoginMember();
+        callback();
+      } else {
+        console.error('로그아웃 실패:', result.error);
+        // 로그아웃 실패해도 로컬 상태는 정리
+        removeLoginMember();
+        callback();
+      }
+    } catch (error) {
+      console.error('로그아웃 에러:', error);
+      // 에러가 발생해도 로컬 상태는 정리
       removeLoginMember();
       callback();
-    });
+    }
   };
 
   const logoutAndHome = () => {
