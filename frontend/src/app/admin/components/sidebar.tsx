@@ -125,6 +125,34 @@ export default function AdminSidebar() {
             </svg>
             메인으로
           </Link>
+          
+          <button
+            onClick={async () => {
+              try {
+                const { AuthService } = await import('@/lib/api/services/authService');
+                const result = await AuthService.logout();
+                
+                if (result.success) {
+                  // 로그아웃 성공 시 로그인 페이지로 이동
+                  window.location.href = '/admin/login';
+                } else {
+                  console.error('로그아웃 실패:', result.error);
+                  // 실패해도 로그인 페이지로 이동
+                  window.location.href = '/admin/login';
+                }
+              } catch (error) {
+                console.error('로그아웃 에러:', error);
+                // 에러 발생 시에도 로그인 페이지로 이동
+                window.location.href = '/admin/login';
+              }
+            }}
+            className="flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200 w-full mt-2"
+          >
+            <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+            </svg>
+            로그아웃
+          </button>
         </div>
       </div>
     </div>
