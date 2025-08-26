@@ -141,5 +141,14 @@ public class UserController {
         return  new RsData<>("204", "닉네임이 변경되었습니다.");
     }
 
+    @PostMapping("/admin/login")
+    public RsData<?> adminLogin(@RequestBody LoginRequestDto loginRequestDto, HttpServletResponse response) {
+
+        User user = userService.adminLogin(loginRequestDto);
+
+        String accessToken = tokenService.makeAuthCookies(user, response);
+
+        return new RsData<>("200", "로그인하였습니다.", accessToken);
+    }
 
 }
