@@ -112,7 +112,12 @@ export default function Header() {
           {isLogin ? (
             <div className="flex items-center gap-3">
               <span className="text-gray-700">{loginMember.nickname}</span>
-              <button onClick={logoutAndHome} className="text-gray-600 hover:text-gray-900">로그아웃</button>
+              <button 
+                onClick={logoutAndHome} 
+                className="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                로그아웃
+              </button>
             </div>
           ) : (
             <>
