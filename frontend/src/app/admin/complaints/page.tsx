@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import AdminSidebar from '../components/sidebar';
+import AdminGuard from '@/lib/auth/adminGuard';
 
 interface Complaint {
   id: string;
@@ -155,7 +156,7 @@ const getDeadlineDisplay = (deadline: string, daysLeft?: number) => {
   return deadline;
 };
 
-export default function ComplaintManagementPage() {
+function ComplaintManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
@@ -556,5 +557,13 @@ export default function ComplaintManagementPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ComplaintManagementPageWithGuard() {
+  return (
+    <AdminGuard>
+      <ComplaintManagementPage />
+    </AdminGuard>
   );
 }

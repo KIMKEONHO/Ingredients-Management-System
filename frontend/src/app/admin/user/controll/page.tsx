@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/sidebar';
+import AdminGuard from '@/lib/auth/adminGuard';
 
 interface Member {
   id: number;
@@ -301,7 +302,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSa
   );
 };
 
-export default function MemberManagementPage() {
+function MemberManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -786,5 +787,13 @@ export default function MemberManagementPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function MemberManagementPageWithGuard() {
+  return (
+    <AdminGuard>
+      <MemberManagementPage />
+    </AdminGuard>
   );
 }
