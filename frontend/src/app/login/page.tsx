@@ -3,12 +3,60 @@
 import Link from "next/link";
 import { useState } from "react";
 import { COLOR_PRESETS } from "@/lib/constants/colors";
+import { AuthService } from "@/lib/api/services/authService";
+import { useRouter } from "next/navigation";
+import { useGlobalLoginMember } from "../stores/auth/loginMamber";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  
+  const router = useRouter();
+  const { setLoginMember } = useGlobalLoginMember();
+  
   const socialLoginForKakaoUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/oauth2/authorization/kakao`;
   const socialLoginForGoogleUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/oauth2/authorization/google`;
   const redirectUrlAfterSocialLogin = 'http://localhost:3000';
+
+  // 일반 로그인 처리
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      setErrorMessage("이메일과 비밀번호를 모두 입력해주세요.");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const result = await AuthService.login({ email, password });
+      
+      if (result.success && result.data) {
+        // 로그인 성공 시 사용자 정보를 스토어에 저장
+        setLoginMember({
+          id: result.data.user.id,
+          nickname: result.data.user.nickname,
+          createDate: new Date().toISOString(),
+          modifyDate: new Date().toISOString(),
+          roles: result.data.user.roles
+        });
+        
+        // 메인 페이지로 이동
+        router.push('/');
+      } else {
+        setErrorMessage(result.error || "로그인에 실패했습니다.");
+      }
+    } catch (error) {
+      setErrorMessage("로그인 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <main className={`min-h-screen ${COLOR_PRESETS.LOGIN_PAGE.background} flex items-center justify-center px-4`}>
@@ -22,9 +70,7 @@ export default function LoginPage() {
 
         <div className={`rounded-2xl ${COLOR_PRESETS.LOGIN_PAGE.card} p-8 shadow-xl ring-1 ring-black/5`}>
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-            }}
+            onSubmit={handleLogin}
             className="space-y-5"
           >
             <div>
@@ -43,8 +89,10 @@ export default function LoginPage() {
                   </svg>
                 </span>
                 <input
-                  type="text"
-                  placeholder="이메일 또는 아이디를 입력하세요"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="이메일을 입력하세요"
                   className={`w-full rounded-lg border ${COLOR_PRESETS.LOGIN_PAGE.border} pl-10 pr-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 ${COLOR_PRESETS.LOGIN_PAGE.focus}`}
                 />
               </div>
@@ -67,6 +115,8 @@ export default function LoginPage() {
                 </span>
                 <input
                   type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="비밀번호를 입력하세요"
                   className={`w-full rounded-lg border ${COLOR_PRESETS.LOGIN_PAGE.border} pl-10 pr-10 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 ${COLOR_PRESETS.LOGIN_PAGE.focus}`}
                 />
@@ -97,13 +147,17 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {errorMessage && (
+                <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              className={`mt-2 w-full rounded-lg ${COLOR_PRESETS.LOGIN_PAGE.button} py-2.5 text-white font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              disabled={isLoading}
+              className={`mt-2 w-full rounded-lg ${COLOR_PRESETS.LOGIN_PAGE.button} py-2.5 text-white font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              로그인
+              {isLoading ? "로그인 중..." : "로그인"}
             </button>
 
             <div className="flex items-center justify-between text-xs text-gray-500">
@@ -117,6 +171,15 @@ export default function LoginPage() {
               <span className="text-gray-300">|</span>
               <Link href="#" className={COLOR_PRESETS.LOGIN_PAGE.hover}>
                 회원가입
+              </Link>
+            </div>
+            
+            <div className="text-center">
+              <Link 
+                href="/admin/login" 
+                className={`text-sm ${COLOR_PRESETS.LOGIN_PAGE.accent} hover:underline`}
+              >
+                관리자 로그인
               </Link>
             </div>
 
