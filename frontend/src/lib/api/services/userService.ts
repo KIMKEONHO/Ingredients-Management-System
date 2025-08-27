@@ -26,6 +26,18 @@ export interface ChangePasswordResponse {
 }
 
 export const userService = {
+  // UserProfile 타입 가드
+  isUserProfile(obj: unknown): obj is UserProfile {
+    return (
+      obj !== null &&
+      typeof obj === 'object' &&
+      'nickName' in obj &&
+      'email' in obj &&
+      'userStatus' in obj &&
+      'createdAt' in obj
+    );
+  },
+
   // 사용자 프로필 조회
   async getUserProfile(): Promise<UserProfileResponse> {
     try {
@@ -33,20 +45,31 @@ export const userService = {
       console.log('userService 응답:', response);
       
       // 백엔드 응답 구조 확인
-      if (response && typeof response === 'object' && 'data' in response) {
-        // 백엔드에서 직접 UserProfile 객체를 보내는 경우
-        return {
-          success: true,
-          data: response.data as UserProfile,
-          message: '프로필 정보를 성공적으로 불러왔습니다.'
-        };
+      if (response && typeof response === 'object') {
+        // response가 UserProfile 객체인지 확인
+        if (this.isUserProfile(response)) {
+          return {
+            success: true,
+            data: response,
+            message: '프로필 정보를 성공적으로 불러왔습니다.'
+          };
+        }
+        
+        // response.data가 UserProfile 객체인지 확인
+        if ('data' in response && this.isUserProfile(response.data)) {
+          return {
+            success: true,
+            data: response.data,
+            message: '프로필 정보를 성공적으로 불러왔습니다.'
+          };
+        }
       }
       
       // 응답이 없는 경우 기본 성공 응답
       return {
         success: true,
-        data: response as UserProfile,
-        message: '프로필 정보를 성공적으로 불러왔습니다.'
+        data: undefined,
+        message: '프로필 정보를 불러올 수 없습니다.'
       };
     } catch (error: unknown) {
       console.error('사용자 프로필 조회 실패:', error);
