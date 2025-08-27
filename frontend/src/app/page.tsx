@@ -1,6 +1,19 @@
-import Link from 'next/link'
+'use client';
+
+import Link from 'next/link';
+import { useGlobalLoginMember } from '@/app/stores/auth/loginMamber';
 
 export default function Home() {
+  const { isLogin, isLoginMemberPending } = useGlobalLoginMember();
+
+  const handleFeatureClick = (e: React.MouseEvent, featurePath: string) => {
+    if (!isLogin && !isLoginMemberPending) {
+      e.preventDefault();
+      // 로그인 페이지로 이동
+      window.location.href = '/login';
+    }
+  };
+
   return (
       <>
         <main className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-purple-50">
@@ -17,10 +30,21 @@ export default function Home() {
                 재고부터 통계, AI 추천까지. 매장의 운영을 단순하고 똑똑하게 만듭니다.
               </p>
               <div className="mt-10 flex items-center justify-center gap-3">
-                <a href="/login" className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200">
-                  시작하기
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/></svg>
-                </a>
+                {!isLoginMemberPending && !isLogin ? (
+                  <a href="/login" className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200">
+                    시작하기
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/></svg>
+                  </a>
+                ) : !isLoginMemberPending && isLogin ? (
+                  <a href="/inventory" className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200">
+                    재고 관리하기
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/></svg>
+                  </a>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-full bg-gray-400 px-6 py-3 font-semibold text-white">
+                    로딩 중...
+                  </div>
+                )}
                 <a href="#features" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-50">
                   기능 보기
                 </a>
@@ -39,31 +63,61 @@ export default function Home() {
 
             <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {/* 재고 관리 */}
-              <div className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-blue-100 transition hover:shadow-md">
+              <Link 
+                href="/inventory" 
+                className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-blue-100 transition hover:shadow-md hover:ring-blue-200"
+                onClick={(e) => handleFeatureClick(e, '/inventory')}
+              >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M3.75 6.75A.75.75 0 0 1 4.5 6h15a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-15a.75.75 0 0 1-.75-.75V6.75Z"/><path d="M7.5 3.75A.75.75 0 0 1 8.25 3h7.5a.75.75 0 0 1 .75.75V6h-9V3.75Z"/></svg>
                 </div>
                 <h3 className="mt-6 text-xl font-semibold text-black">식재료 재고 관리</h3>
                 <p className="mt-2 text-blue-700">입고/출고/유통기한을 한 화면에서 관리하고 알림으로 낭비를 줄입니다.</p>
-              </div>
+                <div className="mt-4 flex items-center text-sm text-blue-600 group-hover:text-blue-700">
+                  <span>{!isLogin && !isLoginMemberPending ? '로그인 후 사용하기' : '바로 사용하기'}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1">
+                    <path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/>
+                  </svg>
+                </div>
+              </Link>
 
               {/* 사용 통계 */}
-              <div className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-purple-100 transition hover:shadow-md">
+              <Link 
+                href="/statistics" 
+                className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-purple-100 transition hover:shadow-md hover:ring-purple-200"
+                onClick={(e) => handleFeatureClick(e, '/statistics')}
+              >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-600">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M3.75 19.5a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 1.5 0v12.75c0 .414-.336.75-.75.75Z"/><path d="M6 18.75a.75.75 0 0 1-.75-.75v-6a.75.75 0 0 1 1.5 0v6c0 .414-.336.75-.75.75Zm4.5 0a.75.75 0 0 1-.75-.75V9a.75.75 0 0 1 1.5 0v9c0 .414-.336.75-.75.75Zm4.5 0a.75.75 0 0 1-.75-.75V6.75a.75.75 0 0 1 1.5 0V18c0 .414-.336.75-.75.75Zm4.5 0a.75.75 0 0 1-.75-.75V12a.75.75 0 0 1 1.5 0v6.75c0 .414-.336.75-.75.75Z"/></svg>
                 </div>
                 <h3 className="mt-6 text-xl font-semibold text-black">식재료 사용 통계</h3>
                 <p className="mt-2 text-purple-700">기간별/메뉴별 사용량을 시각화하고 원가를 추적합니다.</p>
-              </div>
+                <div className="mt-4 flex items-center text-sm text-purple-600 group-hover:text-purple-700">
+                  <span>{!isLogin && !isLoginMemberPending ? '로그인 후 사용하기' : '바로 사용하기'}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1">
+                    <path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/>
+                  </svg>
+                </div>
+              </Link>
 
               {/* AI 메뉴 추천 */}
-              <div className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-blue-100 transition hover:shadow-md">
+              <Link 
+                href="/callender" 
+                className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-blue-100 transition hover:shadow-md hover:ring-blue-200"
+                onClick={(e) => handleFeatureClick(e, '/callender')}
+              >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M12 2.25a9.75 9.75 0 1 0 9.75 9.75A9.761 9.761 0 0 0 12 2.25Zm.75 4.5a.75.75 0 0 0-1.5 0v6a.75.75 0 0 0 .44.68l4.5 2.25a.75.75 0 1 0 .66-1.34L12.75 12.3V6.75Z"/></svg>
                 </div>
                 <h3 className="mt-6 text-xl font-semibold text-black">AI 메뉴 추천</h3>
                 <p className="mt-2 text-blue-700">보유 재고와 판매 추이를 기반으로 판매 가능한 메뉴를 추천합니다.</p>
-              </div>
+                <div className="mt-4 flex items-center text-sm text-blue-600 group-hover:text-blue-700">
+                  <span>{!isLogin && !isLoginMemberPending ? '로그인 후 사용하기' : '바로 사용하기'}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1">
+                    <path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/>
+                  </svg>
+                </div>
+              </Link>
 
               {/* 장바구니 */}
               <Link href="/cart" className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-purple-100 transition hover:shadow-md hover:ring-purple-200">
@@ -72,16 +126,28 @@ export default function Home() {
                 </div>
                 <h3 className="mt-6 text-xl font-semibold text-black">장바구니</h3>
                 <p className="mt-2 text-purple-700">필요한 식재료를 담아 발주서를 쉽고 빠르게 생성합니다.</p>
+                <div className="mt-4 flex items-center text-sm text-purple-600 group-hover:text-purple-700">
+                  <span>바로 사용하기</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1">
+                    <path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/>
+                  </svg>
+                </div>
               </Link>
 
               {/* 민원/문의 */}
-              <div className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-blue-100 transition hover:shadow-md">
+              <Link href="/support" className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-blue-100 transition hover:shadow-md hover:ring-blue-200">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M12 3.75A8.25 8.25 8.25 0 1 0 20.25 12 8.26 8.26 0 0 0 12 3.75Zm0 12.75a.75.75 0 0 1-.53-.22l-2.25-2.25a.75.75 0 0 1 1.06-1.06l1.72 1.72 3.97-3.97a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-.53.22Z"/></svg>
                 </div>
                 <h3 className="mt-6 text-xl font-semibold text-black">민원/문의</h3>
                 <p className="mt-2 text-blue-700">매장 이슈와 요청 사항을 접수하고 처리 현황을 추적합니다.</p>
-              </div>
+                <div className="mt-4 flex items-center text-sm text-blue-600 group-hover:text-blue-700">
+                  <span>바로 사용하기</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1">
+                    <path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/>
+                  </svg>
+                </div>
+              </Link>
             </div>
           </section>
 
@@ -117,10 +183,21 @@ export default function Home() {
               <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-white">재고 데이터를, 매출로 바꾸세요</h3>
               <p className="mt-3 text-blue-100">AI 추천과 자동 통계로 의사결정을 더 빠르고 정확하게.</p>
               <div className="mt-8">
-                <a href="/login" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50">
-                  지금 시작하기
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/></svg>
-                </a>
+                {!isLoginMemberPending && !isLogin ? (
+                  <a href="/login" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50">
+                    지금 시작하기
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/></svg>
+                  </a>
+                ) : !isLoginMemberPending && isLogin ? (
+                  <a href="/inventory" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50">
+                    재고 관리하기
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/></svg>
+                  </a>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/50 px-6 py-3 font-semibold text-white">
+                    로딩 중...
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -131,9 +208,19 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-black">지금 바로 IMS를 경험하세요</h2>
               <p className="mt-4 text-blue-700">로그인하고 1분 만에 매장에 맞는 재고 관리 환경을 구성해보세요.</p>
               <div className="mt-8 flex items-center justify-center gap-3">
-                <a href="/login" className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200">
-                  로그인하고 시작하기
-                </a>
+                {!isLoginMemberPending && !isLogin ? (
+                  <a href="/login" className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200">
+                    로그인하고 시작하기
+                  </a>
+                ) : !isLoginMemberPending && isLogin ? (
+                  <a href="/inventory" className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200">
+                    재고 관리하기
+                  </a>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-full bg-gray-400 px-6 py-3 font-semibold text-white">
+                    로딩 중...
+                  </div>
+                )}
                 <a href="#" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-50">
                   데모 살펴보기
                 </a>

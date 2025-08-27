@@ -177,11 +177,62 @@ export class AuthService {
   static hasAuthCookie(): boolean {
     if (typeof document === 'undefined') return false;
     
-    // 쿠키에서 accessToken 확인 (더 정확한 방법)
+    // 쿠키에서 다양한 인증 토큰 확인
     const cookies = document.cookie.split(';');
-    return cookies.some(cookie => 
-      cookie.trim().startsWith('accessToken=')
+    const hasAccessToken = cookies.some(cookie => 
+      cookie.trim().startsWith('accessToken=') || 
+      cookie.trim().startsWith('token=') ||
+      cookie.trim().startsWith('auth=') ||
+      cookie.trim().startsWith('JSESSIONID=')
     );
+    
+    // 로컬 스토리지에서 인증 정보 확인
+    const hasAuthHeader = localStorage.getItem('authToken') || 
+                         sessionStorage.getItem('authToken') ||
+                         localStorage.getItem('isLoggedIn') === 'true';
+    
+    console.log('쿠키 확인:', { 
+      hasAccessToken, 
+      hasAuthHeader, 
+      cookies: cookies.map(c => c.trim()),
+      localStorage: {
+        isLoggedIn: localStorage.getItem('isLoggedIn'),
+        authToken: localStorage.getItem('authToken'),
+        userData: localStorage.getItem('userData')
+      }
+    });
+    
+    return hasAccessToken || !!hasAuthHeader;
+  }
+
+  // 더 정확한 인증 상태 확인
+  static async checkAuthStatus(): Promise<boolean> {
+    try {
+      // 환경변수가 없으면 기본값 사용
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
+      
+      const response = await fetch(`${baseUrl}/api/v1/users/me`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('백엔드 인증 상태 확인 결과:', response.status, response.ok);
+      return response.ok;
+    } catch (error) {
+      console.error('인증 상태 확인 실패:', error);
+      // 에러가 발생해도 로컬 스토리지에 로그인 정보가 있으면 true 반환
+      if (typeof window !== 'undefined') {
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        const userData = localStorage.getItem('userData');
+        if (isLoggedIn && userData) {
+          console.log('백엔드 연결 실패했지만 로컬 로그인 정보 존재, 인증 성공으로 처리');
+          return true;
+        }
+      }
+      return false;
+    }
   }
 
   // 사용자 등록
