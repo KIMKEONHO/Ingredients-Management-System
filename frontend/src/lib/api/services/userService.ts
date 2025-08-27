@@ -43,12 +43,13 @@ export const userService = {
       }
       
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('사용자 프로필 조회 실패:', error);
       
       // HTTP 상태 코드에 따른 오류 처리
-      if (error.response) {
-        const status = error.response.status;
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as { response?: { status?: number } };
+        const status = errorResponse.response?.status;
         if (status === 401) {
           throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
         } else if (status === 403) {
@@ -59,8 +60,11 @@ export const userService = {
       }
       
       // 세션 관련 오류 처리
-      if (error.message && error.message.includes('Session was invalidated')) {
-        throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = error as { message?: string };
+        if (errorMessage.message && errorMessage.message.includes('Session was invalidated')) {
+          throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
+        }
       }
       
       throw new Error('사용자 프로필을 불러올 수 없습니다.');
@@ -94,7 +98,7 @@ export const userService = {
         success: true,
         message: '닉네임이 성공적으로 변경되었습니다.'
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('닉네임 변경 실패:', error);
       throw new Error('닉네임 변경에 실패했습니다.');
     }
@@ -198,7 +202,7 @@ export const userService = {
         
         throw new Error(`일부 업데이트에 실패했습니다: ${failedMessages}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('사용자 프로필 업데이트 실패:', error);
       throw new Error('프로필 업데이트에 실패했습니다.');
     }
@@ -243,7 +247,7 @@ export const userService = {
         success: true,
         message: '비밀번호가 성공적으로 변경되었습니다.'
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('비밀번호 변경 실패:', error);
       throw new Error('비밀번호 변경에 실패했습니다.');
     }
@@ -254,7 +258,7 @@ export const userService = {
     try {
       const response = await apiClient.delete('/api/v1/users/account');
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('계정 삭제 실패:', error);
       throw new Error('계정 삭제에 실패했습니다.');
     }
