@@ -29,11 +29,11 @@ export const userService = {
   // 사용자 프로필 조회
   async getUserProfile(): Promise<UserProfileResponse> {
     try {
-      const response = await apiClient.post('/api/v1/users/profile');
+      const response = await apiClient.post<Record<string, unknown>>('/api/v1/users/profile');
       console.log('userService 응답:', response);
       
       // 백엔드 응답 구조 확인
-      if (response.data && typeof response.data === 'object') {
+      if (response && typeof response === 'object' && 'data' in response) {
         // 백엔드에서 직접 UserProfile 객체를 보내는 경우
         return {
           success: true,
@@ -74,14 +74,14 @@ export const userService = {
   // 닉네임 변경
   async updateNickname(nickname: string): Promise<UserProfileResponse> {
     try {
-      const response = await apiClient.post('/api/v1/users/exchange/nickname', {
+      const response = await apiClient.post<Record<string, unknown>>('/api/v1/users/exchange/nickname', {
         nickname: nickname
       });
       
       console.log('닉네임 변경 응답:', response);
       
       // 백엔드 응답 구조 확인 및 안전한 처리
-      if (response.data && typeof response.data === 'object') {
+      if (response && typeof response === 'object' && 'data' in response) {
         const responseData = response.data as Record<string, unknown>;
         // 백엔드에서 RsData 형태로 응답하는 경우
         if ('resultCode' in responseData || 'success' in responseData) {
@@ -212,14 +212,14 @@ export const userService = {
   // 비밀번호 변경
   async changePassword(request: ChangePasswordRequest): Promise<ChangePasswordResponse> {
     try {
-      const response = await apiClient.post('/api/v1/users/exchange/password', {
+      const response = await apiClient.post<Record<string, unknown>>('/api/v1/users/exchange/password', {
         password: request.newPassword
       });
       
       console.log('비밀번호 변경 응답:', response);
       
       // 백엔드 RsData 응답 구조 확인 및 처리
-      if (response.data && typeof response.data === 'object') {
+      if (response && typeof response === 'object' && 'data' in response) {
         const responseData = response.data as Record<string, unknown>;
         // RsData 형태: { resultCode: "204", msg: "비밀번호가 변경되었습니다.", data: null }
         if ('resultCode' in responseData && typeof responseData.resultCode === 'string') {
