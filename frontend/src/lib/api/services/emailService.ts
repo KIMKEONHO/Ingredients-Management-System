@@ -22,9 +22,10 @@ export const emailService = {
       
       // 백엔드 RsData 응답 구조 확인 및 처리
       if (response.data && typeof response.data === 'object') {
-        if ('resultCode' in response.data) {
-          const resultCode = response.data.resultCode;
-          const message = response.data.msg || '인증 메일이 발송되었습니다.';
+        const responseData = response.data as Record<string, unknown>;
+        if ('resultCode' in responseData && typeof responseData.resultCode === 'string') {
+          const resultCode = responseData.resultCode;
+          const message = (responseData.msg as string) || '인증 메일이 발송되었습니다.';
           
           // 200번대는 성공
           if (resultCode.startsWith('2')) {
@@ -39,7 +40,7 @@ export const emailService = {
             };
           }
         }
-        return response.data;
+        return responseData as EmailResponse;
       }
       
       return {
@@ -64,9 +65,10 @@ export const emailService = {
       
       // 백엔드 RsData 응답 구조 확인 및 처리
       if (response.data && typeof response.data === 'object') {
-        if ('resultCode' in response.data) {
-          const resultCode = response.data.resultCode;
-          const message = response.data.msg || '인증되었습니다.';
+        const responseData = response.data as Record<string, unknown>;
+        if ('resultCode' in responseData && typeof responseData.resultCode === 'string') {
+          const resultCode = responseData.resultCode;
+          const message = (responseData.msg as string) || '인증되었습니다.';
           
           // 200번대는 성공
           if (resultCode.startsWith('2')) {
@@ -81,7 +83,7 @@ export const emailService = {
             };
           }
         }
-        return response.data;
+        return responseData as EmailResponse;
       }
       
       return {

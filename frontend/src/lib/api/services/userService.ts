@@ -37,12 +37,12 @@ export const userService = {
         // 백엔드에서 직접 UserProfile 객체를 보내는 경우
         return {
           success: true,
-          data: response.data,
+          data: response.data as UserProfile,
           message: '프로필 정보를 성공적으로 불러왔습니다.'
         };
       }
       
-      return response.data;
+      return response.data as UserProfileResponse;
     } catch (error: unknown) {
       console.error('사용자 프로필 조회 실패:', error);
       
@@ -82,15 +82,16 @@ export const userService = {
       
       // 백엔드 응답 구조 확인 및 안전한 처리
       if (response.data && typeof response.data === 'object') {
+        const responseData = response.data as Record<string, unknown>;
         // 백엔드에서 RsData 형태로 응답하는 경우
-        if ('resultCode' in response.data || 'success' in response.data) {
+        if ('resultCode' in responseData || 'success' in responseData) {
           return {
             success: true,
-            message: response.data.msg || '닉네임이 성공적으로 변경되었습니다.'
+            message: (responseData.msg as string) || '닉네임이 성공적으로 변경되었습니다.'
           };
         }
         // 기타 응답 구조
-        return response.data;
+        return responseData as UserProfileResponse;
       }
       
       // 응답이 없는 경우 기본 성공 응답
@@ -219,10 +220,11 @@ export const userService = {
       
       // 백엔드 RsData 응답 구조 확인 및 처리
       if (response.data && typeof response.data === 'object') {
+        const responseData = response.data as Record<string, unknown>;
         // RsData 형태: { resultCode: "204", msg: "비밀번호가 변경되었습니다.", data: null }
-        if ('resultCode' in response.data) {
-          const resultCode = response.data.resultCode;
-          const message = response.data.msg || '비밀번호가 변경되었습니다.';
+        if ('resultCode' in responseData && typeof responseData.resultCode === 'string') {
+          const resultCode = responseData.resultCode;
+          const message = (responseData.msg as string) || '비밀번호가 변경되었습니다.';
           
           // 200번대는 성공
           if (resultCode.startsWith('2')) {
@@ -239,7 +241,7 @@ export const userService = {
         }
         
         // 기타 응답 구조
-        return response.data;
+        return responseData as ChangePasswordResponse;
       }
       
       // 응답이 없는 경우 기본 성공 응답
@@ -256,7 +258,7 @@ export const userService = {
   // 사용자 계정 삭제
   async deleteAccount(): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await apiClient.delete('/api/v1/users/account');
+      const response = await apiClient.delete<{ success: boolean; message?: string }>('/api/v1/users/account');
       return response.data;
     } catch (error: unknown) {
       console.error('계정 삭제 실패:', error);
