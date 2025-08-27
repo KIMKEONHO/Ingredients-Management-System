@@ -3,6 +3,7 @@ package com.example.ingredients_ms.domain.user.controller;
 import com.example.ingredients_ms.domain.user.dto.request.*;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.FindIdResponseDto;
+import com.example.ingredients_ms.domain.user.dto.response.ProfileReposeDto;
 import com.example.ingredients_ms.domain.user.dto.response.ValidUserResponseDto;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.service.UserService;
@@ -138,7 +139,18 @@ public class UserController {
             @RequestBody ExchangeNickNameRequestDto requestDto
     ){
         userService.changeNickName(currentUser.getEmail(), requestDto.getNickname());
-        return  new RsData<>("204", "닉네임이 변경되었습니다.");
+        return new RsData<>("204", "닉네임이 변경되었습니다.");
+    }
+
+    @PostMapping("/exchange/phone")
+    public RsData<?> exchangePhone(
+            @CurrentUser SecurityUser currentUser,
+            @RequestBody ExchangePhoneNumRequestDto requestDto
+    ){
+
+        userService.changePhoneNum(currentUser.getEmail(), requestDto.getPhoneNum()) ;
+
+        return new RsData<>("204","핸드폰 번호가 변경되었습니다.");
     }
 
     @PostMapping("/admin/login")
@@ -149,6 +161,14 @@ public class UserController {
         String accessToken = tokenService.makeAuthCookies(user, response);
 
         return new RsData<>("200", "로그인하였습니다.", accessToken);
+    }
+
+    @PostMapping("/profile")
+    public RsData<?> getProfile(@CurrentUser SecurityUser currentUser){
+
+        ProfileReposeDto response = userService.getProfile(currentUser.getId());
+
+        return new RsData<>("200","정보를 찾았습니다.", response);
     }
 
 }
