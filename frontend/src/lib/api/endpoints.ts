@@ -26,7 +26,8 @@ export const API_ENDPOINTS = {
     
     // 재고 관련
     INVENTORY: {
-      BASE: '/inventory',
+      BASE: '/inventory/',
+      MY: '/inventory/my',
       ITEMS: '/inventory/items',
       STOCK: '/inventory/stock',
       ORDERS: '/inventory/orders',
@@ -44,7 +45,11 @@ export const API_ENDPOINTS = {
       WEEK_STATISTICS: '/diet/week/statistics', // 주간 칼로리 통계
     },
 
-    
+    // 식재료 관련
+    INGREDIENT: {
+      BASE: '/ingredient/',
+    },
+
   } as const;
   
   // API URL 생성 헬퍼 함수
