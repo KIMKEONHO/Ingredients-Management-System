@@ -67,12 +67,19 @@ export default function MyPage() {
         } else {
           setMessage(response.message || '프로필 정보를 불러올 수 없습니다.');
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('프로필 정보 로딩 실패:', error);
         
         // HTTP 상태 코드 확인
         if (error && typeof error === 'object' && 'response' in error) {
-          const errorResponse = error as any;
+          const errorResponse = error as { 
+            response?: { 
+              status?: number; 
+              statusText?: string; 
+              data?: unknown; 
+              headers?: unknown; 
+            } 
+          };
           if (errorResponse.response?.status === 403) {
             setMessage('접근 권한이 없습니다. 로그인 상태를 확인해주세요.');
             console.log('403 에러 상세 정보:', {
@@ -144,7 +151,7 @@ export default function MyPage() {
       } else {
         setMessage(response.message || "프로필 업데이트에 실패했습니다.");
       }
-    } catch (error) {
+    } catch (error: unknown) {
       setMessage("프로필 업데이트에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false);
@@ -159,7 +166,7 @@ export default function MyPage() {
         if (response.success && response.data) {
           setProfile(response.data);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('프로필 정보 복원 실패:', error);
         // 세션 오류인 경우 자동 로그아웃
         if (error instanceof Error && (error.message.includes('세션') || 
