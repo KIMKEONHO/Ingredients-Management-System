@@ -42,7 +42,12 @@ export const userService = {
         };
       }
       
-      return response.data as UserProfileResponse;
+      // 응답이 없는 경우 기본 성공 응답
+      return {
+        success: true,
+        data: response as UserProfile,
+        message: '프로필 정보를 성공적으로 불러왔습니다.'
+      };
     } catch (error: unknown) {
       console.error('사용자 프로필 조회 실패:', error);
       
@@ -90,8 +95,11 @@ export const userService = {
             message: (responseData.msg as string) || '닉네임이 성공적으로 변경되었습니다.'
           };
         }
-        // 기타 응답 구조
-        return responseData as UserProfileResponse;
+        // 기타 응답 구조는 기본 성공 응답으로 처리
+        return {
+          success: true,
+          message: '닉네임이 성공적으로 변경되었습니다.'
+        };
       }
       
       // 응답이 없는 경우 기본 성공 응답
@@ -240,8 +248,11 @@ export const userService = {
           }
         }
         
-        // 기타 응답 구조
-        return responseData as ChangePasswordResponse;
+        // 기타 응답 구조는 기본 성공 응답으로 처리
+        return {
+          success: true,
+          message: '비밀번호가 성공적으로 변경되었습니다.'
+        };
       }
       
       // 응답이 없는 경우 기본 성공 응답
@@ -259,7 +270,7 @@ export const userService = {
   async deleteAccount(): Promise<{ success: boolean; message?: string }> {
     try {
       const response = await apiClient.delete<{ success: boolean; message?: string }>('/api/v1/users/account');
-      return response.data;
+      return response;
     } catch (error: unknown) {
       console.error('계정 삭제 실패:', error);
       throw new Error('계정 삭제에 실패했습니다.');
