@@ -14,6 +14,24 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   
+  // 아이디 찾기 관련 상태
+  const [showFindIdModal, setShowFindIdModal] = useState(false);
+  const [findIdName, setFindIdName] = useState("");
+  const [findIdPhone, setFindIdPhone] = useState("");
+  const [findIdResult, setFindIdResult] = useState("");
+  const [isFindingId, setIsFindingId] = useState(false);
+  
+  // 비밀번호 찾기 관련 상태
+  const [showFindPwModal, setShowFindPwModal] = useState(false);
+  const [findPwStep, setFindPwStep] = useState(1); // 1: 이메일 입력, 2: 인증코드 입력, 3: 비밀번호 찾기 처리
+  const [findPwEmail, setFindPwEmail] = useState("");
+  const [findPwVerifyCode, setFindPwVerifyCode] = useState("");
+  const [isFindingPw, setIsFindingPw] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [findPwMessage, setFindPwMessage] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+  
   const router = useRouter();
   const { setLoginMember } = useGlobalLoginMember();
   
@@ -79,6 +97,172 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 아이디 찾기 처리
+  const handleFindId = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!findIdName || !findIdPhone) {
+      setFindIdResult("이름과 전화번호를 모두 입력해주세요.");
+      return;
+    }
+
+    setIsFindingId(true);
+    setFindIdResult("");
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/users/findID?phoneNum=${encodeURIComponent(findIdPhone)}&name=${encodeURIComponent(findIdName)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.resultCode === '200') {
+        setFindIdResult(`찾은 아이디: ${data.data.email}`);
+      } else {
+        setFindIdResult(data.msg || "아이디를 찾을 수 없습니다.");
+      }
+    } catch (error) {
+      setFindIdResult("아이디 찾기 중 오류가 발생했습니다.");
+    } finally {
+      setIsFindingId(false);
+    }
+  };
+
+  // 이메일 인증코드 발송 (비밀번호 찾기용)
+  const handleSendVerificationCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!findPwEmail) {
+      setFindPwMessage("이메일을 입력해주세요.");
+      return;
+    }
+
+    setIsSendingEmail(true);
+    setFindPwMessage("");
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/email/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mail: findPwEmail }),
+      });
+
+      const data = await response.json();
+      
+      if (data.resultCode === '201') {
+        setFindPwMessage("인증 메일이 발송되었습니다. 이메일을 확인해주세요.");
+        setFindPwStep(2); // 인증코드 입력 단계로 이동
+      } else {
+        setFindPwMessage(data.msg || "인증 메일 발송에 실패했습니다.");
+      }
+    } catch (error) {
+      setFindPwMessage("인증 메일 발송 중 오류가 발생했습니다.");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  // 이메일 인증코드 확인 (비밀번호 찾기용)
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!findPwVerifyCode) {
+      setFindPwMessage("인증코드를 입력해주세요.");
+      return;
+    }
+
+    setIsVerifyingCode(true);
+    setFindPwMessage("");
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/email/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          mail: findPwEmail, 
+          verifyCode: findPwVerifyCode 
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.resultCode === '201') {
+        setFindPwMessage("이메일 인증이 완료되었습니다. 비밀번호 찾기를 진행합니다.");
+        setEmailVerified(true);
+        setFindPwStep(3); // 비밀번호 찾기 처리 단계로 이동
+        // 인증 완료 후 바로 비밀번호 찾기 처리
+        handleFindPwAfterVerification();
+      } else {
+        setFindPwMessage(data.msg || "인증코드가 올바르지 않습니다.");
+      }
+    } catch (error) {
+      setFindPwMessage("인증코드 확인 중 오류가 발생했습니다.");
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  };
+
+  // 인증 완료 후 비밀번호 찾기 처리
+  const handleFindPwAfterVerification = async () => {
+    setIsFindingPw(true);
+    setFindPwMessage("");
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/users/findPW`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: findPwEmail }),
+      });
+
+      const data = await response.json();
+      
+      if (data.resultCode === '201') {
+        setFindPwMessage("임시 비밀번호가 이메일로 전송되었습니다. 이메일을 확인해주세요.");
+        setTimeout(() => {
+          resetFindPwModal();
+        }, 3000);
+      } else {
+        setFindPwMessage(data.msg || "비밀번호 찾기에 실패했습니다.");
+      }
+    } catch (error) {
+      setFindPwMessage("비밀번호 찾기 중 오류가 발생했습니다.");
+    } finally {
+      setIsFindingPw(false);
+    }
+  };
+
+  // 회원가입 페이지로 이동
+  const handleSignup = () => {
+    router.push('/signup');
+  };
+
+  // 아이디 찾기 모달 초기화
+  const resetFindIdModal = () => {
+    setShowFindIdModal(false);
+    setFindIdName("");
+    setFindIdPhone("");
+    setFindIdResult("");
+  };
+
+  // 비밀번호 찾기 모달 초기화
+  const resetFindPwModal = () => {
+    setShowFindPwModal(false);
+    setFindPwStep(1);
+    setFindPwEmail("");
+    setFindPwVerifyCode("");
+    setFindPwMessage("");
+    setEmailVerified(false);
   };
 
   return (
@@ -184,17 +368,29 @@ export default function LoginPage() {
             </button>
 
             <div className="flex items-center justify-between text-xs text-gray-500">
-              <Link href="#" className={COLOR_PRESETS.LOGIN_PAGE.hover}>
+              <button 
+                type="button"
+                onClick={() => setShowFindIdModal(true)}
+                className={COLOR_PRESETS.LOGIN_PAGE.hover}
+              >
                 아이디 찾기
-              </Link>
+              </button>
               <span className="text-gray-300">|</span>
-              <Link href="#" className={COLOR_PRESETS.LOGIN_PAGE.hover}>
+              <button 
+                type="button"
+                onClick={() => setShowFindPwModal(true)}
+                className={COLOR_PRESETS.LOGIN_PAGE.hover}
+              >
                 비밀번호 찾기
-              </Link>
+              </button>
               <span className="text-gray-300">|</span>
-              <Link href="#" className={COLOR_PRESETS.LOGIN_PAGE.hover}>
+              <button 
+                type="button"
+                onClick={handleSignup}
+                className={COLOR_PRESETS.LOGIN_PAGE.hover}
+              >
                 회원가입
-              </Link>
+              </button>
             </div>
             
             <div className="text-center">
@@ -242,6 +438,233 @@ export default function LoginPage() {
         </div>
         </section>
       </div>
+
+      {/* 아이디 찾기 모달 */}
+      {showFindIdModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`bg-white rounded-lg p-6 w-96 max-w-md ${COLOR_PRESETS.LOGIN_PAGE.card}`}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">아이디 찾기</h3>
+              <button
+                onClick={resetFindIdModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleFindId} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  이름
+                </label>
+                <input
+                  type="text"
+                  value={findIdName}
+                  onChange={(e) => setFindIdName(e.target.value)}
+                  placeholder="이름을 입력하세요"
+                  className={`w-full rounded-lg border ${COLOR_PRESETS.LOGIN_PAGE.border} px-3 py-2 text-sm focus:outline-none focus:ring-2 ${COLOR_PRESETS.LOGIN_PAGE.focus}`}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  전화번호
+                </label>
+                <input
+                  type="tel"
+                  value={findIdPhone}
+                  onChange={(e) => setFindIdPhone(e.target.value)}
+                  placeholder="전화번호를 입력하세요"
+                  className={`w-full rounded-lg border ${COLOR_PRESETS.LOGIN_PAGE.border} px-3 py-2 text-sm focus:outline-none focus:ring-2 ${COLOR_PRESETS.LOGIN_PAGE.focus}`}
+                  required
+                />
+              </div>
+              
+              {findIdResult && (
+                <div className={`p-3 rounded-lg text-sm ${
+                  findIdResult.includes('찾은 아이디') 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {findIdResult}
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={isFindingId}
+                  className={`flex-1 rounded-lg ${COLOR_PRESETS.LOGIN_PAGE.button} py-2 text-white font-medium disabled:opacity-50`}
+                >
+                  {isFindingId ? "찾는 중..." : "아이디 찾기"}
+                </button>
+                <button
+                  type="button"
+                  onClick={resetFindIdModal}
+                  className="flex-1 rounded-lg border border-gray-300 py-2 text-gray-700 font-medium hover:bg-gray-50"
+                >
+                  취소
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 비밀번호 찾기 모달 */}
+      {showFindPwModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`bg-white rounded-lg p-6 w-96 max-w-md ${COLOR_PRESETS.LOGIN_PAGE.card}`}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">비밀번호 찾기</h3>
+              <button
+                onClick={resetFindPwModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 진행 단계 표시 */}
+            <div className="flex items-center justify-center mb-6">
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  findPwStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                }`}>
+                  1
+                </div>
+                <div className={`w-12 h-0.5 mx-2 ${
+                  findPwStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'
+                }`}></div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  findPwStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                }`}>
+                  2
+                </div>
+              </div>
+            </div>
+            
+            {/* 단계별 폼 */}
+            {findPwStep === 1 && (
+              <form onSubmit={handleSendVerificationCode} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    이메일 주소
+                  </label>
+                  <input
+                    type="email"
+                    value={findPwEmail}
+                    onChange={(e) => setFindPwEmail(e.target.value)}
+                    placeholder="가입한 이메일을 입력하세요"
+                    className={`w-full rounded-lg border ${COLOR_PRESETS.LOGIN_PAGE.border} px-3 py-2 text-sm focus:outline-none focus:ring-2 ${COLOR_PRESETS.LOGIN_PAGE.focus}`}
+                    required
+                  />
+                </div>
+                
+                {findPwMessage && (
+                  <div className={`p-3 rounded-lg text-sm ${
+                    findPwMessage.includes('발송되었습니다') 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {findPwMessage}
+                  </div>
+                )}
+                
+                <button
+                  type="submit"
+                  disabled={isSendingEmail}
+                  className={`w-full rounded-lg ${COLOR_PRESETS.LOGIN_PAGE.button} py-2 text-white font-medium disabled:opacity-50`}
+                >
+                  {isSendingEmail ? "발송 중..." : "인증 메일 발송"}
+                </button>
+              </form>
+            )}
+
+            {findPwStep === 2 && (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    인증코드
+                  </label>
+                  <input
+                    type="text"
+                    value={findPwVerifyCode}
+                    onChange={(e) => setFindPwVerifyCode(e.target.value)}
+                    placeholder="이메일로 받은 인증코드를 입력하세요"
+                    className={`w-full rounded-lg border ${COLOR_PRESETS.LOGIN_PAGE.border} px-3 py-2 text-sm focus:outline-none focus:ring-2 ${COLOR_PRESETS.LOGIN_PAGE.focus}`}
+                    required
+                  />
+                </div>
+                
+                {findPwMessage && (
+                  <div className={`p-3 rounded-lg text-sm ${
+                    findPwMessage.includes('완료되었습니다') 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {findPwMessage}
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={isVerifyingCode}
+                    className={`flex-1 rounded-lg ${COLOR_PRESETS.LOGIN_PAGE.button} py-2 text-white font-medium disabled:opacity-50`}
+                  >
+                    {isVerifyingCode ? "확인 중..." : "인증코드 확인"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFindPwStep(1)}
+                    className="flex-1 rounded-lg border border-gray-300 py-2 text-white font-medium hover:bg-gray-50"
+                  >
+                    이전
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {findPwStep === 3 && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">이메일 인증 완료</h4>
+                  <p className="text-sm text-gray-600">임시 비밀번호를 발송하고 있습니다...</p>
+                </div>
+                
+                {findPwMessage && (
+                  <div className={`p-3 rounded-lg text-sm ${
+                    findPwMessage.includes('전송되었습니다') 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {findPwMessage}
+                  </div>
+                )}
+                
+                {isFindingPw && (
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-sm text-gray-600 mt-2">처리 중...</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

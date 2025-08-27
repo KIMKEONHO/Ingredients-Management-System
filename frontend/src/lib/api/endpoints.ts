@@ -2,23 +2,23 @@
 export const API_ENDPOINTS = {
     // 인증 관련
     AUTH: {
-      LOGIN: '/users/login',
-      LOGOUT: '/users/logout',
-      ME: '/users/me',
+      LOGIN: '/api/v1/users/login',
+      LOGOUT: '/api/v1/users/logout',
+      ME: '/api/v1/users/me',
       REGISTER: '/auth/register',
     },
     
     // 사용자 관련
     USERS: {
-      BASE: '/users',
-      PROFILE: '/users/profile',
-      UPDATE: '/users/update',
+      BASE: '/api/v1/users',
+      PROFILE: '/api/v1/users/profile',
+      UPDATE: '/api/v1/users/update',
     },
     
     // 관리자 관련
     ADMIN: {
       BASE: '/admin',
-      LOGIN: '/users/admin/login',
+      LOGIN: '/api/v1/users/admin/login',
       USERS: '/admin/users',
       STATISTICS: '/admin/statistics',
       COMPLAINTS: '/admin/complaints',
