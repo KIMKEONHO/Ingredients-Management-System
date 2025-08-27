@@ -46,7 +46,7 @@ export const emailService = {
         success: true,
         message: '인증 메일이 발송되었습니다.'
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('이메일 인증코드 발송 실패:', error);
       throw new Error('인증 메일 발송에 실패했습니다.');
     }
@@ -88,7 +88,7 @@ export const emailService = {
         success: true,
         message: '인증되었습니다.'
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('이메일 인증코드 검증 실패:', error);
       throw new Error('인증코드 검증에 실패했습니다.');
     }

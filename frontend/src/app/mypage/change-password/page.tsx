@@ -81,7 +81,7 @@ export default function ChangePassword() {
       } else {
         setMessage(response.message || "인증코드 발송에 실패했습니다.");
       }
-    } catch (error) {
+    } catch (error: unknown) {
       setMessage("인증코드 발송에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsSendingCode(false);
@@ -108,7 +108,7 @@ export default function ChangePassword() {
       } else {
         setMessage(response.message || "인증코드가 올바르지 않습니다.");
       }
-    } catch (error) {
+    } catch (error: unknown) {
       setMessage("인증코드 검증에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsVerifyingCode(false);
@@ -260,7 +260,7 @@ export default function ChangePassword() {
       } else {
         setMessage(response.message || "비밀번호 변경에 실패했습니다.");
       }
-    } catch (error) {
+    } catch (error: unknown) {
       setMessage("비밀번호 변경에 실패했습니다. 현재 비밀번호를 확인해주세요.");
     } finally {
       setIsLoading(false);
