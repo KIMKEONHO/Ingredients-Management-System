@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { inventoryService, FoodInventory, CreateFoodInventoryRequest } from '@/lib/api/services/inventoryService'
+import { ingredientService, Ingredient } from '@/lib/api/services/ingredientService'
 
 interface InventoryItem {
   id: number
@@ -16,115 +18,50 @@ interface InventoryItem {
   image: string
 }
 
+import { UserGuard } from '@/lib/auth/authGuard';
+
 export default function InventoryPage() {
+  return (
+      <InventoryContent />
+  );
+}
+
+function InventoryContent() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false)
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
-    {
-      id: 1,
-      name: '토마토',
-      category: '채소',
-      quantity: '400g',
-      storageMethod: '냉장',
-      expiryDate: '2024-01-25',
-      addedDate: '2024-01-20',
-      status: '폐기',
-      isExpired: true,
-      description: '신선한 유기농 토마토, 샐러드와 요리에 활용',
-      image: '/images/tomato.jpg'
-    },
-    {
-      id: 2,
-      name: '브로콜리',
-      category: '채소',
-      quantity: '300g',
-      storageMethod: '냉장',
-      expiryDate: '2024-01-26',
-      addedDate: '2024-01-23',
-      status: '보관중',
-      isExpired: true,
-      description: '영양이 풍부한 브로콜리, 찜이나 볶음 요리에',
-      image: '/images/broccoli.jpg'
-    },
-    {
-      id: 3,
-      name: '바나나',
-      category: '과일',
-      quantity: '6개',
-      storageMethod: '실온',
-      expiryDate: '2024-01-27',
-      addedDate: '2024-01-24',
-      status: '보관중',
-      isExpired: true,
-      description: '달콤한 바나나, 간식이나 스무디에 활용',
-      image: '/images/banana.jpg'
-    },
-    {
-      id: 4,
-      name: '우유',
-      category: '유제품',
-      quantity: '1L',
-      storageMethod: '냉장',
-      expiryDate: '2024-01-28',
-      addedDate: '2024-01-22',
-      status: '보관중',
-      isExpired: true,
-      description: '신선한 우유, 커피나 베이킹에 활용',
-      image: '/images/milk.jpg'
-    },
-    {
-      id: 5,
-      name: '닭가슴살',
-      category: '육류',
-      quantity: '500g',
-      storageMethod: '냉장',
-      expiryDate: '2024-01-30',
-      addedDate: '2024-01-20',
-      status: '보관중',
-      isExpired: true,
-      description: '저지방 닭가슴살, 다이어트 식단에 적합',
-      image: '/images/chicken.jpg'
-    },
-    {
-      id: 6,
-      name: '달걀',
-      category: '축산물',
-      quantity: '12개',
-      storageMethod: '냉장',
-      expiryDate: '2024-02-10',
-      addedDate: '2024-01-18',
-      status: '보관중',
-      isExpired: false,
-      description: '신선한 달걀, 다양한 요리에 활용 가능',
-      image: '/images/eggs.jpg'
-    },
-    {
-      id: 7,
-      name: '양파',
-      category: '채소',
-      quantity: '1kg',
-      storageMethod: '실온',
-      expiryDate: '2024-02-15',
-      addedDate: '2024-01-25',
-      status: '보관중',
-      isExpired: false,
-      description: '기본 양념용 양파, 다양한 요리의 기본 재료',
-      image: '/images/onion.jpg'
-    },
-    {
-      id: 8,
-      name: '감자',
-      category: '채소',
-      quantity: '2kg',
-      storageMethod: '실온',
-      expiryDate: '2024-02-20',
-      addedDate: '2024-01-26',
-      status: '보관중',
-      isExpired: false,
-      description: '다양한 요리에 활용 가능한 감자',
-      image: '/images/potato.jpg'
-    }
-  ])
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [ingredientsMap, setIngredientsMap] = useState<Map<number, Ingredient>>(new Map());
+
+  useEffect(() => {
+    const fetchAndSetInventory = async () => {
+      try {
+        const inventoryData = await inventoryService.getInventory();
+
+        const formattedData: InventoryItem[] = inventoryData.map((item: FoodInventory) => {
+          const ingredient = item.ingredientId ? ingredientsMap.get(item.ingredientId) : undefined;
+          return {
+            id: item.foodInventoryId || 0,
+            name: item.ingredientName || 'N/A',
+            category: ingredient?.categoryName || '기타',
+            quantity: `${item.quantity} ${item.unit}`,
+            storageMethod: item.places?.[0] || 'N/A',
+            expiryDate: item.expirationDate ? item.expirationDate.split('T')[0] : 'N/A',
+            addedDate: item.boughtDate ? item.boughtDate.split('T')[0] : 'N/A',
+            status: '보관중', // This needs to be determined based on expiry date
+            isExpired: item.expirationDate ? new Date(item.expirationDate) < new Date() : false,
+            description: 'N/A', // No description in the backend response
+            image: '/images/placeholder.jpg',
+          };
+        });
+
+        setInventoryItems(formattedData);
+      } catch (error) {
+        console.error('Failed to fetch inventory:', error);
+      }
+    };
+
+    fetchAndSetInventory();
+  }, [ingredientsMap]);
 
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('전체')
@@ -160,8 +97,21 @@ export default function InventoryPage() {
     setInventoryItems(prev => prev.filter(item => item.id !== id))
   }
 
-  const addNewItem = () => {
-    setIsAddItemModalOpen(true)
+  const addNewItem = async () => {
+    try {
+      const ingredientsData = await ingredientService.getAllIngredients();
+      const newIngredientsMap = new Map<number, Ingredient>();
+      ingredientsData.forEach(ingredient => {
+        if (ingredient.id) {
+          newIngredientsMap.set(ingredient.id, ingredient);
+        }
+      });
+      setIngredientsMap(newIngredientsMap);
+      setIsAddItemModalOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch ingredients for modal:', error);
+      alert('식재료 목록을 불러오는 데 실패했습니다. 다시 시도해주세요.');
+    }
   }
 
   const resetFilters = () => {
@@ -232,10 +182,10 @@ export default function InventoryPage() {
         {/* 페이지 제목 */}
         <div className="mb-6">
                       <nav className="text-sm text-gray-500 mb-2">
-              홈 &gt; 식재료 관리
+              홈 &gt; 식품 재고 관리
             </nav>
                      <h1 className="text-2xl font-bold text-gray-900">
-             식재료 관리
+             식품 재고 관리
            </h1>
         </div>
 
@@ -619,42 +569,94 @@ export default function InventoryPage() {
                   </svg>
                 </button>
               </div>
-              <form onSubmit={(e) => {
+              <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
-                const newItem: InventoryItem = {
-                  id: Date.now(),
-                  name: formData.get('name') as string,
-                  category: formData.get('category') as string,
-                  quantity: formData.get('quantity') as string,
-                  storageMethod: formData.get('storageMethod') as string,
-                  expiryDate: formData.get('expiryDate') as string,
-                  addedDate: new Date().toISOString().split('T')[0],
-                  status: '보관중',
-                  isExpired: new Date(formData.get('expiryDate') as string) < new Date(),
-                  description: formData.get('description') as string,
-                  image: '/images/placeholder.jpg',
+
+                const ingredientName = formData.get('name') as string;
+                const selectedIngredient = Array.from(ingredientsMap.values()).find(
+                  (ing) => ing.name === ingredientName
+                );
+
+                if (!selectedIngredient || !selectedIngredient.id) {
+                  alert('유효한 식재료를 선택해주세요.');
+                  return;
+                }
+                const ingredientId = selectedIngredient.id;
+
+                const storageMethodMap: { [key: string]: "REFRIGERATED" | "FROZEN" | "ROOM" } = {
+                  '냉장': 'REFRIGERATED',
+                  '실온': 'ROOM',
+                  '냉동': 'FROZEN',
                 };
-                setInventoryItems(prev => [newItem, ...prev]);
-                setIsAddItemModalOpen(false);
+                const storageMethodValue = formData.get('storageMethod') as string;
+                const places = storageMethodMap[storageMethodValue] ? [storageMethodMap[storageMethodValue]] : [];
+
+                const quantity = parseInt(formData.get('quantity') as string, 10);
+                const unit = formData.get('unit') as string;
+                const boughtDate = formData.get('boughtDate') as string;
+                const expirationDate = formData.get('expirationDate') as string;
+
+                const newItemData: CreateFoodInventoryRequest = {
+                  ingredientId: ingredientId,
+                  quantity: quantity,
+                  unit: unit,
+                  boughtDate: boughtDate ? new Date(boughtDate).toISOString() : undefined,
+                  expirationDate: expirationDate ? new Date(expirationDate).toISOString() : undefined,
+                  places: places,
+                };
+
+                try {
+                  const createdItem = await inventoryService.createInventoryItem(newItemData);
+                  // 백엔드에서 반환된 FoodInventoryResponseDto를 InventoryItem 형식으로 변환
+                  const formattedCreatedItem: InventoryItem = {
+                    id: createdItem.foodInventoryId || 0,
+                    name: createdItem.ingredientName || ingredientName,
+                    category: selectedIngredient.categoryName || '기타',
+                    quantity: `${createdItem.quantity} ${createdItem.unit}`,
+                    storageMethod: createdItem.places?.[0] || 'N/A',
+                    expiryDate: createdItem.expirationDate ? createdItem.expirationDate.split('T')[0] : 'N/A',
+                    addedDate: createdItem.boughtDate ? createdItem.boughtDate.split('T')[0] : 'N/A',
+                    status: '보관중',
+                    isExpired: createdItem.expirationDate ? new Date(createdItem.expirationDate) < new Date() : false,
+                    description: 'N/A',
+                    image: '/images/placeholder.jpg',
+                  };
+                  setInventoryItems(prev => [formattedCreatedItem, ...prev]);
+                  setIsAddItemModalOpen(false);
+                } catch (error) {
+                  console.error('식재료 추가 실패:', error);
+                  alert('식재료 추가에 실패했습니다. 다시 시도해주세요.');
+                }
               }}>
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700">식재료명</label>
-                      <input type="text" name="name" id="name" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black" />
-                    </div>
-                    <div>
-                      <label htmlFor="category" className="block text-sm font-medium text-gray-700">카테고리</label>
-                      <select name="category" id="category" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black">
-                        {['채소', '과일', '육류', '유제품', '축산물', '수산물', '곡물', '조미료'].map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
+                      <input type="text" name="name" id="name" list="ingredient-suggestions" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black" />
+                      <datalist id="ingredient-suggestions">
+                        {Array.from(ingredientsMap.values()).map((ingredient) => (
+                          <option key={ingredient.id} value={ingredient.name} />
                         ))}
-                      </select>
+                      </datalist>
                     </div>
+                    
                     <div>
                       <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">수량</label>
-                      <input type="text" name="quantity" id="quantity" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black" />
+                      <div className="flex gap-2 mt-1">
+                        <input type="text" name="quantity" id="quantity" required className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                        <select name="unit" id="unit" required className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black">
+                          <option value="개">개</option>
+                          <option value="g">g</option>
+                          <option value="ml">ml</option>
+                          <option value="팩">팩</option>
+                          <option value="봉">봉</option>
+                          <option value="줄">줄</option>
+                          <option value="컵">컵</option>
+                          <option value="리터">리터</option>
+                          <option value="kg">kg</option>
+                        </select>
+                      </div>
                     </div>
                     <div>
                       <label htmlFor="storageMethod" className="block text-sm font-medium text-gray-700">보관방법</label>
@@ -664,14 +666,17 @@ export default function InventoryPage() {
                         ))}
                       </select>
                     </div>
-                    <div>
-                      <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700">유통기한</label>
-                      <input type="date" name="expiryDate" id="expiryDate" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black" />
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label htmlFor="boughtDate" className="block text-sm font-medium text-gray-700">구매기한</label>
+                        <input type="date" name="boughtDate" id="boughtDate" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                      </div>
+                      <div className="flex-1">
+                        <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-700">유통기한</label>
+                        <input type="date" name="expirationDate" id="expirationDate" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                      </div>
                     </div>
-                    <div>
-                      <label htmlFor="description" className="block text-sm font-medium text-gray-700">설명</label>
-                      <textarea name="description" id="description" rows={3} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black"></textarea>
-                    </div>
+                    
                   </div>
                 </div>
                 <div className="flex justify-end gap-4 p-6 border-t">
