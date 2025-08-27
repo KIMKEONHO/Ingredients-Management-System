@@ -127,7 +127,18 @@ export default function Header() {
           </Link>
           {isLogin ? (
             <div className="flex items-center gap-3">
-              <span className="text-gray-700">{loginMember.nickname}</span>
+              <Link 
+                href="/mypage" 
+                className="text-gray-700 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                {loginMember.nickname}
+              </Link>
+              <Link 
+                href="/mypage" 
+                className="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                마이 페이지
+              </Link>
               <button 
                 onClick={logoutAndHome} 
                 className="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
