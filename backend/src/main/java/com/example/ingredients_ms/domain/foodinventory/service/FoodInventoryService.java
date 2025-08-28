@@ -2,6 +2,7 @@ package com.example.ingredients_ms.domain.foodinventory.service;
 
 
 import com.example.ingredients_ms.domain.foodinventory.dto.request.CreateFoodInventoryRequestDto;
+import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryQuantityRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.ExpiringSoonResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
@@ -117,6 +118,20 @@ public class FoodInventoryService {
         foodInventory.setBoughtDate(requestDto.getBoughtDate());
         foodInventory.setExpirationDate(requestDto.getExpirationDate());
         foodInventory.setPlaces(requestDto.getPlaces());
+
+        FoodInventory updatedFoodInventory = foodInventoryRepository.save(foodInventory);
+        return FoodInventoryResponseDto.fromEntity(updatedFoodInventory);
+    }
+
+    // 수량만 수정하는 메서드 추가
+    @Transactional
+    public FoodInventoryResponseDto updateFoodInventoryQuantity(Long userId, Long foodInventoryId, UpdateFoodInventoryQuantityRequestDto requestDto) {
+
+        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndId(userId, foodInventoryId)
+                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
+
+        foodInventory.setQuantity(requestDto.getQuantity());
+        foodInventory.getPlaces().size();
 
         FoodInventory updatedFoodInventory = foodInventoryRepository.save(foodInventory);
         return FoodInventoryResponseDto.fromEntity(updatedFoodInventory);
