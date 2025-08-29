@@ -1,16 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Bug, Plus, Clock, Mail } from "lucide-react";
+import { Bug, Plus, Mail, List, FileText } from "lucide-react";
+import { apiClient } from "@/lib/api/client";
+import Link from "next/link";
 
 export default function SupportPage() {
   const [formData, setFormData] = useState({
     category: "error",
-    name: "",
-    email: "",
-    priority: "",
-    subject: "",
-    description: ""
+    title: "",
+    content: ""
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -21,21 +20,31 @@ export default function SupportPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: API 연동 로직 구현
-    console.log("민원 제출:", formData);
-    alert("민원이 성공적으로 접수되었습니다.");
     
-    // 폼 초기화
-    setFormData({
-      category: "error",
-      name: "",
-      email: "",
-      priority: "",
-      subject: "",
-      description: ""
-    });
+    try {
+      // 백엔드 DTO에 맞춰 데이터 변환
+      const requestData = {
+        title: formData.title,
+        content: formData.content,
+        categoryCode: formData.category === "error" ? 2 : 1 // 오류사항=2, 식재료요청=1
+      };
+
+      const response = await apiClient.post('/api/v1/complaints/', requestData);
+      
+      alert("민원이 성공적으로 접수되었습니다.");
+      
+      // 폼 초기화
+      setFormData({
+        category: "error",
+        title: "",
+        content: ""
+      });
+    } catch (error) {
+      console.error("민원 접수 오류:", error);
+      alert("민원 접수 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
   };
 
   return (
@@ -49,6 +58,28 @@ export default function SupportPage() {
             <p className="text-blue-100 text-lg">
               문의사항이나 요청사항을 남겨주세요. 빠른 시간 내에 답변드리겠습니다.
             </p>
+          </div>
+
+          {/* 탭 네비게이션 */}
+          <div className="bg-white border-b border-gray-200">
+            <div className="flex justify-center">
+              <div className="flex space-x-1 p-2">
+                <Link
+                  href="/support"
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 text-white font-medium transition-colors"
+                >
+                  <FileText size={20} />
+                  민원 작성
+                </Link>
+                <Link
+                  href="/support/my-complaints"
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors"
+                >
+                  <List size={20} />
+                  내 민원 목록
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* 메인 콘텐츠 */}
@@ -89,73 +120,16 @@ export default function SupportPage() {
                   </div>
                 </div>
 
-                {/* 이름과 이메일 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      이름 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="이름을 입력해주세요"
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      이메일 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="이메일을 입력해주세요"
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                {/* 우선순위 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    우선순위
-                  </label>
-                  <div className="flex gap-4">
-                    {["낮음", "보통", "높음"].map((priority) => (
-                      <button
-                        key={priority}
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, priority }))}
-                        className={`px-6 py-3 rounded-lg border-2 transition-colors ${
-                          formData.priority === priority
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-300 hover:border-gray-400"
-                        }`}
-                      >
-                        {priority}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* 제목 */}
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
                     제목 <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
+                    id="title"
+                    name="title"
+                    value={formData.title}
                     onChange={handleInputChange}
                     placeholder="문의 제목을 입력해주세요"
                     required
@@ -165,14 +139,14 @@ export default function SupportPage() {
 
                 {/* 상세 내용 */}
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
                     상세 내용 <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
+                      id="content"
+                      name="content"
+                      value={formData.content}
                       onChange={handleInputChange}
                       placeholder={
                         formData.category === "error"
@@ -185,7 +159,7 @@ export default function SupportPage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     />
                     <div className="absolute bottom-3 right-3 text-sm text-gray-400">
-                      {formData.description.length}/500
+                      {formData.content.length}/500
                     </div>
                   </div>
                 </div>
@@ -207,7 +181,7 @@ export default function SupportPage() {
               {/* 응답 시간 */}
               <div className="bg-gray-50 rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <Clock className="text-purple-600" size={24} />
+                  <Mail className="text-purple-600" size={24} />
                   <h3 className="text-lg font-semibold text-gray-900">응답 시간</h3>
                 </div>
                 <div className="space-y-2 text-gray-600">
