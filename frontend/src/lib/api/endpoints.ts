@@ -34,14 +34,14 @@ export const API_ENDPOINTS = {
     
     // 식단 관련
     DIET: {
-      BASE: '/diet',
-      ADD: '/diet/add', // 식단 추가
-      PLANS: '/diet/plans',
-      CALENDAR: '/diet/calendar',
-      MONTHLY: '/diet/:year/:month', // 월별 식단 조회
-      ITEM: '/diet/:id', // 개별 식단 항목 (수정/삭제)
-      MONTH_STATISTICS: '/diet/month/statistics', // 월간 칼로리 통계
-      WEEK_STATISTICS: '/diet/week/statistics', // 주간 칼로리 통계
+      BASE: '/api/v1/diet',
+      ADD: '/api/v1/diet/add', // 식단 추가
+      PLANS: '/api/v1/diet/plans',
+      CALENDAR: '/api/v1/diet/calendar',
+      MONTHLY: '/api/v1/diet/:year/:month', // 월별 식단 조회
+      ITEM: '/api/v1/diet/:id', // 개별 식단 항목 (수정/삭제)
+      MONTH_STATISTICS: '/api/v1/diet/month/statistics', // 월간 칼로리 통계
+      WEEK_STATISTICS: '/api/v1/diet/week/statistics', // 주간 칼로리 통계
     },
 
     
