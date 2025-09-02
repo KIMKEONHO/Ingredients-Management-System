@@ -36,13 +36,13 @@ export default function MyComplaintsPage() {
     try {
       setLoading(true);
       // 백엔드 API에서 내 민원 목록을 가져오는 요청
-      const response = await apiClient.get('/api/v1/complaints/users');
+      const response = await apiClient.get<RsData<Complaint[]>>('/api/v1/complaints/users');
       
       // RsData 구조에 맞춰 데이터 추출
-      console.log("API 응답:", response.data);
-      if (response.data && response.data.data) {
-        console.log("민원 데이터:", response.data.data);
-        setComplaints(response.data.data);
+      console.log("API 응답:", response);
+      if (response && response.data) {
+        console.log("민원 데이터:", response.data);
+        setComplaints(response.data);
       } else {
         console.log("민원 데이터가 없습니다");
         setComplaints([]);
