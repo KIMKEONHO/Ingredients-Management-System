@@ -78,7 +78,7 @@ export default function MyComplaintsPage() {
     }
   };
 
-  const getStatusInfo = (status: string) => {
+  const getStatusInfo = (status: string | undefined) => {
     // 백엔드 상태 코드에 따른 매핑
     switch (status) {
       case "1": // 접수완료
