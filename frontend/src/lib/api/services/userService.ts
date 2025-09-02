@@ -1,4 +1,5 @@
 import { apiClient } from '../client';
+import axios from 'axios';
 
 export interface UserProfile {
   nickName: string;
@@ -409,7 +410,7 @@ export const userService = {
       const response = await apiClient.post<{
         resultCode: string;
         msg: string;
-        data: any;
+        data: unknown;
       }>('/api/v1/users/change/status', {
         userId: request.userId,
         status: request.status
@@ -469,8 +470,7 @@ export const userService = {
   // 유저 완전 삭제 (관리자용)
   async deleteUser(userId: number): Promise<DeleteUserResponse> {
     try {
-      // axios를 직접 import하여 사용
-      const axios = require('axios');
+      // axios를 사용하여 직접 API 호출
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
       
       const response = await axios.delete(`${API_BASE_URL}/api/v1/users/drop/${userId}`, {
@@ -487,7 +487,7 @@ export const userService = {
       } else {
         return {
           success: true,
-          message: response.data?.msg || '유저가 성공적으로 삭제되었습니다.'
+          message: (response.data as { msg?: string })?.msg || '유저가 성공적으로 삭제되었습니다.'
         };
       }
     } catch (error: unknown) {
@@ -495,7 +495,7 @@ export const userService = {
       
       // HTTP 상태 코드에 따른 오류 처리
       if (error && typeof error === 'object' && 'response' in error) {
-        const errorResponse = error as { response?: { status?: number; data?: any } };
+        const errorResponse = error as { response?: { status?: number; data?: unknown } };
         const status = errorResponse.response?.status;
         
         // 204 상태 코드는 성공으로 간주 (No Content)
