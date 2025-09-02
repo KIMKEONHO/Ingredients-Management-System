@@ -44,6 +44,17 @@ export const API_ENDPOINTS = {
       WEEK_STATISTICS: '/api/v1/diet/week/statistics', // 주간 칼로리 통계
     },
 
+    // 민원 관련
+    COMPLAINTS: {
+      BASE: '/api/v1/complaints',
+      ALL: '/api/v1/complaints/all', // 전체 민원 조회 (관리자)
+      USERS: '/api/v1/complaints/users', // 내 민원 목록
+      CREATE: '/api/v1/complaints/', // 민원 작성
+      DETAIL: '/api/v1/complaints/:id', // 민원 상세 조회
+      UPDATE: '/api/v1/complaints/:id', // 민원 수정
+      DELETE: '/api/v1/complaints/:id', // 민원 삭제
+      STATUS_UPDATE: '/api/v1/complaints/:id/status/:statusCode', // 민원 상태 변경 (관리자)
+    },
     
   } as const;
   
