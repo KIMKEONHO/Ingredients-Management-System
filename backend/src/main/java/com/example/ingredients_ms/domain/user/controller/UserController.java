@@ -171,4 +171,19 @@ public class UserController {
         return new RsData<>("200","정보를 찾았습니다.", response);
     }
 
+    @PostMapping("/change/status")
+    public RsData<?> changeStatus(@RequestBody ChangeStatusRequestDto request){
+
+        userService.changeStatus(request);
+
+        return new RsData<>("201", "상태를 변경하였습니다.");
+    }
+
+    @DeleteMapping("/drop/{userId}")
+    public RsData<?> dropUser(@PathVariable Long userId){
+
+        userService.dropUser(userId);
+
+        return new RsData<>("204","유저를 삭제했습니다.");
+    }
 }
