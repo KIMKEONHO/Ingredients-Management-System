@@ -47,16 +47,29 @@ export default function MyComplaintsPage() {
         console.log("민원 데이터가 없습니다");
         setComplaints([]);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("민원 목록 조회 오류:", error);
       
-      // 401, 403 에러인 경우 인증 문제
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        setError("로그인이 필요합니다. 다시 로그인해주세요.");
-      } else if (error.response?.status === 404) {
-        // 404 에러인 경우 민원이 없는 것으로 처리
-        setComplaints([]);
-        setError(null);
+      // HTTP 에러 응답 타입 가드
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as { 
+          response?: { 
+            status?: number; 
+            statusText?: string; 
+            data?: unknown; 
+          } 
+        };
+        
+        // 401, 403 에러인 경우 인증 문제
+        if (errorResponse.response?.status === 401 || errorResponse.response?.status === 403) {
+          setError("로그인이 필요합니다. 다시 로그인해주세요.");
+        } else if (errorResponse.response?.status === 404) {
+          // 404 에러인 경우 민원이 없는 것으로 처리
+          setComplaints([]);
+          setError(null);
+        } else {
+          setError("민원 목록을 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        }
       } else {
         setError("민원 목록을 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
       }
