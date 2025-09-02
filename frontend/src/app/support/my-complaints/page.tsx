@@ -1,30 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { List, FileText, Clock, CheckCircle, AlertCircle, MessageSquare, Calendar } from "lucide-react";
-import { apiClient } from "@/lib/api/client";
+import { List, FileText, Clock, CheckCircle, AlertCircle, MessageSquare, Calendar, XCircle } from "lucide-react";
 import Link from "next/link";
-
-interface Complaint {
-  complaintId: number;
-  title: string;
-  content: string;
-  // 백엔드에서 제공하지 않는 필드들은 임시로 기본값 설정
-  categoryCode?: number;
-  status?: string;
-  createdAt?: string;
-  answer?: string;
-  answeredAt?: string;
-}
-
-interface RsData<T> {
-  resultCode: string;
-  msg: string;
-  data: T;
-}
+import { 
+  ComplaintService, 
+  ComplaintDetailResponseDto, 
+  ComplaintStatus, 
+  ComplaintStatusUtils,
+  RsData 
+} from "@/lib/api/services/complaintService";
 
 export default function MyComplaintsPage() {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [complaints, setComplaints] = useState<ComplaintDetailResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,8 +23,8 @@ export default function MyComplaintsPage() {
   const fetchMyComplaints = async () => {
     try {
       setLoading(true);
-      // 백엔드 API에서 내 민원 목록을 가져오는 요청
-      const response = await apiClient.get<RsData<Complaint[]>>('/api/v1/complaints/users');
+      // ComplaintService를 사용하여 내 민원 목록을 가져오는 요청
+      const response = await ComplaintService.getMyComplaints();
       
       // RsData 구조에 맞춰 데이터 추출
       console.log("API 응답:", response);
@@ -78,33 +66,38 @@ export default function MyComplaintsPage() {
     }
   };
 
-  const getStatusInfo = (status: string | undefined) => {
-    // 백엔드 상태 코드에 따른 매핑
+  const getStatusInfo = (status: ComplaintStatus) => {
+    const statusLabel = ComplaintStatusUtils.getStatusLabel(status);
+    const statusColor = ComplaintStatusUtils.getStatusColor(status);
+    
+    // 상태에 따른 아이콘 매핑
+    let icon;
     switch (status) {
-      case "1": // 접수완료
-        return { icon: Clock, color: "text-blue-600", bgColor: "bg-blue-50", label: "접수완료" };
-      case "2": // 처리중
-        return { icon: Clock, color: "text-yellow-600", bgColor: "bg-yellow-50", label: "처리중" };
-      case "3": // 답변완료
-        return { icon: CheckCircle, color: "text-green-600", bgColor: "bg-green-50", label: "답변완료" };
+      case ComplaintStatus.PENDING:
+        icon = Clock;
+        break;
+      case ComplaintStatus.IN_PROGRESS:
+        icon = Clock;
+        break;
+      case ComplaintStatus.COMPLETED:
+        icon = CheckCircle;
+        break;
+      case ComplaintStatus.REJECTED:
+        icon = XCircle;
+        break;
       default:
-        return { icon: AlertCircle, color: "text-gray-600", bgColor: "bg-gray-50", label: status || "알 수 없음" };
+        icon = AlertCircle;
     }
+    
+    return { 
+      icon, 
+      color: statusColor.text, 
+      bgColor: statusColor.bg, 
+      label: statusLabel 
+    };
   };
 
-  const getCategoryName = (categoryCode: number) => {
-    return categoryCode === 1 ? "식재료 추가 요청" : "오류사항 문의";
-  };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   if (loading) {
     return (
@@ -240,38 +233,29 @@ export default function MyComplaintsPage() {
                </div>
             ) : (
               <div className="space-y-6">
-                                 {complaints.map((complaint, index) => {
-                   // 백엔드에서 제공하지 않는 필드들에 기본값 설정
-                   const status = complaint.status || "1"; // 기본값: 접수완료
-                   const categoryCode = complaint.categoryCode || 2; // 기본값: 오류사항 문의
-                   const createdAt = complaint.createdAt || new Date(Date.now() - index * 86400000).toISOString(); // 기본값: 최근 날짜부터 순차적으로
-                   
-                   const StatusIcon = getStatusInfo(status).icon;
-                   const statusColor = getStatusInfo(status).color;
-                   const statusBgColor = getStatusInfo(status).bgColor;
+                {complaints.map((complaint) => {
+                  const StatusIcon = getStatusInfo(complaint.status).icon;
+                  const statusColor = getStatusInfo(complaint.status).color;
+                  const statusBgColor = getStatusInfo(complaint.status).bgColor;
 
-                   return (
-                     <div key={complaint.complaintId} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                  return (
+                    <div key={complaint.complaintId} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
                       {/* 헤더 */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="text-lg font-semibold text-gray-900">{complaint.title}</h3>
-                                                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${statusBgColor} ${statusColor}`}>
-                             <StatusIcon size={16} />
-                             {getStatusInfo(complaint.status).label}
-                           </span>
+                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${statusBgColor} ${statusColor}`}>
+                              <StatusIcon size={16} />
+                              {getStatusInfo(complaint.status).label}
+                            </span>
                           </div>
-                                                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                             <span className="flex items-center gap-1">
-                               <Calendar size={16} />
-                               {formatDate(createdAt)}
-                             </span>
-                             <span className="flex items-center gap-1">
-                               <MessageSquare size={16} />
-                               {getCategoryName(categoryCode)}
-                             </span>
-                           </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <MessageSquare size={16} />
+                              민원 ID: {complaint.complaintId}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -280,34 +264,30 @@ export default function MyComplaintsPage() {
                         <p className="text-gray-700 leading-relaxed">{complaint.content}</p>
                       </div>
 
-                                             {/* 답변 */}
-                       {complaint.answer && (
-                         <div className="bg-white rounded-lg p-4 border-l-4 border-green-500">
-                           <div className="flex items-center gap-2 mb-2">
-                             <CheckCircle className="h-5 w-5 text-green-600" />
-                             <span className="font-medium text-green-800">답변</span>
-                             {complaint.answeredAt && (
-                               <span className="text-sm text-gray-500">
-                                 {formatDate(complaint.answeredAt)}
-                               </span>
-                             )}
-                           </div>
-                           <p className="text-gray-700">{complaint.answer}</p>
-                         </div>
-                       )}
-                       
-                       {/* 백엔드에서 제공하지 않는 필드들에 대한 안내 */}
-                       {!complaint.status && (
-                         <div className="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-500 mt-4">
-                           <div className="flex items-center gap-2 mb-2">
-                             <AlertCircle className="h-5 w-5 text-yellow-600" />
-                             <span className="font-medium text-yellow-800">처리 상태</span>
-                           </div>
-                           <p className="text-yellow-700 text-sm">
-                             현재 처리 상태 정보를 확인할 수 없습니다. 관리자에게 문의해주세요.
-                           </p>
-                         </div>
-                       )}
+                      {/* 상태별 안내 메시지 */}
+                      {complaint.status === ComplaintStatus.COMPLETED && (
+                        <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <span className="font-medium text-green-800">처리 완료</span>
+                          </div>
+                          <p className="text-green-700 text-sm">
+                            민원이 성공적으로 처리되었습니다.
+                          </p>
+                        </div>
+                      )}
+
+                      {complaint.status === ComplaintStatus.REJECTED && (
+                        <div className="bg-red-50 rounded-lg p-4 border-l-4 border-red-500">
+                          <div className="flex items-center gap-2 mb-2">
+                            <XCircle className="h-5 w-5 text-red-600" />
+                            <span className="font-medium text-red-800">처리 거부</span>
+                          </div>
+                          <p className="text-red-700 text-sm">
+                            민원이 거부되었습니다. 자세한 사유는 관리자에게 문의해주세요.
+                          </p>
+                        </div>
+                      )}
 
                       {/* 액션 버튼 */}
                       <div className="flex justify-end mt-4 pt-4 border-t border-gray-200">
@@ -325,23 +305,29 @@ export default function MyComplaintsPage() {
             {complaints.length > 0 && (
               <div className="mt-8 bg-gray-50 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">민원 통계</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600">{complaints.length}</div>
                     <div className="text-sm text-gray-600">전체 민원</div>
                   </div>
-                                     <div className="text-center">
-                     <div className="text-2xl font-bold text-green-600">
-                       {complaints.filter(c => c.status === "3").length}
-                     </div>
-                     <div className="text-sm text-gray-600">답변완료</div>
-                   </div>
-                   <div className="text-center">
-                     <div className="text-2xl font-bold text-yellow-600">
-                       {complaints.filter(c => c.status === "2" || c.status === "1").length}
-                     </div>
-                     <div className="text-sm text-gray-600">처리중</div>
-                   </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {complaints.filter(c => c.status === ComplaintStatus.COMPLETED).length}
+                    </div>
+                    <div className="text-sm text-gray-600">완료</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {complaints.filter(c => c.status === ComplaintStatus.IN_PROGRESS).length}
+                    </div>
+                    <div className="text-sm text-gray-600">진행 중</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-600">
+                      {complaints.filter(c => c.status === ComplaintStatus.PENDING).length}
+                    </div>
+                    <div className="text-sm text-gray-600">보류</div>
+                  </div>
                 </div>
               </div>
             )}
