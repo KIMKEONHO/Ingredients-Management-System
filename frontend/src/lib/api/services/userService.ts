@@ -25,6 +25,40 @@ export interface ChangePasswordResponse {
   message?: string;
 }
 
+// 유저 통계 관련 타입 정의
+export interface UserStatistics {
+  id: number; // 유저 ID 추가
+  userName: string;
+  userEmail: string;
+  userPhoneNum: string | null; // 카카오/구글 로그인 시 null 가능
+  createdAt: string;
+  recentLogin: string;
+  status: 'active' | 'inactive' | 'pending' | 'withdrawn'; // 백엔드 Status enum과 일치
+}
+
+export interface UserStatisticsResponse {
+  success: boolean;
+  data?: UserStatistics[];
+  message?: string;
+}
+
+// 유저 상태 변경 관련 타입 정의
+export interface ChangeUserStatusRequest {
+  userId: number;
+  status: 'active' | 'inactive' | 'pending' | 'withdrawn'; // 백엔드 Status enum과 일치
+}
+
+export interface ChangeUserStatusResponse {
+  success: boolean;
+  message?: string;
+}
+
+// 유저 삭제 관련 타입 정의
+export interface DeleteUserResponse {
+  success: boolean;
+  message?: string;
+}
+
 export const userService = {
   // UserProfile 타입 가드
   isUserProfile(obj: unknown): obj is UserProfile {
@@ -297,6 +331,192 @@ export const userService = {
     } catch (error: unknown) {
       console.error('계정 삭제 실패:', error);
       throw new Error('계정 삭제에 실패했습니다.');
+    }
+  },
+
+  // 관리자용 유저 통계 조회
+  async getAllUserStatistics(): Promise<UserStatisticsResponse> {
+    try {
+      const response = await apiClient.get<{
+        resultCode: string;
+        msg: string;
+        data: UserStatistics[];
+      }>('/api/v1/users/statistics/');
+      
+      console.log('유저 통계 조회 응답:', response);
+      
+      // 백엔드 RsData 응답 구조 확인 및 처리
+      if (response && typeof response === 'object') {
+        // RsData 형태: { resultCode: "200", msg: "모든 유저의 정보를 찾았습니다.", data: [...] }
+        if ('resultCode' in response && typeof response.resultCode === 'string') {
+          const resultCode = response.resultCode;
+          const message = response.msg || '유저 정보를 성공적으로 불러왔습니다.';
+          const data = response.data || [];
+          
+          // 200번대는 성공
+          if (resultCode.startsWith('2')) {
+            return {
+              success: true,
+              data: data,
+              message: message
+            };
+          } else {
+            return {
+              success: false,
+              message: message
+            };
+          }
+        }
+        
+        // 직접 배열이 반환되는 경우
+        if (Array.isArray(response)) {
+          return {
+            success: true,
+            data: response,
+            message: '유저 정보를 성공적으로 불러왔습니다.'
+          };
+        }
+      }
+      
+      // 응답이 없는 경우
+      return {
+        success: false,
+        message: '유저 정보를 불러올 수 없습니다.'
+      };
+    } catch (error: unknown) {
+      console.error('유저 통계 조회 실패:', error);
+      
+      // HTTP 상태 코드에 따른 오류 처리
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as { response?: { status?: number } };
+        const status = errorResponse.response?.status;
+        if (status === 401) {
+          throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+        } else if (status === 403) {
+          throw new Error('관리자 권한이 필요합니다.');
+        } else if (status === 500) {
+          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      }
+      
+      throw new Error('유저 통계 정보를 불러올 수 없습니다.');
+    }
+  },
+
+  // 유저 상태 변경
+  async changeUserStatus(request: ChangeUserStatusRequest): Promise<ChangeUserStatusResponse> {
+    try {
+      const response = await apiClient.post<{
+        resultCode: string;
+        msg: string;
+        data: any;
+      }>('/api/v1/users/change/status', {
+        userId: request.userId,
+        status: request.status
+      });
+      
+      console.log('유저 상태 변경 응답:', response);
+      
+      // 백엔드 RsData 응답 구조 확인 및 처리
+      if (response && typeof response === 'object') {
+        // RsData 형태: { resultCode: "201", msg: "상태를 변경하였습니다.", data: null }
+        if ('resultCode' in response && typeof response.resultCode === 'string') {
+          const resultCode = response.resultCode;
+          const message = response.msg || '상태가 성공적으로 변경되었습니다.';
+          
+          // 200번대는 성공
+          if (resultCode.startsWith('2')) {
+            return {
+              success: true,
+              message: message
+            };
+          } else {
+            return {
+              success: false,
+              message: message
+            };
+          }
+        }
+      }
+      
+      // 응답이 없는 경우
+      return {
+        success: false,
+        message: '상태 변경에 실패했습니다.'
+      };
+    } catch (error: unknown) {
+      console.error('유저 상태 변경 실패:', error);
+      
+      // HTTP 상태 코드에 따른 오류 처리
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as { response?: { status?: number } };
+        const status = errorResponse.response?.status;
+        if (status === 401) {
+          throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+        } else if (status === 403) {
+          throw new Error('관리자 권한이 필요합니다.');
+        } else if (status === 404) {
+          throw new Error('유저를 찾을 수 없습니다.');
+        } else if (status === 500) {
+          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      }
+      
+      throw new Error('유저 상태 변경에 실패했습니다.');
+    }
+  },
+
+  // 유저 완전 삭제 (관리자용)
+  async deleteUser(userId: number): Promise<DeleteUserResponse> {
+    try {
+      // axios를 직접 import하여 사용
+      const axios = require('axios');
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
+      
+      const response = await axios.delete(`${API_BASE_URL}/api/v1/users/drop/${userId}`, {
+        withCredentials: true,
+        timeout: 10000
+      });
+      
+      // 204 상태 코드는 성공으로 간주
+      if (response.status === 204) {
+        return {
+          success: true,
+          message: '유저가 성공적으로 삭제되었습니다.'
+        };
+      } else {
+        return {
+          success: true,
+          message: response.data?.msg || '유저가 성공적으로 삭제되었습니다.'
+        };
+      }
+    } catch (error: unknown) {
+      console.error('유저 삭제 실패:', error);
+      
+      // HTTP 상태 코드에 따른 오류 처리
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as { response?: { status?: number; data?: any } };
+        const status = errorResponse.response?.status;
+        
+        // 204 상태 코드는 성공으로 간주 (No Content)
+        if (status === 204) {
+          return {
+            success: true,
+            message: '유저가 성공적으로 삭제되었습니다.'
+          };
+        } else if (status === 401) {
+          throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+        } else if (status === 403) {
+          throw new Error('관리자 권한이 필요합니다.');
+        } else if (status === 404) {
+          throw new Error('유저를 찾을 수 없습니다.');
+        } else if (status === 500) {
+          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      }
+      
+      // 네트워크 오류나 기타 오류의 경우
+      throw new Error('유저 삭제에 실패했습니다.');
     }
   }
 };
