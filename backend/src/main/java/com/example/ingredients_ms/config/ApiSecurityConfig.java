@@ -64,7 +64,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/*/cart/item/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/*/cart/item/*").hasAnyRole("USER","ADMIN")
 
-                        // 유저 관리 api
+                        // 유저 정보 관리 api
                         .requestMatchers(HttpMethod.POST, "/api/*/users/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/*/users/login").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/*/users/exchange/phone").hasAnyRole("USER","ADMIN")
@@ -77,6 +77,11 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/*/users/withdraw").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST,"/api/*/users/admin/login").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/*/users/profile").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST,"/api/*/users/change/status").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,"/api/*/users/drop/*").hasRole("ADMIN")
+
+                        // 유저 통계 및 관리 api
+                        .requestMatchers(HttpMethod.GET, "/api/*/users/statistics/").hasRole("ADMIN")
 
                         // 이메일 관련 api
                         .requestMatchers(HttpMethod.POST, "/api/*/email/verify").permitAll()
