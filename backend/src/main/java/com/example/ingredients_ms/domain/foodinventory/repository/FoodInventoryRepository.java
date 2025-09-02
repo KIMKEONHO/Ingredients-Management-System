@@ -20,7 +20,7 @@ public interface FoodInventoryRepository extends JpaRepository<FoodInventory, Lo
 
     List<FoodInventory> findByUser_IdAndIngredient_Category_IdOrderById(Long userId, Long categoryId);
 
-    List<FoodInventory> findByUser_IdAndPlaces(Long userId, Place place);
+    List<FoodInventory> findByUser_IdAndPlace(Long userId, Place place);
 
     List<FoodInventory> findByUser_IdAndStatus(Long userId, FoodStatus status);
 

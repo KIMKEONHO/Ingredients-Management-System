@@ -23,7 +23,7 @@ public class FoodInventoryResponseDto {
     // 유통기한, 임박했다면 서두르세요!
     private LocalDateTime expirationDate;
     // 현재 보관 위치
-    private Set<Place> places;
+    private Place place;
     // 주인님 ID
     private Long userId;
     // 식재료 ID
@@ -39,7 +39,7 @@ public class FoodInventoryResponseDto {
                 .unit(foodInventory.getUnit())
                 .boughtDate(foodInventory.getBoughtDate())
                 .expirationDate(foodInventory.getExpirationDate())
-                .places(foodInventory.getPlaces())
+                .place(foodInventory.getPlace())
                 .userId(foodInventory.getUser().getId())
                 .ingredientId(foodInventory.getIngredient().getId())
                 .ingredientName(foodInventory.getIngredient().getName())
