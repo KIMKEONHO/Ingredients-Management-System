@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Bug, Plus, Mail, List, FileText } from "lucide-react";
-import { apiClient } from "@/lib/api/client";
 import Link from "next/link";
 import { AuthGuard } from "@/lib/auth/authGuard";
+import { ComplaintService, CreateComplaintRequestDto } from "@/lib/api/services/complaintService";
 
 export default function SupportPage() {
   const [formData, setFormData] = useState({
@@ -26,22 +26,26 @@ export default function SupportPage() {
     
     try {
       // 백엔드 DTO에 맞춰 데이터 변환
-      const requestData = {
+      const requestData: CreateComplaintRequestDto = {
         title: formData.title,
         content: formData.content,
         categoryCode: formData.category === "error" ? 2 : 1 // 오류사항=2, 식재료요청=1
       };
 
-      const response = await apiClient.post('/api/v1/complaints/', requestData);
+      const response = await ComplaintService.createComplaint(requestData);
       
-      alert("민원이 성공적으로 접수되었습니다.");
-      
-      // 폼 초기화
-      setFormData({
-        category: "error",
-        title: "",
-        content: ""
-      });
+      if (response.resultCode === "201") {
+        alert("민원이 성공적으로 접수되었습니다.");
+        
+        // 폼 초기화
+        setFormData({
+          category: "error",
+          title: "",
+          content: ""
+        });
+      } else {
+        alert("민원 접수 중 오류가 발생했습니다. 다시 시도해주세요.");
+      }
     } catch (error) {
       console.error("민원 접수 오류:", error);
       alert("민원 접수 중 오류가 발생했습니다. 다시 시도해주세요.");
