@@ -77,6 +77,7 @@ public class ComplaintService {
                         .title(complaint.getTitle())
                         .content(complaint.getContent())
                         .complaintId(complaint.getId())
+                        .status(complaint.getStatus())
                         .build())
                 .toList();
     }
