@@ -26,8 +26,8 @@ export const API_ENDPOINTS = {
     
     // 재고 관련
     INVENTORY: {
-      BASE: '/inventory/',
-      MY: '/inventory/my',
+      BASE: '/api/v1/inventory/',
+      MY: '/api/v1/inventory/my',
       ITEMS: '/inventory/items',
       STOCK: '/inventory/stock',
       ORDERS: '/inventory/orders',
@@ -47,7 +47,7 @@ export const API_ENDPOINTS = {
 
     // 식재료 관련
     INGREDIENT: {
-      BASE: '/ingredient/',
+      BASE: '/api/v1/ingredient/',
     },
 
   } as const;
