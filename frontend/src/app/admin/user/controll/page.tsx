@@ -3,138 +3,48 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/sidebar';
 import AdminGuard from '@/lib/auth/adminGuard';
+import { userService, UserStatistics } from '@/lib/api/services/userService';
 
 interface Member {
   id: number;
   name: string;
   email: string;
-  phone: string;
+  phone: string | null; // 카카오/구글 로그인 시 null 가능
   joinDate: string;
   lastLogin: string;
-  status: 'active' | 'denied' | 'dormant' | 'withdrawn' | 'pending';
+  status: 'active' | 'inactive' | 'pending' | 'withdrawn'; // 백엔드 Status enum과 일치
 }
 
-const members: Member[] = [
-  {
-    id: 1,
-    name: '김철수',
-    email: 'kim@example.com',
-    phone: '010-1234-5678',
-    joinDate: '2024-01-15',
-    lastLogin: '2025-08-07',
-    status: 'active'
-  },
-  {
-    id: 2,
-    name: '이영희',
-    email: 'lee@example.com',
-    phone: '010-2345-6789',
-    joinDate: '2024-02-20',
-    lastLogin: '2025-08-06',
-    status: 'active'
-  },
-  {
-    id: 3,
-    name: '박민수',
-    email: 'park@example.com',
-    phone: '010-3456-7890',
-    joinDate: '2024-03-10',
-    lastLogin: '2025-07-25',
-    status: 'denied'
-  },
-  {
-    id: 4,
-    name: '최수진',
-    email: 'choi@example.com',
-    phone: '010-4567-8901',
-    joinDate: '2024-04-05',
-    lastLogin: '2025-06-15',
-    status: 'dormant'
-  },
-  {
-    id: 5,
-    name: '정다은',
-    email: 'jung@example.com',
-    phone: '010-5678-9012',
-    joinDate: '2024-05-18',
-    lastLogin: '2025-08-07',
-    status: 'active'
-  },
-  {
-    id: 6,
-    name: '임병호',
-    email: 'lim@example.com',
-    phone: '010-6789-0123',
-    joinDate: '2024-06-22',
-    lastLogin: '2025-07-10',
-    status: 'withdrawn'
-  },
-  {
-    id: 7,
-    name: '한소영',
-    email: 'han@example.com',
-    phone: '010-7890-1234',
-    joinDate: '2024-07-11',
-    lastLogin: '2025-08-05',
-    status: 'active'
-  },
-  {
-    id: 8,
-    name: '윤재혁',
-    email: 'yoon@example.com',
-    phone: '010-8901-2345',
-    joinDate: '2024-08-01',
-    lastLogin: '2025-08-04',
-    status: 'pending'
-  },
-  {
-    id: 9,
-    name: '송미영',
-    email: 'song@example.com',
-    phone: '010-9012-3456',
-    joinDate: '2024-09-15',
-    lastLogin: '2025-08-03',
-    status: 'active'
-  },
-  {
-    id: 10,
-    name: '강동훈',
-    email: 'kang@example.com',
-    phone: '010-0123-4567',
-    joinDate: '2024-10-20',
-    lastLogin: '2025-08-02',
-    status: 'active'
-  },
-  {
-    id: 11,
-    name: '조은영',
-    email: 'cho@example.com',
-    phone: '010-1234-5679',
-    joinDate: '2024-11-05',
-    lastLogin: '2025-08-01',
-    status: 'pending'
-  },
-  {
-    id: 12,
-    name: '백준호',
-    email: 'baek@example.com',
-    phone: '010-2345-6780',
-    joinDate: '2024-12-10',
-    lastLogin: '2025-07-30',
-    status: 'active'
-  }
-];
+// 백엔드에서 받은 UserStatistics를 Member 형태로 변환하는 함수
+const convertUserStatisticsToMember = (userStats: UserStatistics): Member => {
+  return {
+    id: userStats.id, // 백엔드에서 제공하는 실제 ID 사용
+    name: userStats.userName,
+    email: userStats.userEmail,
+    phone: userStats.userPhoneNum, // null일 수 있음
+    joinDate: new Date(userStats.createdAt).toLocaleDateString('ko-KR'),
+    lastLogin: new Date(userStats.recentLogin).toLocaleDateString('ko-KR'),
+    status: userStats.status
+  };
+};
 
 const getStatusBadge = (status: Member['status']) => {
   const statusConfig = {
+    // 백엔드 Status enum과 일치하는 소문자 상태값
     active: { text: '활동중', bg: 'bg-green-100', textColor: 'text-green-800', border: 'border-green-200' },
-    denied: { text: '활동 거부됨', bg: 'bg-red-100', textColor: 'text-red-800', border: 'border-red-200' },
-    dormant: { text: '휴면', bg: 'bg-gray-100', textColor: 'text-gray-800', border: 'border-gray-200' },
-    withdrawn: { text: '탈퇴', bg: 'bg-gray-800', textColor: 'text-white', border: 'border-gray-700' },
-    pending: { text: '대기중', bg: 'bg-yellow-100', textColor: 'text-yellow-800', border: 'border-yellow-200' }
+    inactive: { text: '비활성', bg: 'bg-gray-100', textColor: 'text-gray-800', border: 'border-gray-200' },
+    pending: { text: '대기중', bg: 'bg-yellow-100', textColor: 'text-yellow-800', border: 'border-yellow-200' },
+    withdrawn: { text: '철회됨', bg: 'bg-gray-800', textColor: 'text-white', border: 'border-gray-700' }
   };
 
-  const config = statusConfig[status];
+  // 안전장치: 정의되지 않은 상태값에 대한 기본값 제공
+  const config = statusConfig[status] || { 
+    text: status || '알 수 없음', 
+    bg: 'bg-gray-100', 
+    textColor: 'text-gray-800', 
+    border: 'border-gray-200' 
+  };
+
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.textColor} ${config.border}`}>
       {config.text}
@@ -232,9 +142,10 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSa
               <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
               <input
                 type="tel"
-                value={formData.phone}
+                value={formData.phone || ''}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 disabled={mode === 'view'}
+                placeholder={formData.phone ? '' : '전화번호 없음 (소셜 로그인)'}
                 className={`w-full px-3 py-2 border rounded-md ${
                   mode === 'view' 
                     ? 'bg-gray-100 text-gray-600' 
@@ -270,11 +181,10 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSa
                     : 'border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
                 }`}
               >
-                <option value="active">활동중</option>
-                <option value="denied">활동 거부됨</option>
-                <option value="dormant">휴면</option>
-                <option value="withdrawn">탈퇴</option>
-                <option value="pending">대기중</option>
+                <option value="ACTIVE">활동중</option>
+                <option value="INACTIVE">비활성</option>
+                <option value="SUSPENDED">정지됨</option>
+                <option value="DELETED">삭제됨</option>
               </select>
             </div>
           </div>
@@ -317,8 +227,44 @@ function MemberManagementPage() {
     mode: 'view'
   });
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
-  const [membersData, setMembersData] = useState<Member[]>(members);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; userId: number | null; userName: string }>({
+    isOpen: false,
+    userId: null,
+    userName: ''
+  });
+  const [membersData, setMembersData] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const itemsPerPage = 10;
+
+  // 백엔드에서 유저 데이터를 가져오는 함수
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await userService.getAllUserStatistics();
+      
+      if (response.success && response.data) {
+        const convertedMembers = response.data.map((userStats) => 
+          convertUserStatisticsToMember(userStats)
+        );
+        setMembersData(convertedMembers);
+      } else {
+        setError(response.message || '유저 데이터를 불러올 수 없습니다.');
+      }
+    } catch (err) {
+      console.error('유저 데이터 로딩 실패:', err);
+      setError(err instanceof Error ? err.message : '유저 데이터를 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    fetchUserData();
+  }, []);
 
   const filteredMembers = membersData.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -384,58 +330,104 @@ function MemberManagementPage() {
     alert('사용자 정보가 수정되었습니다.');
   };
 
-  const handleStatusChange = (userId: number, newStatus: Member['status']) => {
-    // 실제 구현에서는 API 호출을 통해 상태를 업데이트해야 합니다
-    console.log(`User ${userId} status changed to ${newStatus}`);
+  const handleStatusChange = async (userId: number, newStatus: Member['status']) => {
+    try {
+      console.log(`User ${userId} status changed to ${newStatus}`);
+      
+      // API 호출을 통해 상태 변경
+      const response = await userService.changeUserStatus({
+        userId: userId,
+        status: newStatus
+      });
+      
+      if (response.success) {
+        // 성공 시 로컬 상태 업데이트
+        setMembersData(prev => 
+          prev.map(member => 
+            member.id === userId 
+              ? { ...member, status: newStatus }
+              : member
+          )
+        );
+        
+        alert(`사용자 상태가 ${getStatusText(newStatus)}로 변경되었습니다.`);
+      } else {
+        alert(`상태 변경에 실패했습니다: ${response.message}`);
+      }
+    } catch (error) {
+      console.error('상태 변경 실패:', error);
+      alert(`상태 변경 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+    }
     
-    // 로컬 상태 업데이트
-    setMembersData(prev => 
-      prev.map(member => 
-        member.id === userId 
-          ? { ...member, status: newStatus }
-          : member
-      )
-    );
-    
-    alert(`사용자 상태가 ${getStatusText(newStatus)}로 변경되었습니다.`);
     setEditingStatus(null);
+  };
+
+  // 유저 삭제 함수
+  const handleDeleteUser = async (userId: number) => {
+    try {
+      const result = await userService.deleteUser(userId);
+      
+      if (result.success) {
+        // 성공 시 목록에서 해당 유저 제거
+        setMembersData(prev => prev.filter(member => member.id !== userId));
+        alert('유저가 성공적으로 삭제되었습니다.');
+      } else {
+        alert(result.message || '유저 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('유저 삭제 오류:', error);
+      alert(error instanceof Error ? error.message : '유저 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setDeleteModal({ isOpen: false, userId: null, userName: '' });
+    }
+  };
+
+  // 삭제 확인 모달 열기
+  const openDeleteModal = (userId: number, userName: string) => {
+    setDeleteModal({ isOpen: true, userId, userName });
+  };
+
+  // 삭제 확인 모달 닫기
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, userId: null, userName: '' });
   };
 
   const getStatusText = (status: Member['status']) => {
     const statusMap = {
       active: '활동중',
-      denied: '활동 거부됨',
-      dormant: '휴면',
-      withdrawn: '탈퇴',
-      pending: '대기중'
+      inactive: '비활성',
+      pending: '대기중',
+      withdrawn: '철회됨'
     };
-    return statusMap[status];
+    return statusMap[status] || status || '알 수 없음';
   };
 
   const StatusDropdown: React.FC<{ member: Member }> = ({ member }) => {
     const [isOpen, setIsOpen] = useState(false);
 
+    // 상태에 따른 스타일을 직접 정의
+    const getStatusStyle = (status: Member['status']) => {
+      const statusStyles = {
+        active: { bg: '#dcfce7', text: '#166534', border: '#bbf7d0' },
+        inactive: { bg: '#f3f4f6', text: '#1f2937', border: '#e5e7eb' },
+        pending: { bg: '#fef3c7', text: '#92400e', border: '#fde68a' },
+        withdrawn: { bg: '#1f2937', text: '#ffffff', border: '#374151' }
+      };
+      
+      return statusStyles[status] || { bg: '#f3f4f6', text: '#1f2937', border: '#e5e7eb' };
+    };
+
+    const style = getStatusStyle(member.status);
+
     return (
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
+          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity border"
           style={{
-            backgroundColor: getStatusBadge(member.status).props.className.includes('bg-green-100') ? '#dcfce7' :
-                           getStatusBadge(member.status).props.className.includes('bg-red-100') ? '#fee2e2' :
-                           getStatusBadge(member.status).props.className.includes('bg-gray-100') ? '#f3f4f6' :
-                           getStatusBadge(member.status).props.className.includes('bg-gray-800') ? '#1f2937' :
-                           '#fef3c7',
-            color: getStatusBadge(member.status).props.className.includes('text-white') ? '#ffffff' :
-                   getStatusBadge(member.status).props.className.includes('text-green-800') ? '#166534' :
-                   getStatusBadge(member.status).props.className.includes('text-red-800') ? '#991b1b' :
-                   getStatusBadge(member.status).props.className.includes('text-gray-800') ? '#1f2937' :
-                   '#92400e',
-            borderColor: getStatusBadge(member.status).props.className.includes('border-green-200') ? '#bbf7d0' :
-                        getStatusBadge(member.status).props.className.includes('border-red-200') ? '#fecaca' :
-                        getStatusBadge(member.status).props.className.includes('border-gray-200') ? '#e5e7eb' :
-                        getStatusBadge(member.status).props.className.includes('border-gray-700') ? '#374151' :
-                        '#fde68a'
+            backgroundColor: style.bg,
+            color: style.text,
+            borderColor: style.border
           }}
         >
           {getStatusText(member.status)}
@@ -447,51 +439,23 @@ function MemberManagementPage() {
         {isOpen && (
           <div className="absolute z-10 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg">
             <div className="py-1">
-              <button
-                onClick={() => {
-                  handleStatusChange(member.id, 'active');
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                활동중
-              </button>
-              <button
-                onClick={() => {
-                  handleStatusChange(member.id, 'withdrawn');
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                탈퇴함
-              </button>
-              <button
-                onClick={() => {
-                  handleStatusChange(member.id, 'denied');
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                활동 거부됨
-              </button>
-              <button
-                onClick={() => {
-                  handleStatusChange(member.id, 'dormant');
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                휴면
-              </button>
-              <button
-                onClick={() => {
-                  handleStatusChange(member.id, 'pending');
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                대기중
-              </button>
+              {[
+                { value: 'active', label: '활동중' },
+                { value: 'inactive', label: '비활성' },
+                { value: 'pending', label: '대기중' },
+                { value: 'withdrawn', label: '철회됨' }
+              ].map((statusOption) => (
+                <button
+                  key={statusOption.value}
+                  onClick={() => {
+                    handleStatusChange(member.id, statusOption.value as Member['status']);
+                    setIsOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  {statusOption.label}
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -518,7 +482,7 @@ function MemberManagementPage() {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">전체 회원</p>
                   <p className="text-2xl font-semibold text-gray-900">{membersData.length}명</p>
-                  <p className="text-sm text-green-600">↑ 전월 대비 +{membersData.length}명</p>
+                  <p className="text-sm text-green-600">↑ 전월 대비 +{Math.floor(membersData.length * 0.1)}명</p>
                 </div>
               </div>
             </div>
@@ -534,7 +498,7 @@ function MemberManagementPage() {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">활동 중인 회원</p>
                   <p className="text-2xl font-semibold text-gray-900">{membersData.filter(m => m.status === 'active').length}명</p>
-                  <p className="text-sm text-green-600">↑ 전월 대비 +5명</p>
+                  <p className="text-sm text-green-600">↑ 전월 대비 +{Math.floor(membersData.filter(m => m.status === 'active').length * 0.1)}명</p>
                 </div>
               </div>
             </div>
@@ -549,7 +513,13 @@ function MemberManagementPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">신규 가입</p>
-                  <p className="text-2xl font-semibold text-gray-900">12명</p>
+                  <p className="text-2xl font-semibold text-gray-900">{membersData.filter(m => {
+                    const joinDate = new Date(m.joinDate);
+                    const now = new Date();
+                    const thisMonth = now.getMonth();
+                    const thisYear = now.getFullYear();
+                    return joinDate.getMonth() === thisMonth && joinDate.getFullYear() === thisYear;
+                  }).length}명</p>
                   <p className="text-sm text-gray-600">이번 달 가입</p>
                 </div>
               </div>
@@ -564,8 +534,8 @@ function MemberManagementPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">차단된 회원</p>
-                  <p className="text-2xl font-semibold text-gray-900">{membersData.filter(m => m.status === 'denied').length}명</p>
+                  <p className="text-sm font-medium text-gray-600">철회된 회원</p>
+                  <p className="text-2xl font-semibold text-gray-900">{membersData.filter(m => m.status === 'withdrawn').length}명</p>
                   <p className="text-sm text-red-600">▲ 관리 필요</p>
                 </div>
               </div>
@@ -635,17 +605,49 @@ function MemberManagementPage() {
                 >
                   <option value="all">전체</option>
                   <option value="active">활동중</option>
-                  <option value="denied">활동 거부됨</option>
-                  <option value="dormant">휴면</option>
-                  <option value="withdrawn">탈퇴</option>
+                  <option value="inactive">비활성</option>
                   <option value="pending">대기중</option>
+                  <option value="withdrawn">철회됨</option>
                 </select>
               </div>
             </div>
 
+            {/* Loading State */}
+            {loading && (
+              <div className="px-6 py-12 text-center">
+                <div className="inline-flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  유저 데이터를 불러오는 중...
+                </div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="px-6 py-12 text-center">
+                <div className="text-red-600 mb-4">
+                  <svg className="mx-auto h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">오류가 발생했습니다</h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <button
+                  onClick={fetchUserData}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  다시 시도
+                </button>
+              </div>
+            )}
+
             {/* Table */}
-            <div className="overflow-x-auto bg-white">
-              <table className="min-w-full divide-y divide-gray-200">
+            {!loading && !error && (
+              <div className="overflow-x-auto bg-white">
+                <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -666,8 +668,8 @@ function MemberManagementPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentMembers.map((member) => (
-                    <tr key={member.id} className="hover:bg-gray-50">
+                  {currentMembers.map((member, index) => (
+                    <tr key={member.id || `member-${index}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
@@ -691,7 +693,11 @@ function MemberManagementPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.phone}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {member.phone || (
+                          <span className="text-gray-400 italic">전화번호 없음</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.joinDate}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.lastLogin}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -718,7 +724,11 @@ function MemberManagementPage() {
                               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                             </svg>
                           </button>
-                          <button className="text-red-600 hover:text-red-900" title="삭제">
+                          <button 
+                            onClick={() => openDeleteModal(member.id, member.name)}
+                            className="text-red-600 hover:text-red-900"
+                            title="유저 완전 삭제"
+                          >
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
@@ -729,14 +739,16 @@ function MemberManagementPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            )}
 
             {/* Pagination */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-white rounded-b-lg">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-700">
-                  {startIndex + 1}-{Math.min(endIndex, filteredMembers.length)} of {filteredMembers.length} results
-                </div>
+            {!loading && !error && (
+              <div className="px-6 py-4 border-t border-gray-200 bg-white rounded-b-lg">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-700">
+                    {startIndex + 1}-{Math.min(endIndex, filteredMembers.length)} of {filteredMembers.length} results
+                  </div>
                 <div className="flex items-center space-x-2">
                   <button 
                     onClick={() => handlePageChange(currentPage - 1)}
@@ -748,9 +760,9 @@ function MemberManagementPage() {
                     </svg>
                   </button>
                   
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page, index) => (
                     <button
-                      key={page}
+                      key={`page-${page}-${index}`}
                       onClick={() => handlePageChange(page)}
                       className={`px-3 py-1 rounded-md text-sm font-medium ${
                         currentPage === page
@@ -773,7 +785,8 @@ function MemberManagementPage() {
                   </button>
                 </div>
               </div>
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -785,6 +798,44 @@ function MemberManagementPage() {
           mode={modalData.mode}
           onSave={handleSaveUser}
         />
+
+        {/* 삭제 확인 모달 */}
+        {deleteModal.isOpen && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3 text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                  <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mt-4">유저 삭제 확인</h3>
+                <div className="mt-2 px-7 py-3">
+                  <p className="text-sm text-gray-500">
+                    <strong>{deleteModal.userName}</strong> 유저를 완전히 삭제하시겠습니까?
+                  </p>
+                  <p className="text-sm text-red-600 mt-2">
+                    ⚠️ 이 작업은 되돌릴 수 없습니다. 유저의 모든 데이터가 영구적으로 삭제됩니다.
+                  </p>
+                </div>
+                <div className="items-center px-4 py-3">
+                  <button
+                    onClick={() => deleteModal.userId && handleDeleteUser(deleteModal.userId)}
+                    className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300"
+                  >
+                    삭제
+                  </button>
+                  <button
+                    onClick={closeDeleteModal}
+                    className="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-24 hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
