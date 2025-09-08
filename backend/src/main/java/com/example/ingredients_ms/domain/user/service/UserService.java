@@ -2,6 +2,7 @@ package com.example.ingredients_ms.domain.user.service;
 
 import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.email.service.EmailService;
+import com.example.ingredients_ms.domain.user.dto.request.ChangeStatusRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
@@ -339,5 +340,26 @@ public class UserService {
                 .userStatus(user.getStatus())
                 .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    @Transactional
+    public void changeStatus(ChangeStatusRequestDto requestDto){
+
+        Optional<User> opUser = userRepository.findById(requestDto.getUserId());
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+
+        user.setStatus(Status.fromValue(requestDto.getStatus()));
+
+        userRepository.save(user);
+    }
+
+    public void dropUser(Long userId){
+
+        userRepository.deleteById(userId);
+
     }
 }

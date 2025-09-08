@@ -9,11 +9,13 @@ export const API_ENDPOINTS = {
     },
     
     // 사용자 관련
-    USERS: {
-      BASE: '/api/v1/users',
-      PROFILE: '/api/v1/users/profile',
-      UPDATE: '/api/v1/users/update',
-    },
+      USERS: {
+    BASE: '/api/v1/users',
+    PROFILE: '/api/v1/users/profile',
+    UPDATE: '/api/v1/users/update',
+    CHANGE_STATUS: '/api/v1/users/change/status', // 유저 상태 변경
+    DELETE: '/api/v1/users/drop', // 유저 완전 삭제 (관리자용)
+  },
     
     // 관리자 관련
     ADMIN: {
@@ -22,6 +24,7 @@ export const API_ENDPOINTS = {
       USERS: '/admin/users',
       STATISTICS: '/admin/statistics',
       COMPLAINTS: '/admin/complaints',
+      USER_STATISTICS: '/api/v1/users/statistics', // 유저 통계 조회
     },
     
     // 재고 관련
