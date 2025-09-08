@@ -68,6 +68,7 @@ public class ApiSecurityConfig {
                         // 유저 관리 api
                         .requestMatchers(HttpMethod.POST, "/api/*/users/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/*/users/login").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/*/users/exchange/phone").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/*/users/exchange/password").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/*/users/exchange/nickname").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/users/me").hasAnyRole("USER","ADMIN")
@@ -76,6 +77,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/*/users/findID").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/*/users/withdraw").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST,"/api/*/users/admin/login").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/*/users/profile").hasAnyRole("USER","ADMIN")
 
                         // 이메일 관련 api
                         .requestMatchers(HttpMethod.POST, "/api/*/email/verify").permitAll()

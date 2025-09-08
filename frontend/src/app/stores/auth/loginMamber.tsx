@@ -1,5 +1,6 @@
 import { createContext, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 type Member = {
   id: number;
@@ -41,9 +42,38 @@ export function useLoginMember() {
   const [isLoginMemberPending, setLoginMemberPending] = useState(true);
   const [loginMember, _setLoginMember] = useState<Member>(createEmptyMember());
 
+  // 컴포넌트 마운트 시 로컬 스토리지에서 로그인 상태 복원
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const userData = localStorage.getItem('userData');
+      
+      if (isLoggedIn === 'true' && userData) {
+        try {
+          const parsedUserData = JSON.parse(userData);
+          console.log('로컬 스토리지에서 사용자 데이터 복원:', parsedUserData);
+          _setLoginMember(parsedUserData);
+        } catch (error) {
+          console.error('사용자 데이터 파싱 실패:', error);
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('userData');
+        }
+      }
+      setLoginMemberPending(false);
+    }
+  }, []);
+
   const removeLoginMember = () => {
+    console.log('로그인 멤버 제거');
     _setLoginMember(createEmptyMember());
     setLoginMemberPending(false);
+    
+    // 로그인 상태를 로컬 스토리지에서 제거
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userData');
+      console.log('로컬 스토리지에서 로그인 상태 제거됨');
+    }
   };
 
   const setLoginMember = (member: Member) => {
@@ -53,11 +83,28 @@ export function useLoginMember() {
       roles: member.roles || ['USER'] // roles가 없으면 기본값으로 USER 설정
     });
     setLoginMemberPending(false);
+    
+    // 로그인 상태를 로컬 스토리지에 저장
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userData', JSON.stringify(member));
+      console.log('로컬 스토리지에 로그인 상태 저장됨:', {
+        isLoggedIn: localStorage.getItem('isLoggedIn'),
+        userData: localStorage.getItem('userData')
+      });
+    }
   };
 
   const setNoLoginMember = () => {
-    console.log('로그인 멤버 제거');
+    console.log('로그인 멤버 제거 (setNoLoginMember)');
     setLoginMemberPending(false);
+    
+    // 로그인 상태를 로컬 스토리지에서 제거
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userData');
+      console.log('로컬 스토리지에서 로그인 상태 제거됨 (setNoLoginMember)');
+    }
   };
 
   const isLogin = loginMember.id !== 0;

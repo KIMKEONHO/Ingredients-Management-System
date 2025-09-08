@@ -6,6 +6,7 @@ import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.FindIdResponseDto;
+import com.example.ingredients_ms.domain.user.dto.response.ProfileReposeDto;
 import com.example.ingredients_ms.domain.user.dto.response.ValidUserResponseDto;
 import com.example.ingredients_ms.domain.user.entity.Role;
 import com.example.ingredients_ms.domain.user.entity.User;
@@ -235,6 +236,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public FindIdResponseDto findId(String phoneNum, String name){
 
         Optional<User> user = userRepository.findByPhoneNumAndUserName(phoneNum, name);
@@ -249,6 +251,7 @@ public class UserService {
                 .build();
     }
 
+    @Transactional
     public void findPw(String email){
         Optional<User> opUser = userRepository.findByEmail(email);
 
@@ -277,6 +280,7 @@ public class UserService {
         return sb.toString();
     }
 
+    @Transactional
     public void changePassword(String email, String password){
 
         Optional<User> opUser = userRepository.findByEmail(email);
@@ -291,6 +295,7 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void changeNickName(String email, String nickname){
         Optional<User> opUser = userRepository.findByEmail(email);
         if(opUser.isEmpty()){
@@ -302,5 +307,37 @@ public class UserService {
         user.setNickname(nickname);
 
         userRepository.save(user);
+    }
+
+    public void changePhoneNum(String email, String phoneNum){
+        Optional<User> opUser = userRepository.findByEmail(email);
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+
+        user.setPhoneNum(phoneNum);
+
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public ProfileReposeDto getProfile(Long userId){
+
+        Optional<User> opUser = userRepository.findById(userId);
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+
+        return ProfileReposeDto.builder()
+                .nickName(user.getNickname())
+                .phoneNum(user.getPhoneNum())
+                .email(user.getEmail())
+                .userStatus(user.getStatus())
+                .createdAt(user.getCreatedAt())
+                .build();
     }
 }

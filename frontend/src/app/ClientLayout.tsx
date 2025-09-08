@@ -27,26 +27,76 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         const checkAuthStatus = async () => {
             try {
                 console.log('로그인 상태 확인 중...');
-                const response = await fetch('http://localhost:8090/api/v1/users/me', {
-                    credentials: 'include',
-                });
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('로그인 성공:', data);
-                    setLoginMember(data);
-                } else {
-                    console.log('로그인 실패:', response.status);
-                    setNoLoginMember();
+                // 로컬 스토리지에서 로그인 상태 먼저 확인
+                const isLoggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
+                const userData = localStorage.getItem('userData');
+                
+                if (isLoggedInLocal && userData) {
+                    try {
+                        const parsedUserData = JSON.parse(userData);
+                        console.log('로컬 스토리지에서 사용자 데이터 복원:', parsedUserData);
+                        setLoginMember(parsedUserData);
+                        return; // 로컬 데이터가 있으면 API 호출 생략
+                    } catch (error) {
+                        console.error('사용자 데이터 파싱 실패:', error);
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('userData');
+                    }
+                }
+                
+                // 백엔드 API 호출로 인증 상태 확인 (선택적)
+                try {
+                    const response = await fetch('http://localhost:8090/api/v1/users/me', {
+                        credentials: 'include',
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('백엔드 로그인 성공:', data);
+                        setLoginMember(data);
+                    } else {
+                        console.log('백엔드 로그인 실패:', response.status);
+                        // 백엔드 실패 시에도 로컬 상태는 유지
+                        if (!isLoggedInLocal) {
+                            setNoLoginMember();
+                        }
+                    }
+                } catch (error) {
+                    console.error('백엔드 API 호출 실패:', error);
+                    // 백엔드 연결 실패 시에도 로컬 상태는 유지
+                    if (!isLoggedInLocal) {
+                        setNoLoginMember();
+                    }
                 }
             } catch (error) {
                 console.error('로그인 상태 확인 중 오류:', error);
-                setNoLoginMember();
+                // 에러 발생 시에도 로컬 상태는 유지
+                const isLoggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
+                if (!isLoggedInLocal) {
+                    setNoLoginMember();
+                }
             }
         };
 
         checkAuthStatus();
-    }, [])
+        
+        // 페이지 이동 시 인증 상태 재확인을 위한 이벤트 리스너 추가
+        const handleRouteChange = () => {
+            checkAuthStatus();
+        };
+        
+        // 페이지 포커스 시 인증 상태 재확인
+        const handleFocus = () => {
+            checkAuthStatus();
+        };
+        
+        window.addEventListener('focus', handleFocus);
+        
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [pathname]) // pathname을 의존성으로 추가하여 페이지 이동 시마다 실행
 
     if (isLoginMemberPending) {
         return (
