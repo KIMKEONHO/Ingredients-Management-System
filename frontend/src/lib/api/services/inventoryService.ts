@@ -10,28 +10,42 @@ export type UpdateFoodInventoryStatusRequest = components['schemas']['UpdateFood
 
 export const inventoryService = {
   getInventory: async (): Promise<FoodInventory[]> => {
-    const response = await apiClient.get(API_ENDPOINTS.INVENTORY.MY);
-    return response.data;
+    const response = await apiClient.get<components['schemas']['RsDataListFoodInventoryResponseDto']>(
+      API_ENDPOINTS.INVENTORY.MY
+    );
+    return Array.isArray(response?.data) ? response.data : [];
   },
 
   createInventoryItem: async (data: CreateFoodInventoryRequest): Promise<FoodInventory> => {
-    const response = await apiClient.post(API_ENDPOINTS.INVENTORY.BASE, data);
-    return response.data;
+    const response = await apiClient.post<components['schemas']['RsDataFoodInventoryResponseDto']>(
+      API_ENDPOINTS.INVENTORY.BASE,
+      data
+    );
+    return (response && response.data) ? response.data : {};
   },
 
   updateInventoryItem: async (data: UpdateFoodInventoryRequest): Promise<FoodInventory> => {
-    const response = await apiClient.put(API_ENDPOINTS.INVENTORY.BASE, data);
-    return response.data;
+    const response = await apiClient.put<components['schemas']['RsDataFoodInventoryResponseDto']>(
+      API_ENDPOINTS.INVENTORY.BASE,
+      data
+    );
+    return (response && response.data) ? response.data : {};
   },
 
   updateFoodInventoryQuantity: async (foodInventoryId: number, data: UpdateFoodInventoryQuantityRequest): Promise<FoodInventory> => {
-    const response = await apiClient.patch(`${API_ENDPOINTS.INVENTORY.BASE}${foodInventoryId}/quantity`, data);
-    return response.data;
+    const response = await apiClient.patch<components['schemas']['RsDataFoodInventoryResponseDto']>(
+      `${API_ENDPOINTS.INVENTORY.BASE}${foodInventoryId}/quantity`,
+      data
+    );
+    return (response && response.data) ? response.data : {};
   },
 
   updateFoodInventoryStatus: async (foodInventoryId: number, data: UpdateFoodInventoryStatusRequest): Promise<FoodInventory> => {
-    const response = await apiClient.patch(`${API_ENDPOINTS.INVENTORY.BASE}${foodInventoryId}/status`, data);
-    return response.data;
+    const response = await apiClient.patch<components['schemas']['RsDataFoodInventoryResponseDto']>(
+      `${API_ENDPOINTS.INVENTORY.BASE}${foodInventoryId}/status`,
+      data
+    );
+    return (response && response.data) ? response.data : {};
   },
 
   deleteInventoryItem: async (foodInventoryId: number): Promise<void> => {

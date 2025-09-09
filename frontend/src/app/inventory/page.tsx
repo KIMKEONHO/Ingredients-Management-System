@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { inventoryService, FoodInventory, CreateFoodInventoryRequest, UpdateFoodInventoryRequest, UpdateFoodInventoryQuantityRequest, UpdateFoodInventoryStatusRequest } from '@/lib/api/services/inventoryService'
-import { ingredientService, Ingredient, Category } from '@/lib/api/services/ingredientService'
+import { ingredientService, Ingredient } from '@/lib/api/services/ingredientService';
+import { categoryService, Category } from '@/lib/api/services/categoryService';
 
 interface InventoryItem {
   id: number
@@ -93,7 +94,7 @@ function InventoryContent() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const categoryData = await ingredientService.getAllCategories();
+        const categoryData = await categoryService.getAllCategories();
         setCategories(categoryData);
       } catch (error) {
         console.error('Failed to fetch categories:', error);
@@ -345,17 +346,17 @@ function InventoryContent() {
                <div className="mb-6">
                  <h4 className="font-medium text-gray-900 mb-3">카테고리</h4>
                  <div className="space-y-2">
-                   {[ { categoryName: '전체' }, ...categories].map((category) => (
-                     <label key={category.categoryName} className="flex items-center">
+                   {[ { name: '전체' }, ...categories].map((category) => (
+                     <label key={category.name} className="flex items-center">
                        <input
                          type="radio"
                          name="category"
-                         value={category.categoryName}
-                         checked={categoryFilter === category.categoryName}
+                         value={category.name}
+                         checked={categoryFilter === category.name}
                          onChange={(e) => setCategoryFilter(e.target.value)}
                          className="mr-2 text-green-600 focus:ring-green-500"
                        />
-                       <span className="text-sm text-gray-700">{category.categoryName}</span>
+                       <span className="text-sm text-gray-700">{category.name}</span>
                      </label>
                    ))}
                  </div>
@@ -626,17 +627,17 @@ function InventoryContent() {
                  <div className="mb-6">
                    <h4 className="font-medium text-gray-900 mb-3">카테고리</h4>
                    <div className="space-y-2">
-                     {[ { categoryName: '전체' }, ...categories].map((category) => (
-                       <label key={category.categoryName} className="flex items-center">
+                     {[ { name: '전체' }, ...categories].map((category) => (
+                       <label key={category.name} className="flex items-center">
                          <input
                            type="radio"
                            name="category-mobile"
-                           value={category.categoryName}
-                           checked={categoryFilter === category.categoryName}
+                           value={category.name}
+                           checked={categoryFilter === category.name}
                            onChange={(e) => setCategoryFilter(e.target.value)}
                            className="mr-2 text-green-600 focus:ring-green-500"
                          />
-                         <span className="text-sm text-gray-700">{category.categoryName}</span>
+                         <span className="text-sm text-gray-700">{category.name}</span>
                        </label>
                      ))}
                    </div>
