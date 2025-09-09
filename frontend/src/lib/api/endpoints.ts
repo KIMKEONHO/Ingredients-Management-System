@@ -65,6 +65,12 @@ export const API_ENDPOINTS = {
       BASE: '/api/v1/ingredient/',
     },
 
+    // 카테고리 관련
+    CATEGORY: {
+      BASE: '/api/v1/category/',
+      DETAIL: '/api/v1/category/:categoryId',
+    },
+
   } as const;
   
   // API URL 생성 헬퍼 함수
