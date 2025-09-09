@@ -1,6 +1,6 @@
 import { apiClient } from '../client';
 import { API_ENDPOINTS } from '../endpoints';
-import { components } from '@/lib/backend/apiV1/schema';
+import type { components } from '@/lib/backend/apiV1/schema';
 
 export type FoodInventory = components['schemas']['FoodInventoryResponseDto'];
 export type CreateFoodInventoryRequest = components['schemas']['CreateFoodInventoryRequestDto'];

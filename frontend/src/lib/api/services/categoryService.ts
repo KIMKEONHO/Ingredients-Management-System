@@ -1,6 +1,6 @@
 import { apiClient } from '../client';
 import { API_ENDPOINTS, createApiUrl } from '../endpoints';
-import { components } from '@/lib/backend/apiV1/schema';
+import type { components } from '@/lib/backend/apiV1/schema';
 
 export type Category = components['schemas']['AllIngredientsCategoryResponseDto'];
 export type NewCategory = components['schemas']['CreateIngredientsCategoryRequestDto'];
