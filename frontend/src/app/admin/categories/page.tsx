@@ -10,64 +10,21 @@ function CategoriesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-interface Category {
-  id: number
-  name: string
-  createdAt: string
-  itemCount: number
-}
-
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([
-    {
-      id: 1,
-      name: '육류',
-      createdAt: '2025-08-01',
-      itemCount: 12
-    },
-    {
-      id: 2,
-      name: '해산물',
-      createdAt: '2025-08-01',
-      itemCount: 8
-    },
-    {
-      id: 3,
-      name: '채소류',
-      createdAt: '2025-08-01',
-      itemCount: 25
-    },
-    {
-      id: 4,
-      name: '과일류',
-      createdAt: '2025-08-01',
-      itemCount: 15
-    },
-    {
-      id: 5,
-      name: '유제품',
-      createdAt: '2025-08-01',
-      itemCount: 10
-    },
-    {
-      id: 6,
-      name: '곡물',
-      createdAt: '2025-08-01',
-      itemCount: 18
-    },
-    {
-      id: 7,
-      name: '조미료',
-      createdAt: '2025-08-01',
-      itemCount: 22
-    },
-    {
-      id: 8,
-      name: '냉동식품',
-      createdAt: '2025-08-01',
-      itemCount: 14
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true)
+        const data = await categoryService.getAllCategories()
+        setCategories(data)
+      } catch (err) {
+        setError('카테고리 조회에 실패했습니다')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ])
+
+    fetchCategories()
+  }, [])
 
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -76,7 +33,7 @@ export default function CategoriesPage() {
 
   // 검색 필터링
   const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(searchQuery.toLowerCase())
+    category.name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   // 페이지네이션
@@ -86,33 +43,55 @@ export default function CategoriesPage() {
   const endIndex = startIndex + itemsPerPage
   const currentCategories = filteredCategories.slice(startIndex, endIndex)
 
-  const deleteCategory = (id: number) => {
+  const deleteCategory = async (id: number) => {
     if (confirm('정말로 이 카테고리를 삭제하시겠습니까?')) {
-      setCategories(prev => prev.filter(category => category.id !== id))
+      try {
+        await categoryService.deleteCategory(id)
+        setCategories(prev => prev.filter(category => category.id !== id))
+      } catch (error) {
+        console.error('카테고리 삭제 실패:', error)
+        alert('카테고리 삭제에 실패했습니다.')
+      }
     }
   }
 
-  const editCategory = (id: number, newName: string) => {
-    setCategories(prev =>
-      prev.map(category =>
-        category.id === id ? { ...category, name: newName } : category
+  const editCategory = async (id: number, newName: string) => {
+    try {
+      await categoryService.updateCategory(id, { name: newName })
+      setCategories(prev =>
+        prev.map(category =>
+          category.id === id ? { ...category, name: newName } : category
+        )
       )
-    )
+    } catch (error) {
+      console.error('카테고리 수정 실패:', error)
+      alert('카테고리 수정에 실패했습니다.')
+    }
   }
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (newCategoryName.trim()) {
-      const newCategory: Category = {
-        id: categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1,
-        name: newCategoryName.trim(),
-        createdAt: new Date().toISOString().split('T')[0],
-        itemCount: 0,
-      };
-      setCategories(prev => [...prev, newCategory]);
-      setIsAddModalOpen(false);
-      setNewCategoryName('');
+      try {
+        await categoryService.createCategory({ name: newCategoryName.trim() })
+        // 성공 시 목록 새로고침
+        const data = await categoryService.getAllCategories()
+        setCategories(data)
+        setIsAddModalOpen(false);
+        setNewCategoryName('');
+      } catch (error) {
+        console.error('카테고리 추가 실패:', error)
+        alert('카테고리 추가에 실패했습니다.')
+      }
     }
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -174,12 +153,7 @@ export default function CategoriesPage() {
                       </svg>
                       <span>{category.createdAt}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span>{category.itemCount}개 항목</span>
-                    </div>
+                    
                   </div>
                 </div>
               </div>
@@ -188,8 +162,8 @@ export default function CategoriesPage() {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => {
-                    const newName = prompt('새 카테고리 이름을 입력하세요:', category.name)
-                    if (newName && newName.trim()) {
+                    const newName = prompt('새 카테고리 이름을 입력하세요:', category.name || '')
+                    if (newName && newName.trim() && category.id) {
                       editCategory(category.id, newName.trim())
                     }
                   }}
@@ -201,7 +175,7 @@ export default function CategoriesPage() {
                   </svg>
                 </button>
                 <button
-                  onClick={() => deleteCategory(category.id)}
+                  onClick={() => category.id && deleteCategory(category.id)}
                   className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
                   title="삭제"
                 >
