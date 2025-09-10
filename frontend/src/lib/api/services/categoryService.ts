@@ -4,6 +4,7 @@ import { API_ENDPOINTS, createApiUrl } from '../endpoints';
 export type Category = {
   id?: number;
   name?: string;
+  createdAt?: string;
 };
 
 export type NewCategory = {
