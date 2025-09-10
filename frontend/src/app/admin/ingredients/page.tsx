@@ -1,18 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-
-interface Ingredient {
-  id: number
-  name: string
-  description: string
-  category: string
-  price: number
-  unit: string
-  supplier: string
-  storagePeriod: number
-  lastModified: string
-}
+import { useState, useEffect } from 'react'
+import AdminSidebar from '../components/sidebar'
+import AdminGuard from '@/lib/auth/adminGuard'
+import { ingredientService, Ingredient } from '@/lib/api/services/ingredientService'
+import { categoryService, Category } from '@/lib/api/services/categoryService'
 
 interface NewIngredient {
   name: string
@@ -24,75 +16,11 @@ interface NewIngredient {
   storagePeriod: number
 }
 
-export default function AdminIngredientsPage() {
-  const [ingredients, setIngredients] = useState<Ingredient[]>([
-    {
-      id: 1,
-      name: '달걀',
-      description: '방목 닭이 낳은 신선한 달걀...',
-      category: '축산물',
-      price: 6000,
-      unit: '30개',
-      supplier: '건강한 농장',
-      storagePeriod: 21,
-      lastModified: '2024-01-24'
-    },
-    {
-      id: 2,
-      name: '닭가슴살',
-      description: '고품질 닭가슴살로 단백질이...',
-      category: '육류',
-      price: 8000,
-      unit: 'kg',
-      supplier: '프리미엄 육류',
-      storagePeriod: 3,
-      lastModified: '2024-01-20'
-    },
-    {
-      id: 3,
-      name: '쌀',
-      description: '국내산 프리미엄 쌀입니다....',
-      category: '곡물',
-      price: 50000,
-      unit: '20kg',
-      supplier: '황금들녘',
-      storagePeriod: 365,
-      lastModified: '2024-01-25'
-    },
-    {
-      id: 4,
-      name: '양파',
-      description: '신선하고 달콤한 양파입니다......',
-      category: '채소',
-      price: 3000,
-      unit: 'kg',
-      supplier: '신선농장',
-      storagePeriod: 30,
-      lastModified: '2024-01-15'
-    },
-    {
-      id: 5,
-      name: '우유',
-      description: '신선한 목장 우유입니다. 칼...',
-      category: '유제품',
-      price: 2500,
-      unit: 'L',
-      supplier: '목장 직송',
-      storagePeriod: 7,
-      lastModified: '2024-01-18'
-    },
-    {
-      id: 6,
-      name: '토마토',
-      description: '빨갛게 익은 신선한 토마토...',
-      category: '채소',
-      price: 4000,
-      unit: 'kg',
-      supplier: '싱싱농장',
-      storagePeriod: 7,
-      lastModified: '2024-01-22'
-    }
-  ])
+function AdminIngredientsPage() {
+  const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('전체')
@@ -199,8 +127,10 @@ export default function AdminIngredientsPage() {
   const categories = ['축산물', '육류', '곡물', '채소', '유제품', '과일', '조미료']
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-6 py-8">
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar />
+      <div className="flex-1 p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
         {/* Search and Filter Section */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -495,7 +425,16 @@ export default function AdminIngredientsPage() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   )
+}
+
+export default function AdminIngredientsPageWithGuard() {
+  return (
+    <AdminGuard>
+      <AdminIngredientsPage />
+    </AdminGuard>
+  );
 }
