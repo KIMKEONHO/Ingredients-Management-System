@@ -1,6 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { categoryService, Category } from '@/lib/api/services/categoryService'
+import AdminSidebar from '../components/sidebar'
+import AdminGuard from '@/lib/auth/adminGuard'
+
+function CategoriesPage() {
+  const [categories, setCategories] = useState<Category[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
 interface Category {
   id: number
@@ -107,8 +115,10 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-6 py-8">
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar />
+      <div className="flex-1 p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
         {/* 페이지 제목 및 통계 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-blue-900 mb-2">식재료 카테고리</h1>
@@ -251,6 +261,7 @@ export default function CategoriesPage() {
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* 새 카테고리 추가 모달 */}
@@ -303,4 +314,12 @@ export default function CategoriesPage() {
       )}
     </div>
   )
+}
+
+export default function CategoriesPageWithGuard() {
+  return (
+    <AdminGuard>
+      <CategoriesPage />
+    </AdminGuard>
+  );
 }
