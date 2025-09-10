@@ -197,29 +197,26 @@ function ComplaintManagementPage() {
 
   const StatusDropdown: React.FC<{ complaint: Complaint }> = ({ complaint }) => {
     const isOpen = openDropdownId === complaint.id;
-    const [dropdownPosition, setDropdownPosition] = useState<'top' | 'bottom'>('bottom');
+    
+    // 현재 페이지의 민원 개수와 위치에 따라 드롭다운 위치 결정
+    const getDropdownPosition = (): 'top' | 'bottom' => {
+      // 현재 페이지의 민원 개수가 7개 이상이면 8번째부터 위로 표시
+      if (currentComplaints.length >= 7) {
+        const complaintIndex = currentComplaints.findIndex(c => c.id === complaint.id);
+        return complaintIndex >= 7 ? 'top' : 'bottom';
+      }
+      return 'bottom';
+    };
 
     const handleToggle = () => {
-      console.log('드롭다운 토글 클릭:', { complaintId: complaint.id, isOpen });
-      
       if (!isOpen) {
-        // 드롭다운을 열기 전에 위치 계산
-        const buttonElement = document.getElementById(`status-button-${complaint.id}`);
-        if (buttonElement) {
-          const rect = buttonElement.getBoundingClientRect();
-          const viewportHeight = window.innerHeight;
-          const spaceBelow = viewportHeight - rect.bottom;
-          const spaceAbove = rect.top;
-          
-          // 아래쪽 공간이 부족하고 위쪽 공간이 더 많으면 위로, 그렇지 않으면 아래로
-          setDropdownPosition(spaceBelow < 200 && spaceAbove > spaceBelow ? 'top' : 'bottom');
-        }
+        setOpenDropdownId(complaint.id);
+      } else {
+        setOpenDropdownId(null);
       }
-      setOpenDropdownId(isOpen ? null : complaint.id);
     };
 
     const handleStatusChangeAndClose = (newStatus: Complaint['status']) => {
-      console.log('드롭다운에서 상태 변경 클릭:', { complaintId: complaint.id, newStatus });
       handleStatusChange(complaint.id, newStatus);
       setOpenDropdownId(null);
     };
@@ -245,7 +242,7 @@ function ComplaintManagementPage() {
 
         {isOpen && (
           <div className={`absolute z-10 w-32 bg-white border border-gray-200 rounded-md shadow-lg ${
-            dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
+            getDropdownPosition() === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
           }`}>
             <div className="py-1">
               <button
@@ -490,14 +487,14 @@ function ComplaintManagementPage() {
             )}
 
             {/* Table */}
-            <div className="overflow-x-auto bg-white">
+            <div className="overflow-x-auto bg-white" style={{ minHeight: '700px', maxHeight: '800px' }}>
               {loading ? (
-                <div className="flex justify-center items-center py-12">
+                <div className="flex justify-center items-center h-full">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   <span className="ml-2 text-gray-600">민원 데이터를 불러오는 중...</span>
                 </div>
               ) : error ? (
-                <div className="flex justify-center items-center py-12">
+                <div className="flex justify-center items-center h-full">
                   <div className="text-center">
                     <div className="text-red-600 mb-2">⚠️</div>
                     <p className="text-gray-600">{error}</p>
@@ -510,35 +507,37 @@ function ComplaintManagementPage() {
                   </div>
                 </div>
               ) : currentComplaints.length === 0 ? (
-                <div className="flex justify-center items-center py-12">
+                <div className="flex justify-center items-center h-full">
                   <div className="text-center">
                     <div className="text-gray-400 mb-2">📝</div>
                     <p className="text-gray-600">민원이 없습니다.</p>
                   </div>
                 </div>
               ) : (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          checked={selectAll}
-                          onChange={handleSelectAll}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원번호</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원 제목</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원 내용</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작성자</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">접수일자</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">처리기한</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                <div className="h-full flex flex-col">
+                  <div className="overflow-y-auto flex-1">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <input
+                              type="checkbox"
+                              checked={selectAll}
+                              onChange={handleSelectAll}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원번호</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원 제목</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원 내용</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작성자</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">접수일자</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">처리기한</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
                     {currentComplaints.map((complaint) => (
                       <tr key={complaint.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -584,8 +583,10 @@ function ComplaintManagementPage() {
                         </td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
             </div>
 
