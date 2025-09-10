@@ -1,23 +1,67 @@
 import { apiClient } from '../client';
 import { API_ENDPOINTS } from '../endpoints';
-import type { components } from '@/lib/backend/apiV1/schema';
 
-export type FoodInventory = components['schemas']['FoodInventoryResponseDto'];
-export type CreateFoodInventoryRequest = components['schemas']['CreateFoodInventoryRequestDto'];
-export type UpdateFoodInventoryRequest = components['schemas']['UpdateFoodInventoryRequestDto'];
-export type UpdateFoodInventoryQuantityRequest = components['schemas']['UpdateFoodInventoryQuantityRequestDto'];
-export type UpdateFoodInventoryStatusRequest = components['schemas']['UpdateFoodInventoryStatusRequestDto'];
+export type FoodInventory = {
+  foodInventoryId?: number;
+  quantity?: number;
+  unit?: string;
+  boughtDate?: string;
+  expirationDate?: string;
+  place?: "REFRIGERATED" | "FROZEN" | "ROOM";
+  userId?: number;
+  ingredientId?: number;
+  ingredientName?: string;
+  status?: "NORMAL" | "EXPIRING_SOON" | "EXPIRED" | "CONSUMED";
+};
+
+export type CreateFoodInventoryRequest = {
+  quantity?: number;
+  unit?: string;
+  boughtDate?: string;
+  expirationDate?: string;
+  place?: "REFRIGERATED" | "FROZEN" | "ROOM";
+  ingredientId?: number;
+};
+
+export type UpdateFoodInventoryRequest = {
+  foodInventoryId?: number;
+  quantity?: number;
+  unit?: string;
+  boughtDate?: string;
+  expirationDate?: string;
+  place?: "REFRIGERATED" | "FROZEN" | "ROOM";
+};
+
+export type UpdateFoodInventoryQuantityRequest = {
+  quantity?: number;
+};
+
+export type UpdateFoodInventoryStatusRequest = {
+  status?: "NORMAL" | "EXPIRING_SOON" | "EXPIRED" | "CONSUMED";
+};
+
+export type RsDataListFoodInventoryResponseDto = {
+  resultCode?: string;
+  msg?: string;
+  data?: FoodInventory[];
+};
+
+export type RsDataFoodInventoryResponseDto = {
+  resultCode?: string;
+  msg?: string;
+  data?: FoodInventory;
+};
 
 export const inventoryService = {
   getInventory: async (): Promise<FoodInventory[]> => {
-    const response = await apiClient.get<components['schemas']['RsDataListFoodInventoryResponseDto']>(
+    const response = await apiClient.get<RsDataListFoodInventoryResponseDto>(
       API_ENDPOINTS.INVENTORY.MY
     );
     return Array.isArray(response?.data) ? response.data : [];
   },
 
   createInventoryItem: async (data: CreateFoodInventoryRequest): Promise<FoodInventory> => {
-    const response = await apiClient.post<components['schemas']['RsDataFoodInventoryResponseDto']>(
+    const response = await apiClient.post<RsDataFoodInventoryResponseDto>(
       API_ENDPOINTS.INVENTORY.BASE,
       data
     );
@@ -25,7 +69,7 @@ export const inventoryService = {
   },
 
   updateInventoryItem: async (data: UpdateFoodInventoryRequest): Promise<FoodInventory> => {
-    const response = await apiClient.put<components['schemas']['RsDataFoodInventoryResponseDto']>(
+    const response = await apiClient.put<RsDataFoodInventoryResponseDto>(
       API_ENDPOINTS.INVENTORY.BASE,
       data
     );
@@ -33,7 +77,7 @@ export const inventoryService = {
   },
 
   updateFoodInventoryQuantity: async (foodInventoryId: number, data: UpdateFoodInventoryQuantityRequest): Promise<FoodInventory> => {
-    const response = await apiClient.patch<components['schemas']['RsDataFoodInventoryResponseDto']>(
+    const response = await apiClient.patch<RsDataFoodInventoryResponseDto>(
       `${API_ENDPOINTS.INVENTORY.BASE}${foodInventoryId}/quantity`,
       data
     );
@@ -41,7 +85,7 @@ export const inventoryService = {
   },
 
   updateFoodInventoryStatus: async (foodInventoryId: number, data: UpdateFoodInventoryStatusRequest): Promise<FoodInventory> => {
-    const response = await apiClient.patch<components['schemas']['RsDataFoodInventoryResponseDto']>(
+    const response = await apiClient.patch<RsDataFoodInventoryResponseDto>(
       `${API_ENDPOINTS.INVENTORY.BASE}${foodInventoryId}/status`,
       data
     );
