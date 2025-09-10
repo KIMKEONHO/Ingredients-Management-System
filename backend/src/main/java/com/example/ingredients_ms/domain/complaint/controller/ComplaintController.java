@@ -49,7 +49,7 @@ public class ComplaintController {
         return new RsData<>("201","민원이 생성되었습니다.", responseDto);
     }
 
-    // ( 본인거 단건 조회 )
+    // ( 본인거 조회 )
     @GetMapping("/users")
     public RsData<List<ComplaintDetailResponseDto>> getComplaintsByUsers(@CurrentUser SecurityUser currentUser){
 
