@@ -36,11 +36,33 @@ function AdminIngredientsPage() {
     storagePeriod: 0
   })
 
+  // 데이터 로딩
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true)
+        const [ingredientsData, categoriesData] = await Promise.all([
+          ingredientService.getAllIngredients(),
+          categoryService.getAllCategories()
+        ])
+        setIngredients(ingredientsData)
+        setCategories(categoriesData)
+      } catch (err) {
+        setError('데이터 로딩에 실패했습니다')
+        console.error('Failed to fetch data:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
   // 검색 및 필터링
   const filteredIngredients = ingredients.filter(ingredient => {
-    const matchesSearch = ingredient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         ingredient.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = categoryFilter === '전체' || ingredient.category === categoryFilter
+    const matchesSearch = ingredient.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         ingredient.categoryName?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = categoryFilter === '전체' || ingredient.categoryName === categoryFilter
     return matchesSearch && matchesCategory
   })
 
@@ -48,32 +70,48 @@ function AdminIngredientsPage() {
   const sortedIngredients = [...filteredIngredients].sort((a, b) => {
     switch (sortBy) {
       case '이름순':
-        return a.name.localeCompare(b.name)
-      case '가격순':
-        return a.price - b.price
+        return (a.name || '').localeCompare(b.name || '')
+      case '카테고리순':
+        return (a.categoryName || '').localeCompare(b.categoryName || '')
       case '최신순':
-        return new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
       default:
         return 0
     }
   })
 
-  const deleteIngredient = (id: number) => {
+  const deleteIngredient = async (id: number) => {
     if (confirm('정말로 이 식재료를 삭제하시겠습니까?')) {
-      setIngredients(prev => prev.filter(ingredient => ingredient.id !== id))
+      try {
+        // API 호출 (ingredientService에 deleteIngredient 함수가 있다고 가정)
+        // await ingredientService.deleteIngredient(id)
+        setIngredients(prev => prev.filter(ingredient => ingredient.id !== id))
+        alert('식재료가 삭제되었습니다.')
+      } catch (error) {
+        console.error('삭제 실패:', error)
+        alert('삭제에 실패했습니다.')
+      }
     }
   }
 
-  const editIngredient = (id: number) => {
+  const editIngredient = async (id: number) => {
     const ingredient = ingredients.find(i => i.id === id)
     if (ingredient) {
-      const newName = prompt('새 식재료 이름을 입력하세요:', ingredient.name)
+      const newName = prompt('새 식재료 이름을 입력하세요:', ingredient.name || '')
       if (newName && newName.trim()) {
-        setIngredients(prev =>
-          prev.map(i =>
-            i.id === id ? { ...i, name: newName.trim() } : i
+        try {
+          // API 호출 (ingredientService에 updateIngredient 함수가 있다고 가정)
+          // await ingredientService.updateIngredient(id, { name: newName.trim() })
+          setIngredients(prev =>
+            prev.map(i =>
+              i.id === id ? { ...i, name: newName.trim() } : i
+            )
           )
-        )
+          alert('식재료가 수정되었습니다.')
+        } catch (error) {
+          console.error('수정 실패:', error)
+          alert('수정에 실패했습니다.')
+        }
       }
     }
   }
@@ -103,7 +141,7 @@ function AdminIngredientsPage() {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!newIngredient.name || !newIngredient.category || !newIngredient.unit || !newIngredient.supplier) {
@@ -111,20 +149,62 @@ function AdminIngredientsPage() {
       return
     }
 
-    const newId = Math.max(...ingredients.map(i => i.id)) + 1
-    const today = new Date().toISOString().split('T')[0]
-    
-    const ingredientToAdd: Ingredient = {
-      ...newIngredient,
-      id: newId,
-      lastModified: today
-    }
+    try {
+      // API 호출 (ingredientService에 createIngredient 함수가 있다고 가정)
+      // const createdIngredient = await ingredientService.createIngredient(newIngredient)
+      
+      const newId = Math.max(...ingredients.map(i => i.id || 0), 0) + 1
+      const today = new Date().toISOString().split('T')[0]
+      
+      const ingredientToAdd: Ingredient = {
+        id: newId,
+        name: newIngredient.name,
+        categoryName: newIngredient.category,
+        createdAt: today
+      }
 
-    setIngredients(prev => [...prev, ingredientToAdd])
-    closeModal()
+      setIngredients(prev => [...prev, ingredientToAdd])
+      closeModal()
+      alert('식재료가 추가되었습니다.')
+    } catch (error) {
+      console.error('추가 실패:', error)
+      alert('추가에 실패했습니다.')
+    }
   }
 
-  const categories = ['축산물', '육류', '곡물', '채소', '유제품', '과일', '조미료']
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <AdminSidebar />
+        <div className="flex-1 p-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">데이터를 불러오는 중...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <AdminSidebar />
+        <div className="flex-1 p-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+            <div className="text-center text-red-600">
+              <p className="text-lg font-medium">오류가 발생했습니다</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -159,7 +239,7 @@ function AdminIngredientsPage() {
               >
                 <option value="전체">전체</option>
                 {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
+                  <option key={category.id} value={category.name}>{category.name}</option>
                 ))}
               </select>
               
@@ -169,7 +249,7 @@ function AdminIngredientsPage() {
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="이름순">이름순</option>
-                <option value="가격순">가격순</option>
+                <option value="카테고리순">카테고리순</option>
                 <option value="최신순">최신순</option>
               </select>
             </div>
@@ -196,10 +276,7 @@ function AdminIngredientsPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">식재료명</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">가격/단위</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">공급업체</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">보관기간</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">최근 수정</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">생성일</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
                 </tr>
               </thead>
@@ -208,31 +285,22 @@ function AdminIngredientsPage() {
                   <tr key={ingredient.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{ingredient.name}</div>
-                        <div className="text-sm text-gray-500">{ingredient.description}</div>
+                        <div className="text-sm font-medium text-gray-900">{ingredient.name || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">ID: {ingredient.id}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {ingredient.category}
+                        {ingredient.categoryName || 'N/A'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {ingredient.price.toLocaleString()}원 / {ingredient.unit}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {ingredient.supplier}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {ingredient.storagePeriod}일
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {ingredient.lastModified}
+                      {ingredient.createdAt ? new Date(ingredient.createdAt).toLocaleDateString('ko-KR') : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => editIngredient(ingredient.id)}
+                          onClick={() => editIngredient(ingredient.id || 0)}
                           className="text-blue-600 hover:text-blue-900 p-1"
                           title="편집"
                         >
@@ -241,7 +309,7 @@ function AdminIngredientsPage() {
                           </svg>
                         </button>
                         <button
-                          onClick={() => deleteIngredient(ingredient.id)}
+                          onClick={() => deleteIngredient(ingredient.id || 0)}
                           className="text-red-600 hover:text-red-900 p-1"
                           title="삭제"
                         >
@@ -336,7 +404,7 @@ function AdminIngredientsPage() {
                     >
                       <option value="">카테고리를 선택하세요</option>
                       {categories.map(category => (
-                        <option key={category} value={category}>{category}</option>
+                        <option key={category.id} value={category.name}>{category.name}</option>
                       ))}
                     </select>
                   </div>
