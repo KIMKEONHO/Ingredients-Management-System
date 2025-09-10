@@ -22,5 +22,5 @@ public class UpdateFoodInventoryRequestDto {
     // 유통기한이 변경되었나요? (시간을 되돌리는 마법?)
     private LocalDateTime expirationDate;
     // 보관 장소를 옮겼나요?
-    private Set<Place> places;
+    private Place place;
 }

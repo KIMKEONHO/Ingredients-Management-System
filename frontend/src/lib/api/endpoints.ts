@@ -29,7 +29,8 @@ export const API_ENDPOINTS = {
     
     // 재고 관련
     INVENTORY: {
-      BASE: '/inventory',
+      BASE: '/api/v1/inventory/',
+      MY: '/api/v1/inventory/my',
       ITEMS: '/inventory/items',
       STOCK: '/inventory/stock',
       ORDERS: '/inventory/orders',
@@ -58,7 +59,18 @@ export const API_ENDPOINTS = {
       DELETE: '/api/v1/complaints/:id', // 민원 삭제
       STATUS_UPDATE: '/api/v1/complaints/:id/status/:statusCode', // 민원 상태 변경 (관리자)
     },
-    
+
+    // 식재료 관련
+    INGREDIENT: {
+      BASE: '/api/v1/ingredient/',
+    },
+
+    // 카테고리 관련
+    CATEGORY: {
+      BASE: '/api/v1/category/',
+      DETAIL: '/api/v1/category/:categoryId',
+    },
+
   } as const;
   
   // API URL 생성 헬퍼 함수

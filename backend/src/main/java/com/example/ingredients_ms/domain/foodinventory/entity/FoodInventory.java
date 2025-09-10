@@ -36,11 +36,8 @@ public class FoodInventory extends BaseEntity {
     private LocalDateTime expirationDate;
 
     @Enumerated(EnumType.STRING)
-    @ElementCollection(fetch = FetchType.LAZY)
-    @Builder.Default
-    @CollectionTable(name = "places", joinColumns = @JoinColumn(name = "foodinventory_id"))
     @Column(name = "place", nullable = false)
-    private Set<Place> places = new HashSet<>();
+    private Place place; // Set<Place> -> Place
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -54,4 +51,8 @@ public class FoodInventory extends BaseEntity {
     @Column(name = "status", nullable = false)
     @Builder.Default
     private FoodStatus status = FoodStatus.NORMAL;
+
+    public void updateStatus(FoodStatus status) {
+        this.status = status;
+    }
 }

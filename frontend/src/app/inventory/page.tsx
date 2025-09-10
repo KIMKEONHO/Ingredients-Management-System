@@ -1,130 +1,108 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { inventoryService, FoodInventory, CreateFoodInventoryRequest, UpdateFoodInventoryRequest, UpdateFoodInventoryQuantityRequest, UpdateFoodInventoryStatusRequest } from '@/lib/api/services/inventoryService'
+import { ingredientService, Ingredient } from '@/lib/api/services/ingredientService';
+import { categoryService, Category } from '@/lib/api/services/categoryService';
 
 interface InventoryItem {
   id: number
   name: string
   category: string
-  quantity: string
+  quantity: number
+  originalQuantity: number
+  unit: string
   storageMethod: string
   expiryDate: string
   addedDate: string
-  status: '보관중' | '폐기' | '사용완료'
+  status: '보관중' | '유통기한 임박' | '기간만료' | '사용완료'
   isExpired: boolean
-  description: string
   image: string
 }
 
+import { UserGuard } from '@/lib/auth/authGuard';
+
 export default function InventoryPage() {
+  return (
+      <InventoryContent />
+  );
+}
+
+function InventoryContent() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false)
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
-    {
-      id: 1,
-      name: '토마토',
-      category: '채소',
-      quantity: '400g',
-      storageMethod: '냉장',
-      expiryDate: '2024-01-25',
-      addedDate: '2024-01-20',
-      status: '폐기',
-      isExpired: true,
-      description: '신선한 유기농 토마토, 샐러드와 요리에 활용',
-      image: '/images/tomato.jpg'
-    },
-    {
-      id: 2,
-      name: '브로콜리',
-      category: '채소',
-      quantity: '300g',
-      storageMethod: '냉장',
-      expiryDate: '2024-01-26',
-      addedDate: '2024-01-23',
-      status: '보관중',
-      isExpired: true,
-      description: '영양이 풍부한 브로콜리, 찜이나 볶음 요리에',
-      image: '/images/broccoli.jpg'
-    },
-    {
-      id: 3,
-      name: '바나나',
-      category: '과일',
-      quantity: '6개',
-      storageMethod: '실온',
-      expiryDate: '2024-01-27',
-      addedDate: '2024-01-24',
-      status: '보관중',
-      isExpired: true,
-      description: '달콤한 바나나, 간식이나 스무디에 활용',
-      image: '/images/banana.jpg'
-    },
-    {
-      id: 4,
-      name: '우유',
-      category: '유제품',
-      quantity: '1L',
-      storageMethod: '냉장',
-      expiryDate: '2024-01-28',
-      addedDate: '2024-01-22',
-      status: '보관중',
-      isExpired: true,
-      description: '신선한 우유, 커피나 베이킹에 활용',
-      image: '/images/milk.jpg'
-    },
-    {
-      id: 5,
-      name: '닭가슴살',
-      category: '육류',
-      quantity: '500g',
-      storageMethod: '냉장',
-      expiryDate: '2024-01-30',
-      addedDate: '2024-01-20',
-      status: '보관중',
-      isExpired: true,
-      description: '저지방 닭가슴살, 다이어트 식단에 적합',
-      image: '/images/chicken.jpg'
-    },
-    {
-      id: 6,
-      name: '달걀',
-      category: '축산물',
-      quantity: '12개',
-      storageMethod: '냉장',
-      expiryDate: '2024-02-10',
-      addedDate: '2024-01-18',
-      status: '보관중',
-      isExpired: false,
-      description: '신선한 달걀, 다양한 요리에 활용 가능',
-      image: '/images/eggs.jpg'
-    },
-    {
-      id: 7,
-      name: '양파',
-      category: '채소',
-      quantity: '1kg',
-      storageMethod: '실온',
-      expiryDate: '2024-02-15',
-      addedDate: '2024-01-25',
-      status: '보관중',
-      isExpired: false,
-      description: '기본 양념용 양파, 다양한 요리의 기본 재료',
-      image: '/images/onion.jpg'
-    },
-    {
-      id: 8,
-      name: '감자',
-      category: '채소',
-      quantity: '2kg',
-      storageMethod: '실온',
-      expiryDate: '2024-02-20',
-      addedDate: '2024-01-26',
-      status: '보관중',
-      isExpired: false,
-      description: '다양한 요리에 활용 가능한 감자',
-      image: '/images/potato.jpg'
-    }
-  ])
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [ingredientsMap, setIngredientsMap] = useState<Map<number, Ingredient>>(new Map());
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    const fetchAndSetInventory = async () => {
+      try {
+        const ingredientsData = await ingredientService.getAllIngredients();
+        const newIngredientsMap = new Map<number, Ingredient>();
+        ingredientsData.forEach(ingredient => {
+          if (ingredient.id) {
+            newIngredientsMap.set(ingredient.id, ingredient);
+          }
+        });
+        setIngredientsMap(newIngredientsMap);
+
+        const inventoryData = await inventoryService.getInventory();
+
+        const formattedData: InventoryItem[] = inventoryData.map((item: FoodInventory) => {
+          const ingredient = item.ingredientId ? newIngredientsMap.get(item.ingredientId) : undefined;
+          const storageMethodMap: { [key: string]: string } = {
+            "REFRIGERATED": "냉장",
+            "FROZEN": "냉동",
+            "ROOM": "실온"
+          };
+          const storageMethod = item.place ? storageMethodMap[item.place] || item.place : 'N/A';
+          const quantity = item.quantity || 0;
+          const statusMap: { [key: string]: '보관중' | '유통기한 임박' | '기간만료' | '사용완료' } = {
+            "NORMAL": '보관중',
+            "EXPIRING_SOON": '유통기한 임박',
+            "EXPIRED": '기간만료',
+            "CONSUMED": '사용완료'
+          };
+          return {
+            id: item.foodInventoryId || 0,
+            name: item.ingredientName || 'N/A',
+            category: ingredient?.categoryName || '기타',
+            quantity: quantity,
+            originalQuantity: quantity,
+            unit: item.unit || '',
+            storageMethod: storageMethod,
+            expiryDate: item.expirationDate ? item.expirationDate.split('T')[0] : 'N/A',
+            addedDate: item.boughtDate ? item.boughtDate.split('T')[0] : 'N/A',
+            status: item.status ? statusMap[item.status] : '보관중',
+            isExpired: item.expirationDate ? new Date(item.expirationDate) < new Date() : false,
+            image: '/images/placeholder.jpg',
+          };
+        });
+
+        setInventoryItems(formattedData);
+      } catch (error) {
+        console.error('Failed to fetch inventory:', error);
+      }
+    };
+
+    fetchAndSetInventory();
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoryData = await categoryService.getAllCategories();
+        setCategories(categoryData);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('전체')
@@ -135,12 +113,11 @@ export default function InventoryPage() {
   const totalItems = inventoryItems.length
   const storedItems = inventoryItems.filter(item => item.status === '보관중').length
   const expiringItems = inventoryItems.filter(item => item.isExpired && item.status === '보관중').length
-  const disposedItems = inventoryItems.filter(item => item.status === '폐기').length
+  const expiredItems = inventoryItems.filter(item => item.status === '기간만료').length
 
   // 필터링
   const filteredItems = inventoryItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === '전체' || item.category === categoryFilter
     const matchesStatus = statusFilter === '전체' || item.status === statusFilter
     const matchesStorage = storageFilter === '전체' || item.storageMethod === storageFilter
@@ -148,21 +125,137 @@ export default function InventoryPage() {
     return matchesSearch && matchesCategory && matchesStatus && matchesStorage
   })
 
-  const updateStatus = (id: number, newStatus: InventoryItem['status']) => {
+  const updateStatus = async (id: number, newStatus: InventoryItem['status']) => {
+    const statusMap: { [key: string]: "NORMAL" | "EXPIRING_SOON" | "EXPIRED" | "CONSUMED" } = {
+      '보관중': 'NORMAL',
+      '유통기한 임박': 'EXPIRING_SOON',
+      '기간만료': 'EXPIRED',
+      '사용완료': 'CONSUMED'
+    };
+
+    const backendStatus = statusMap[newStatus];
+
+    if (!backendStatus) {
+      console.error('Invalid status:', newStatus);
+      return;
+    }
+
+    try {
+      await inventoryService.updateFoodInventoryStatus(id, { status: backendStatus });
+      setInventoryItems(prev => 
+        prev.map(item => 
+          item.id === id ? { ...item, status: newStatus } : item
+        )
+      )
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      alert('상태 변경에 실패했습니다.');
+    }
+  }
+
+  const handleQuantityChange = (id: number, delta: number) => {
     setInventoryItems(prev => 
       prev.map(item => 
-        item.id === id ? { ...item, status: newStatus } : item
+        item.id === id ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item
       )
     )
   }
 
-  const removeItem = (id: number) => {
-    setInventoryItems(prev => prev.filter(item => item.id !== id))
+  const handleSaveQuantity = async (item: InventoryItem) => {
+    try {
+      await inventoryService.updateFoodInventoryQuantity(item.id, { quantity: item.quantity });
+      setInventoryItems(prev => 
+        prev.map(i => 
+          i.id === item.id ? { ...i, originalQuantity: i.quantity } : i
+        )
+      );
+      alert('수량이 저장되었습니다.');
+    } catch (error) {
+      console.error('Failed to save quantity:', error);
+      alert('수량 저장에 실패했습니다.');
+    }
   }
 
-  const addNewItem = () => {
-    setIsAddItemModalOpen(true)
+  const removeItem = async (id: number) => {
+    try {
+      await inventoryService.deleteInventoryItem(id);
+      setInventoryItems(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Failed to delete inventory item:', error);
+      alert('삭제에 실패했습니다. 다시 시도해주세요.');
+    }
   }
+
+  const addNewItem = async () => {
+    try {
+      const ingredientsData = await ingredientService.getAllIngredients();
+      const newIngredientsMap = new Map<number, Ingredient>();
+      ingredientsData.forEach(ingredient => {
+        if (ingredient.id) {
+          newIngredientsMap.set(ingredient.id, ingredient);
+        }
+      });
+      setIngredientsMap(newIngredientsMap);
+      setIsAddItemModalOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch ingredients for modal:', error);
+      alert('식재료 목록을 불러오는 데 실패했습니다. 다시 시도해주세요.');
+    }
+  }
+
+  const handleUpdateItem = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    const formData = new FormData(e.currentTarget);
+    const storageMethodValue = formData.get('storageMethod') as string;
+    const boughtDate = formData.get('boughtDate') as string;
+    const expirationDate = formData.get('expirationDate') as string;
+    const quantity = parseInt(formData.get('quantity') as string, 10);
+    const unit = formData.get('unit') as string;
+
+    const storageMethodMap: { [key: string]: "REFRIGERATED" | "FROZEN" | "ROOM" } = {
+      '냉장': 'REFRIGERATED',
+      '실온': 'ROOM',
+      '냉동': 'FROZEN',
+    };
+    const place = storageMethodMap[storageMethodValue];
+
+    const updateData: UpdateFoodInventoryRequest = {
+      foodInventoryId: editingItem.id,
+      quantity: quantity,
+      unit: unit,
+      place: place,
+      boughtDate: boughtDate ? new Date(boughtDate).toISOString() : undefined,
+      expirationDate: expirationDate ? new Date(expirationDate).toISOString() : undefined,
+    };
+
+    try {
+      const updatedItem = await inventoryService.updateInventoryItem(updateData);
+      const storageMethod = updatedItem.place ? Object.keys(storageMethodMap).find(key => storageMethodMap[key] === updatedItem.place) : storageMethodValue;
+      const statusMap: { [key: string]: '보관중' | '유통기한 임박' | '기간만료' | '사용완료' } = {
+        "NORMAL": '보관중',
+        "EXPIRING_SOON": '유통기한 임박',
+        "EXPIRED": '기간만료',
+        "CONSUMED": '사용완료'
+      };
+      setInventoryItems(prev => prev.map(item => item.id === editingItem.id ? {
+        ...item,
+        quantity: updatedItem.quantity || 0,
+        originalQuantity: updatedItem.quantity || 0,
+        unit: updatedItem.unit || '',
+        storageMethod: storageMethod || 'N/A',
+        addedDate: updatedItem.boughtDate ? updatedItem.boughtDate.split('T')[0] : 'N/A',
+        expiryDate: updatedItem.expirationDate ? updatedItem.expirationDate.split('T')[0] : 'N/A',
+        status: updatedItem.status ? statusMap[updatedItem.status] : '보관중',
+        isExpired: updatedItem.expirationDate ? new Date(updatedItem.expirationDate) < new Date() : false,
+      } : item));
+      closeEditModal();
+    } catch (error) {
+      console.error('Failed to update inventory item:', error);
+      alert('수정에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
 
   const resetFilters = () => {
     setSearchQuery('')
@@ -178,6 +271,16 @@ export default function InventoryPage() {
   const closeFilterModal = () => {
     setIsFilterModalOpen(false)
   }
+
+  const openEditModal = (item: InventoryItem) => {
+    setEditingItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditingItem(null);
+    setIsEditModalOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,21 +313,7 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* 인기 검색어 */}
-          <div className="mt-4">
-            <div className="text-sm text-gray-600 mb-2">인기 검색어</div>
-            <div className="flex flex-wrap gap-2">
-              {['채소', '과일', '육류', '유제품', '냉장', '실온', '신선', '유기농', '프리미엄', '할인', '만료임박', '신상품', '계절식재료', '수입식재료', '국내산', '친환경'].map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => setSearchQuery(tag)}
-                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
+          
         </div>
       </div>
 
@@ -232,10 +321,10 @@ export default function InventoryPage() {
         {/* 페이지 제목 */}
         <div className="mb-6">
                       <nav className="text-sm text-gray-500 mb-2">
-              홈 &gt; 식재료 관리
+              홈 &gt; 식품 재고 관리
             </nav>
                      <h1 className="text-2xl font-bold text-gray-900">
-             식재료 관리
+             식품 재고 관리
            </h1>
         </div>
 
@@ -257,17 +346,17 @@ export default function InventoryPage() {
                <div className="mb-6">
                  <h4 className="font-medium text-gray-900 mb-3">카테고리</h4>
                  <div className="space-y-2">
-                   {['전체', '채소', '과일', '육류', '유제품', '축산물', '수산물', '곡물', '조미료'].map((category) => (
-                     <label key={category} className="flex items-center">
+                   {[ { name: '전체' }, ...categories].map((category) => (
+                     <label key={category.name} className="flex items-center">
                        <input
                          type="radio"
                          name="category"
-                         value={category}
-                         checked={categoryFilter === category}
+                         value={category.name}
+                         checked={categoryFilter === category.name}
                          onChange={(e) => setCategoryFilter(e.target.value)}
                          className="mr-2 text-green-600 focus:ring-green-500"
                        />
-                       <span className="text-sm text-gray-700">{category}</span>
+                       <span className="text-sm text-gray-700">{category.name}</span>
                      </label>
                    ))}
                  </div>
@@ -297,7 +386,7 @@ export default function InventoryPage() {
                <div className="mb-6">
                  <h4 className="font-medium text-gray-900 mb-3">상태</h4>
                  <div className="space-y-2">
-                   {['전체', '보관중', '폐기', '사용완료'].map((status) => (
+                   {['전체', '보관중', '유통기한 임박', '기간만료', '사용완료'].map((status) => (
                      <label key={status} className="flex items-center">
                        <input
                          type="radio"
@@ -384,8 +473,8 @@ export default function InventoryPage() {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-xs text-gray-600">폐기됨</p>
-                    <p className="text-lg font-bold text-gray-900">{disposedItems}개</p>
+                    <p className="text-xs text-gray-600">기간만료</p>
+                    <p className="text-lg font-bold text-gray-900">{expiredItems}개</p>
                   </div>
                 </div>
               </div>
@@ -417,7 +506,6 @@ export default function InventoryPage() {
                   {/* 내용 영역 */}
                   <div className="p-4">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
                     
                     {/* 메타데이터 */}
                     <div className="text-sm text-gray-500 mb-3">
@@ -427,8 +515,13 @@ export default function InventoryPage() {
                           {item.storageMethod}
                         </span>
                       </div>
-                      <div className="mt-1">
-                        <span className="text-red-600 font-medium">{item.quantity}</span>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="text-red-600 font-medium">{item.quantity} {item.unit}</span>
+                        <button onClick={() => handleQuantityChange(item.id, -1)} className="text-sm px-2 py-0.5 border rounded">-</button>
+                        <button onClick={() => handleQuantityChange(item.id, 1)} className="text-sm px-2 py-0.5 border rounded">+</button>
+                        {item.quantity !== item.originalQuantity && (
+                            <button onClick={() => handleSaveQuantity(item)} className="text-sm px-2 py-0.5 border rounded bg-green-500 text-white">저장</button>
+                        )}
                       </div>
                     </div>
 
@@ -436,22 +529,25 @@ export default function InventoryPage() {
                     <div className="flex items-center justify-between">
                       <select
                         value={item.status}
-                        onChange={(e) => updateStatus(item.id, e.target.value as InventoryItem['status'])}
+                        onChange={async (e) => await updateStatus(item.id, e.target.value as InventoryItem['status'])}
                         className={`text-xs rounded-full px-3 py-1 border-0 focus:ring-2 focus:ring-offset-2 ${
                           item.status === '보관중' 
                             ? 'bg-green-100 text-green-800 focus:ring-green-500'
-                            : item.status === '폐기'
+                            : item.status === '유통기한 임박'
+                            ? 'bg-orange-100 text-orange-800 focus:ring-orange-500'
+                            : item.status === '기간만료'
                             ? 'bg-red-100 text-red-800 focus:ring-red-500'
                             : 'bg-gray-100 text-gray-800 focus:ring-gray-500'
                         }`}
                       >
                         <option value="보관중">보관중</option>
-                        <option value="폐기">폐기</option>
+                        <option value="유통기한 임박">유통기한 임박</option>
+                        <option value="기간만료">기간만료</option>
                         <option value="사용완료">사용완료</option>
                       </select>
 
                       <div className="flex items-center space-x-2">
-                        <button className="text-blue-600 hover:text-blue-900 p-1">
+                        <button onClick={() => openEditModal(item)} className="text-blue-600 hover:text-blue-900 p-1">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
@@ -531,17 +627,17 @@ export default function InventoryPage() {
                  <div className="mb-6">
                    <h4 className="font-medium text-gray-900 mb-3">카테고리</h4>
                    <div className="space-y-2">
-                     {['전체', '채소', '과일', '육류', '유제품', '축산물', '수산물', '곡물', '조미료'].map((category) => (
-                       <label key={category} className="flex items-center">
+                     {[ { name: '전체' }, ...categories].map((category) => (
+                       <label key={category.name} className="flex items-center">
                          <input
                            type="radio"
                            name="category-mobile"
-                           value={category}
-                           checked={categoryFilter === category}
+                           value={category.name}
+                           checked={categoryFilter === category.name}
                            onChange={(e) => setCategoryFilter(e.target.value)}
                            className="mr-2 text-green-600 focus:ring-green-500"
                          />
-                         <span className="text-sm text-gray-700">{category}</span>
+                         <span className="text-sm text-gray-700">{category.name}</span>
                        </label>
                      ))}
                    </div>
@@ -571,7 +667,7 @@ export default function InventoryPage() {
                  <div className="mb-6">
                    <h4 className="font-medium text-gray-900 mb-3">상태</h4>
                    <div className="space-y-2">
-                     {['전체', '보관중', '폐기', '사용완료'].map((status) => (
+                     {['전체', '보관중', '유통기한 임박', '기간만료', '사용완료'].map((status) => (
                        <label key={status} className="flex items-center">
                          <input
                            type="radio"
@@ -619,42 +715,103 @@ export default function InventoryPage() {
                   </svg>
                 </button>
               </div>
-              <form onSubmit={(e) => {
+              <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
-                const newItem: InventoryItem = {
-                  id: Date.now(),
-                  name: formData.get('name') as string,
-                  category: formData.get('category') as string,
-                  quantity: formData.get('quantity') as string,
-                  storageMethod: formData.get('storageMethod') as string,
-                  expiryDate: formData.get('expiryDate') as string,
-                  addedDate: new Date().toISOString().split('T')[0],
-                  status: '보관중',
-                  isExpired: new Date(formData.get('expiryDate') as string) < new Date(),
-                  description: formData.get('description') as string,
-                  image: '/images/placeholder.jpg',
+
+                const ingredientName = formData.get('name') as string;
+                const selectedIngredient = Array.from(ingredientsMap.values()).find(
+                  (ing) => ing.name === ingredientName
+                );
+
+                if (!selectedIngredient || !selectedIngredient.id) {
+                  alert('유효한 식재료를 선택해주세요.');
+                  return;
+                }
+                const ingredientId = selectedIngredient.id;
+
+                const storageMethodMap: { [key: string]: "REFRIGERATED" | "FROZEN" | "ROOM" } = {
+                  '냉장': 'REFRIGERATED',
+                  '실온': 'ROOM',
+                  '냉동': 'FROZEN',
                 };
-                setInventoryItems(prev => [newItem, ...prev]);
-                setIsAddItemModalOpen(false);
+                const storageMethodValue = formData.get('storageMethod') as string;
+                const place = storageMethodMap[storageMethodValue];
+
+                const quantity = parseInt(formData.get('quantity') as string, 10);
+                const unit = formData.get('unit') as string;
+                const boughtDate = formData.get('boughtDate') as string;
+                const expirationDate = formData.get('expirationDate') as string;
+
+                const newItemData: CreateFoodInventoryRequest = {
+                  ingredientId: ingredientId,
+                  quantity: quantity,
+                  unit: unit,
+                  boughtDate: boughtDate ? new Date(boughtDate).toISOString() : undefined,
+                  expirationDate: expirationDate ? new Date(expirationDate).toISOString() : undefined,
+                  place: place,
+                };
+
+                try {
+                  const createdItem = await inventoryService.createInventoryItem(newItemData);
+                  // 백엔드에서 반환된 FoodInventoryResponseDto를 InventoryItem 형식으로 변환
+                  const storageMethod = createdItem.place ? Object.keys(storageMethodMap).find(key => storageMethodMap[key] === createdItem.place) : 'N/A';
+                  const newQuantity = createdItem.quantity || 0;
+                  const statusMap: { [key: string]: '보관중' | '유통기한 임박' | '기간만료' | '사용완료' } = {
+                    "NORMAL": '보관중',
+                    "EXPIRING_SOON": '유통기한 임박',
+                    "EXPIRED": '기간만료',
+                    "CONSUMED": '사용완료'
+                  };
+                  const formattedCreatedItem: InventoryItem = {
+                    id: createdItem.foodInventoryId || 0,
+                    name: createdItem.ingredientName || ingredientName,
+                    category: selectedIngredient.categoryName || '기타',
+                    quantity: newQuantity,
+                    originalQuantity: newQuantity,
+                    unit: createdItem.unit || '',
+                    storageMethod: storageMethod || 'N/A',
+                    expiryDate: createdItem.expirationDate ? createdItem.expirationDate.split('T')[0] : 'N/A',
+                    addedDate: createdItem.boughtDate ? createdItem.boughtDate.split('T')[0] : 'N/A',
+                    status: createdItem.status ? statusMap[createdItem.status] : '보관중',
+                    isExpired: createdItem.expirationDate ? new Date(createdItem.expirationDate) < new Date() : false,
+                    image: '/images/placeholder.jpg',
+                  };
+                  setInventoryItems(prev => [formattedCreatedItem, ...prev]);
+                  setIsAddItemModalOpen(false);
+                } catch (error) {
+                  console.error('식재료 추가 실패:', error);
+                  alert('식재료 추가에 실패했습니다. 다시 시도해주세요.');
+                }
               }}>
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700">식재료명</label>
-                      <input type="text" name="name" id="name" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black" />
-                    </div>
-                    <div>
-                      <label htmlFor="category" className="block text-sm font-medium text-gray-700">카테고리</label>
-                      <select name="category" id="category" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black">
-                        {['채소', '과일', '육류', '유제품', '축산물', '수산물', '곡물', '조미료'].map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
+                      <input type="text" name="name" id="name" list="ingredient-suggestions" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black" />
+                      <datalist id="ingredient-suggestions">
+                        {Array.from(ingredientsMap.values()).map((ingredient) => (
+                          <option key={ingredient.id} value={ingredient.name} />
                         ))}
-                      </select>
+                      </datalist>
                     </div>
+                    
                     <div>
                       <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">수량</label>
-                      <input type="text" name="quantity" id="quantity" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black" />
+                      <div className="flex gap-2 mt-1">
+                        <input type="text" name="quantity" id="quantity" required className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                        <select name="unit" id="unit" required className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black">
+                          <option value="개">개</option>
+                          <option value="g">g</option>
+                          <option value="ml">ml</option>
+                          <option value="팩">팩</option>
+                          <option value="봉">봉</option>
+                          <option value="줄">줄</option>
+                          <option value="컵">컵</option>
+                          <option value="리터">리터</option>
+                          <option value="kg">kg</option>
+                        </select>
+                      </div>
                     </div>
                     <div>
                       <label htmlFor="storageMethod" className="block text-sm font-medium text-gray-700">보관방법</label>
@@ -664,18 +821,95 @@ export default function InventoryPage() {
                         ))}
                       </select>
                     </div>
-                    <div>
-                      <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700">유통기한</label>
-                      <input type="date" name="expiryDate" id="expiryDate" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black" />
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label htmlFor="boughtDate" className="block text-sm font-medium text-gray-700">구매기한</label>
+                        <input type="date" name="boughtDate" id="boughtDate" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                      </div>
+                      <div className="flex-1">
+                        <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-700">유통기한</label>
+                        <input type="date" name="expirationDate" id="expirationDate" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                      </div>
                     </div>
-                    <div>
-                      <label htmlFor="description" className="block text-sm font-medium text-gray-700">설명</label>
-                      <textarea name="description" id="description" rows={3} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black"></textarea>
-                    </div>
+                    
                   </div>
                 </div>
                 <div className="flex justify-end gap-4 p-6 border-t">
                   <button type="button" onClick={() => setIsAddItemModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">취소</button>
+                  <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">저장</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 식재료 수정 모달 */}
+      {isEditModalOpen && editingItem && (
+        <div className="fixed inset-0 z-40">
+          <div className="fixed inset-0 bg-black bg-opacity-10"></div>
+          <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden border border-gray-200">
+              <div className="flex items-center justify-between p-6 border-b">
+                <h3 className="text-lg font-semibold text-gray-900">식재료 수정</h3>
+                <button
+                  onClick={closeEditModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleUpdateItem}>
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700">식재료명</label>
+                      <input type="text" name="name" id="name" disabled value={editingItem.name} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black" />
+                    </div>
+
+                    <div>
+                      <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">수량</label>
+                      <div className="flex gap-2 mt-1">
+                        <input type="number" name="quantity" id="quantity" defaultValue={editingItem.quantity} required className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                        <select name="unit" id="unit" defaultValue={editingItem.unit} required className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black">
+                          <option value="개">개</option>
+                          <option value="g">g</option>
+                          <option value="ml">ml</option>
+                          <option value="팩">팩</option>
+                          <option value="봉">봉</option>
+                          <option value="줄">줄</option>
+                          <option value="컵">컵</option>
+                          <option value="리터">리터</option>
+                          <option value="kg">kg</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="storageMethod" className="block text-sm font-medium text-gray-700">보관방법</label>
+                      <select name="storageMethod" id="storageMethod" defaultValue={editingItem.storageMethod} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black">
+                        {['냉장', '실온', '냉동'].map(sm => (
+                          <option key={sm} value={sm}>{sm}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label htmlFor="boughtDate" className="block text-sm font-medium text-gray-700">구매일</label>
+                        <input type="date" name="boughtDate" id="boughtDate" defaultValue={editingItem.addedDate} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                      </div>
+                      <div className="flex-1">
+                        <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-700">유통기한</label>
+                        <input type="date" name="expirationDate" id="expirationDate" defaultValue={editingItem.expiryDate} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                      </div>
+                    </div>
+                    
+                  </div>
+                </div>
+                <div className="flex justify-end gap-4 p-6 border-t">
+                  <button type="button" onClick={closeEditModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">취소</button>
                   <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">저장</button>
                 </div>
               </form>

@@ -20,7 +20,7 @@ public class CreateFoodInventoryRequestDto {
     // 이별 예정일... 유통기한은 꼭 지켜주세요.
     private LocalDateTime expirationDate;
     // 어디에 보관할까요? 냉장? 냉동? 아니면 그냥 실온?
-    private Set<Place> places;
+    private Place place;
     // 어떤 식재료인가요? (예: 당근, 양파)
     private Long ingredientId;
 }

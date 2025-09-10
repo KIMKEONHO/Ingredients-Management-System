@@ -2,6 +2,7 @@ package com.example.ingredients_ms.domain.foodinventory.service;
 
 
 import com.example.ingredients_ms.domain.foodinventory.dto.request.CreateFoodInventoryRequestDto;
+import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryQuantityRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.ExpiringSoonResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
@@ -48,7 +49,7 @@ public class FoodInventoryService {
                 .unit(requestDto.getUnit())
                 .boughtDate(requestDto.getBoughtDate())
                 .expirationDate(requestDto.getExpirationDate())
-                .places(requestDto.getPlaces())
+                .place(requestDto.getPlace())
                 .originalQuantity(requestDto.getQuantity())
                 .user(user)
                 .ingredient(ingredient)
@@ -64,10 +65,9 @@ public class FoodInventoryService {
 
         Place place = Place.valueOf(placeName.toUpperCase());
 
-        List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdAndPlaces(userId,place);
+        List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdAndPlace(userId,place);
 
         // places 미리 초기화
-        inventories.forEach(inventory -> inventory.getPlaces().size());
 
         // 엔티티(객체)를 Dto로 변환하여 반환
         return inventories.stream()
@@ -84,7 +84,6 @@ public class FoodInventoryService {
         List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdOrderById(userId);
 
         // places 미리 초기화
-        inventories.forEach(inventory -> inventory.getPlaces().size());
 
         return inventories.stream()
                 .map(FoodInventoryResponseDto::fromEntity)
@@ -97,7 +96,6 @@ public class FoodInventoryService {
         List<FoodInventory> inventories = foodInventoryRepository
                 .findByUser_IdAndIngredient_Category_IdOrderById(userId, categoryId);
 
-        inventories.forEach(inventory -> inventory.getPlaces().size());
 
         return inventories.stream()
                 .map(FoodInventoryResponseDto::fromEntity)
@@ -116,7 +114,20 @@ public class FoodInventoryService {
         foodInventory.setUnit(requestDto.getUnit());
         foodInventory.setBoughtDate(requestDto.getBoughtDate());
         foodInventory.setExpirationDate(requestDto.getExpirationDate());
-        foodInventory.setPlaces(requestDto.getPlaces());
+        foodInventory.setPlace(requestDto.getPlace());
+
+        FoodInventory updatedFoodInventory = foodInventoryRepository.save(foodInventory);
+        return FoodInventoryResponseDto.fromEntity(updatedFoodInventory);
+    }
+
+    // 수량만 수정하는 메서드 추가
+    @Transactional
+    public FoodInventoryResponseDto updateFoodInventoryQuantity(Long userId, Long foodInventoryId, UpdateFoodInventoryQuantityRequestDto requestDto) {
+
+        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndId(userId, foodInventoryId)
+                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
+
+        foodInventory.setQuantity(requestDto.getQuantity());
 
         FoodInventory updatedFoodInventory = foodInventoryRepository.save(foodInventory);
         return FoodInventoryResponseDto.fromEntity(updatedFoodInventory);
@@ -135,16 +146,25 @@ public class FoodInventoryService {
     }
 
     @Transactional
+    public FoodInventoryResponseDto updateFoodInventoryStatus(Long userId, Long foodInventoryId, FoodStatus status) {
+        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndId(userId, foodInventoryId)
+                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
+
+        foodInventory.updateStatus(status);
+
+        FoodInventory updatedFoodInventory = foodInventoryRepository.save(foodInventory);
+        return FoodInventoryResponseDto.fromEntity(updatedFoodInventory);
+    }
+
+    @Transactional
     public List<ExpiringSoonResponseDto> getExpiringSoon(Long userId) {
         List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdAndStatus(userId, FoodStatus.EXPIRING_SOON);
-        
-        inventories.forEach(inventory -> inventory.getPlaces().size());
-        
+
         return inventories.stream()
                 .map(i -> ExpiringSoonResponseDto.builder()
                         .ingredientsName(i.getIngredient().getName())
                         .quantity(i.getQuantity())
-                        .places(i.getPlaces())
+                        .place(i.getPlace())
                         .unit(i.getUnit())
                         .expirationDate(i.getExpirationDate())
                         .boughtDate(i.getBoughtDate())

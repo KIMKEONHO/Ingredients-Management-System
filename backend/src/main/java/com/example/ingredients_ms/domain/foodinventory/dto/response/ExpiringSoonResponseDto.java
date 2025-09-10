@@ -16,5 +16,5 @@ public class ExpiringSoonResponseDto {
     private Integer quantity;
     private String unit;
     private LocalDateTime expirationDate;
-    private Set<Place> places;
+    private Place place;
 }

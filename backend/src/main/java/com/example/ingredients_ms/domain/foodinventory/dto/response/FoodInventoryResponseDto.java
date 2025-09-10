@@ -1,6 +1,7 @@
 package com.example.ingredients_ms.domain.foodinventory.dto.response;
 
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
+import com.example.ingredients_ms.domain.foodinventory.entity.FoodStatus;
 import com.example.ingredients_ms.domain.foodinventory.entity.Place;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,13 +24,15 @@ public class FoodInventoryResponseDto {
     // 유통기한, 임박했다면 서두르세요!
     private LocalDateTime expirationDate;
     // 현재 보관 위치
-    private Set<Place> places;
+    private Place place;
     // 주인님 ID
     private Long userId;
     // 식재료 ID
     private Long ingredientId;
     // 식재료 이름 (서비스 좋죠?)
     private String ingredientName;
+    // 식품 재고 상태
+    private FoodStatus status;
 
     // FoodInventory 엔티티를 DTO로 변환하는 마법
     public static FoodInventoryResponseDto fromEntity(FoodInventory foodInventory) {
@@ -39,10 +42,11 @@ public class FoodInventoryResponseDto {
                 .unit(foodInventory.getUnit())
                 .boughtDate(foodInventory.getBoughtDate())
                 .expirationDate(foodInventory.getExpirationDate())
-                .places(foodInventory.getPlaces())
+                .place(foodInventory.getPlace())
                 .userId(foodInventory.getUser().getId())
                 .ingredientId(foodInventory.getIngredient().getId())
                 .ingredientName(foodInventory.getIngredient().getName())
+                .status(foodInventory.getStatus())
                 .build();
     }
 }

@@ -1,7 +1,9 @@
 package com.example.ingredients_ms.domain.foodinventory.controller;
 
 import com.example.ingredients_ms.domain.foodinventory.dto.request.CreateFoodInventoryRequestDto;
+import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryQuantityRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
+import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryStatusRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.ExpiringSoonResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.entity.Place;
@@ -80,6 +82,27 @@ public class FoodInventoryController {
 
         FoodInventoryResponseDto responseDto = foodInventoryService.updateFoodInventory(userId, requestDto);
         return new RsData<>("200", "식품 재고가 성공적으로 수정되었습니다.", responseDto);
+    }
+
+    // 식품 재고 수량만 수정하는 엔드포인트 추가
+    @Operation(summary = "식품 재고 수량 수정", description = "기존 식품 재고의 수량만 수정합니다.")
+    @PatchMapping("/{foodInventoryId}/quantity")
+    public RsData<FoodInventoryResponseDto> updateFoodInventoryQuantity(@PathVariable Long foodInventoryId, @RequestBody UpdateFoodInventoryQuantityRequestDto requestDto) {
+
+        Long userId = tokenService.getIdFromToken();
+
+        FoodInventoryResponseDto responseDto = foodInventoryService.updateFoodInventoryQuantity(userId, foodInventoryId, requestDto);
+        return new RsData<>("200", "식품 재고 수량이 성공적으로 수정되었습니다.", responseDto);
+    }
+
+    @Operation(summary = "식품 재고 상태 수정", description = "기존 식품 재고의 상태만 수정합니다.")
+    @PatchMapping("/{foodInventoryId}/status")
+    public RsData<FoodInventoryResponseDto> updateFoodInventoryStatus(@PathVariable Long foodInventoryId, @RequestBody UpdateFoodInventoryStatusRequestDto requestDto) {
+
+        Long userId = tokenService.getIdFromToken();
+
+        FoodInventoryResponseDto responseDto = foodInventoryService.updateFoodInventoryStatus(userId, foodInventoryId, requestDto.getStatus());
+        return new RsData<>("200", "식품 재고 상태가 성공적으로 수정되었습니다.", responseDto);
     }
 
     @Operation(summary = "식품 재고 삭제", description = "식품 재고를 삭제합니다. 다 먹었다!")
