@@ -83,6 +83,7 @@ public class ApiSecurityConfig {
 
                         // 유저 통계 및 관리 api
                         .requestMatchers(HttpMethod.GET, "/api/*/users/statistics/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/users/statistics/*").hasRole("ADMIN")
 
                         // 이메일 관련 api
                         .requestMatchers(HttpMethod.POST, "/api/*/email/verify").permitAll()
