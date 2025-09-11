@@ -3,17 +3,12 @@
 import { useState, useEffect } from 'react'
 import AdminSidebar from '../components/sidebar'
 import AdminGuard from '@/lib/auth/adminGuard'
-import { ingredientService, Ingredient } from '@/lib/api/services/ingredientService'
+import { ingredientService, Ingredient, CreateIngredientRequest, UpdateIngredientRequest } from '@/lib/api/services/ingredientService'
 import { categoryService, Category } from '@/lib/api/services/categoryService'
 
 interface NewIngredient {
   name: string
-  description: string
-  category: string
-  price: number
-  unit: string
-  supplier: string
-  storagePeriod: number
+  categoryId: number
 }
 
 function AdminIngredientsPage() {
@@ -33,15 +28,20 @@ function AdminIngredientsPage() {
   const [categoryFilter, setCategoryFilter] = useState('전체')
   const [sortBy, setSortBy] = useState('이름순')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null)
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
   const [newIngredient, setNewIngredient] = useState<NewIngredient>({
     name: '',
-    description: '',
-    category: '',
-    price: 0,
-    unit: '',
-    supplier: '',
-    storagePeriod: 0
+    categoryId: 0
   })
+
+  // 알림 함수
+  const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification(null), 3000)
+  }
 
   // 데이터 로딩
   useEffect(() => {
@@ -54,8 +54,10 @@ function AdminIngredientsPage() {
         ])
         setIngredients(ingredientsData)
         setCategories(categoriesData)
+        showNotification('success', '데이터를 성공적으로 로딩했습니다.')
       } catch (err) {
         setError('데이터 로딩에 실패했습니다')
+        showNotification('error', '데이터 로딩에 실패했습니다.')
         console.error('Failed to fetch data:', err)
       } finally {
         setIsLoading(false)
@@ -174,36 +176,71 @@ function AdminIngredientsPage() {
   const deleteIngredient = async (id: number) => {
     if (confirm('정말로 이 식재료를 삭제하시겠습니까?')) {
       try {
-        // API 호출 (ingredientService에 deleteIngredient 함수가 있다고 가정)
-        // await ingredientService.deleteIngredient(id)
+        await ingredientService.deleteIngredient(id)
         setIngredients(prev => prev.filter(ingredient => ingredient.id !== id))
-        alert('식재료가 삭제되었습니다.')
+        showNotification('success', '식재료가 삭제되었습니다.')
       } catch (error) {
         console.error('삭제 실패:', error)
-        alert('삭제에 실패했습니다.')
+        showNotification('error', '삭제에 실패했습니다.')
       }
     }
   }
 
-  const editIngredient = async (id: number) => {
-    const ingredient = ingredients.find(i => i.id === id)
-    if (ingredient) {
-      const newName = prompt('새 식재료 이름을 입력하세요:', ingredient.name || '')
-      if (newName && newName.trim()) {
-        try {
-          // API 호출 (ingredientService에 updateIngredient 함수가 있다고 가정)
-          // await ingredientService.updateIngredient(id, { name: newName.trim() })
-          setIngredients(prev =>
-            prev.map(i =>
-              i.id === id ? { ...i, name: newName.trim() } : i
-            )
-          )
-          alert('식재료가 수정되었습니다.')
-        } catch (error) {
-          console.error('수정 실패:', error)
-          alert('수정에 실패했습니다.')
-        }
+  const openEditModal = (ingredient: Ingredient) => {
+    // ID 유효성 검증
+    if (!ingredient.id) {
+      showNotification('error', '유효하지 않은 식재료입니다.')
+      return
+    }
+
+    setEditingIngredient(ingredient)
+    setNewIngredient({
+      name: ingredient.name || '',
+      categoryId: categories.find(cat => cat.name === ingredient.categoryName)?.id || 0
+    })
+    setIsEditModalOpen(true)
+  }
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false)
+    setEditingIngredient(null)
+    setNewIngredient({
+      name: '',
+      categoryId: 0
+    })
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!newIngredient.name || !newIngredient.categoryId || !editingIngredient?.id) {
+      showNotification('error', '필수 항목을 모두 입력해주세요.')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      
+      // 백엔드 API 호출
+      const ingredientData: UpdateIngredientRequest = {
+        name: newIngredient.name,
+        categoryId: newIngredient.categoryId
       }
+      
+      const updatedIngredient = await ingredientService.updateIngredient(editingIngredient.id, ingredientData)
+      
+      // 성공 시 로컬 상태 업데이트
+      setIngredients(prev => prev.map(ingredient => 
+        ingredient.id === editingIngredient.id ? { ...ingredient, ...updatedIngredient } : ingredient
+      ))
+      
+      showNotification('success', '식재료가 수정되었습니다.')
+      closeEditModal()
+    } catch (error) {
+      console.error('수정 실패:', error)
+      showNotification('error', '수정에 실패했습니다.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -211,12 +248,7 @@ function AdminIngredientsPage() {
     setIsModalOpen(true)
     setNewIngredient({
       name: '',
-      description: '',
-      category: '',
-      price: 0,
-      unit: '',
-      supplier: '',
-      storagePeriod: 0
+      categoryId: 0
     })
   }
 
@@ -224,42 +256,42 @@ function AdminIngredientsPage() {
     setIsModalOpen(false)
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setNewIngredient(prev => ({
       ...prev,
-      [name]: name === 'price' || name === 'storagePeriod' ? Number(value) : value
+      [name]: name === 'categoryId' ? Number(value) : value
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!newIngredient.name || !newIngredient.category || !newIngredient.unit || !newIngredient.supplier) {
-      alert('필수 항목을 모두 입력해주세요.')
+    if (!newIngredient.name || !newIngredient.categoryId) {
+      showNotification('error', '필수 항목을 모두 입력해주세요.')
       return
     }
 
     try {
-      // API 호출 (ingredientService에 createIngredient 함수가 있다고 가정)
-      // const createdIngredient = await ingredientService.createIngredient(newIngredient)
+      setIsSubmitting(true)
       
-      const newId = Math.max(...ingredients.map(i => i.id || 0), 0) + 1
-      const today = new Date().toISOString().split('T')[0]
-      
-      const ingredientToAdd: Ingredient = {
-        id: newId,
+      // 백엔드 API 호출
+      const ingredientData: CreateIngredientRequest = {
         name: newIngredient.name,
-        categoryName: newIngredient.category,
-        createdAt: today
+        categoryId: newIngredient.categoryId
       }
-
-      setIngredients(prev => [...prev, ingredientToAdd])
+      
+      const createdIngredient = await ingredientService.createIngredient(ingredientData)
+      
+      // 성공 시 로컬 상태 업데이트
+      setIngredients(prev => [...prev, createdIngredient])
       closeModal()
-      alert('식재료가 추가되었습니다.')
+      showNotification('success', '식재료가 성공적으로 추가되었습니다.')
     } catch (error) {
-      console.error('추가 실패:', error)
-      alert('추가에 실패했습니다.')
+      console.error('식재료 추가 실패:', error)
+      showNotification('error', '식재료 추가에 실패했습니다. 다시 시도해주세요.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -483,7 +515,7 @@ function AdminIngredientsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => editIngredient(ingredient.id || 0)}
+                          onClick={() => openEditModal(ingredient)}
                           className="text-blue-600 hover:text-blue-900 p-1"
                           title="편집"
                         >
@@ -492,7 +524,13 @@ function AdminIngredientsPage() {
                           </svg>
                         </button>
                         <button
-                          onClick={() => deleteIngredient(ingredient.id || 0)}
+                          onClick={() => {
+                            if (!ingredient.id) {
+                              showNotification('error', '유효하지 않은 식재료입니다.')
+                              return
+                            }
+                            deleteIngredient(ingredient.id)
+                          }}
                           className="text-red-600 hover:text-red-900 p-1"
                           title="삭제"
                         >
@@ -630,9 +668,9 @@ function AdminIngredientsPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="px-6 py-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   {/* 식재료명 */}
-                  <div className="md:col-span-2">
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       식재료명 <span className="text-red-500">*</span>
                     </label>
@@ -647,18 +685,89 @@ function AdminIngredientsPage() {
                     />
                   </div>
 
-                  {/* 설명 */}
-                  <div className="md:col-span-2">
+                  {/* 카테고리 */}
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      설명
+                      카테고리 <span className="text-red-500">*</span>
                     </label>
-                    <textarea
-                      name="description"
-                      value={newIngredient.description}
+                    <select
+                      name="categoryId"
+                      value={newIngredient.categoryId}
                       onChange={handleInputChange}
-                      rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                      placeholder="식재료에 대한 설명을 입력하세요"
+                      required
+                    >
+                      <option value={0}>카테고리를 선택하세요</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>{category.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        추가 중...
+                      </>
+                    ) : (
+                      '추가'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* 수정 모달 */}
+        {isEditModalOpen && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <form onSubmit={handleEditSubmit}>
+                <div className="mt-3">
+                  <h3 className="text-lg font-medium text-gray-900">식재료 수정</h3>
+                  <button
+                    onClick={closeEditModal}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-4">
+                  {/* 식재료명 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      식재료명 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={newIngredient.name}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="식재료명을 입력하세요"
+                      required
                     />
                   </div>
 
@@ -668,104 +777,51 @@ function AdminIngredientsPage() {
                       카테고리 <span className="text-red-500">*</span>
                     </label>
                     <select
-                      name="category"
-                      value={newIngredient.category}
+                      name="categoryId"
+                      value={newIngredient.categoryId}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                       required
                     >
-                      <option value="">카테고리를 선택하세요</option>
+                      <option value={0}>카테고리를 선택하세요</option>
                       {categories.map(category => (
-                        <option key={category.id} value={category.name}>{category.name}</option>
+                        <option key={category.id} value={category.id}>{category.name}</option>
                       ))}
                     </select>
-                  </div>
-
-                  {/* 가격 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      가격 (원)
-                    </label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={newIngredient.price}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                      placeholder="0"
-                    />
-                  </div>
-
-                  {/* 단위 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      단위 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="unit"
-                      value={newIngredient.unit}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                      placeholder="kg, 개, L 등"
-                      required
-                    />
-                  </div>
-
-                  {/* 공급업체 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      공급업체 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="supplier"
-                      value={newIngredient.supplier}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                      placeholder="공급업체명을 입력하세요"
-                      required
-                    />
-                  </div>
-
-                  {/* 보관기간 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      보관기간 (일)
-                    </label>
-                    <input
-                      type="number"
-                      name="storagePeriod"
-                      value={newIngredient.storagePeriod}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                      placeholder="0"
-                    />
                   </div>
                 </div>
 
                 <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
                   <button
                     type="button"
-                    onClick={closeModal}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    onClick={closeEditModal}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     취소
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
-                    추가
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        수정 중...
+                      </>
+                    ) : (
+                      '수정'
+                    )}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         )}
-        </div>
       </div>
     </div>
   )
