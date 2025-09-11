@@ -100,9 +100,26 @@ export const getComplaint = async (complaintId: number): Promise<ComplaintDetail
 // 민원 상태 업데이트
 export const updateComplaintStatus = async (complaintId: number, statusCode: number): Promise<void> => {
   try {
-    await apiClient.patch(`/api/v1/complaints/${complaintId}/status/${statusCode}`);
+    console.log('API 호출 시작:', {
+      complaintId,
+      statusCode,
+      url: `/api/v1/complaints/${complaintId}/status/${statusCode}`
+    });
+    
+    const response = await apiClient.patch(`/api/v1/complaints/${complaintId}/status/${statusCode}`);
+    
+    console.log('API 응답 성공:', {
+      complaintId,
+      statusCode,
+      response: response.data
+    });
   } catch (error) {
-    console.error('민원 상태 업데이트 중 오류가 발생했습니다:', error);
+    console.error('민원 상태 업데이트 중 오류가 발생했습니다:', {
+      complaintId,
+      statusCode,
+      error: error.response?.data || error.message,
+      status: error.response?.status
+    });
     throw new Error('민원 상태를 업데이트할 수 없습니다.');
   }
 };
@@ -110,7 +127,6 @@ export const updateComplaintStatus = async (complaintId: number, statusCode: num
 // 상태 코드 매핑 (백엔드 ComplaintStatus enum의 getCode() 값과 일치)
 export const getStatusCodeFromStatus = (status: string): number => {
   switch (status) {
-    case 'received':
     case 'pending':
       return 1; // PENDING
     case 'processing':

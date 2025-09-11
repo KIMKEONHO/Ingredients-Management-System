@@ -124,7 +124,16 @@ function ComplaintManagementPage() {
       const idNumber = parseInt(complaintId.split('-')[1]);
       const statusCode = getStatusCodeFromStatus(newStatus);
       
+      console.log('단일 처리 시작:', {
+        complaintId,
+        idNumber,
+        newStatus,
+        statusCode
+      });
+      
       await updateComplaintStatus(idNumber, statusCode);
+      
+      console.log('단일 처리 성공:', complaintId);
       
       // 로컬 상태 업데이트
       setComplaintsData(prev => 
@@ -154,17 +163,38 @@ function ComplaintManagementPage() {
 
     try {
       const statusCode = getStatusCodeFromStatus(newStatus);
-      const promises = selectedComplaints.map(complaintId => {
-        const idNumber = parseInt(complaintId.split('-')[1]);
-        return updateComplaintStatus(idNumber, statusCode);
+      console.log('일괄 처리 시작:', {
+        selectedComplaints,
+        newStatus,
+        statusCode
       });
 
-      await Promise.all(promises);
+      const promises = selectedComplaints.map(async (complaintId, index) => {
+        const idNumber = parseInt(complaintId.split('-')[1]);
+        console.log(`민원 ${index + 1} 처리 중:`, {
+          complaintId,
+          idNumber,
+          statusCode
+        });
+        
+        try {
+          await updateComplaintStatus(idNumber, statusCode);
+          console.log(`민원 ${index + 1} 성공:`, complaintId);
+          return { success: true, complaintId };
+        } catch (error) {
+          console.error(`민원 ${index + 1} 실패:`, complaintId, error);
+          return { success: false, complaintId, error };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      console.log('일괄 처리 결과:', results);
       
-      // 로컬 상태 업데이트
+      // 성공한 민원들만 로컬 상태 업데이트
+      const successfulComplaints = results.filter(r => r.success).map(r => r.complaintId);
       setComplaintsData(prev => 
         prev.map(complaint => 
-          selectedComplaints.includes(complaint.id)
+          successfulComplaints.includes(complaint.id)
             ? { ...complaint, status: newStatus }
             : complaint
         )
@@ -177,7 +207,14 @@ function ComplaintManagementPage() {
       // 맨 위로 스크롤
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
-      alert(`${selectedComplaints.length}개 민원의 상태가 ${getStatusText(newStatus)}로 변경되었습니다.`);
+      const successCount = successfulComplaints.length;
+      const failCount = results.length - successCount;
+      
+      if (failCount > 0) {
+        alert(`${successCount}개 민원 성공, ${failCount}개 민원 실패했습니다. 콘솔을 확인해주세요.`);
+      } else {
+        alert(`${successCount}개 민원의 상태가 ${getStatusText(newStatus)}로 변경되었습니다.`);
+      }
     } catch (error) {
       console.error('일괄 상태 변경 오류:', error);
       alert('일괄 상태 변경에 실패했습니다.');
@@ -186,10 +223,9 @@ function ComplaintManagementPage() {
 
   const getStatusText = (status: Complaint['status']) => {
     const statusMap = {
-      received: '접수',
+      pending: '보류',
       processing: '처리중',
       completed: '완료',
-      pending: '보류',
       rejected: '거부됨'
     };
     return statusMap[status];
@@ -227,7 +263,7 @@ function ComplaintManagementPage() {
           id={`status-button-${complaint.id}`}
           onClick={handleToggle}
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${
-            complaint.status === 'received' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+            complaint.status === 'pending' ? 'bg-gray-100 text-gray-800 border border-gray-200' :
             complaint.status === 'processing' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
             complaint.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-200' :
             complaint.status === 'rejected' ? 'bg-red-100 text-red-800 border border-red-200' :
@@ -246,10 +282,10 @@ function ComplaintManagementPage() {
           }`}>
             <div className="py-1">
               <button
-                onClick={() => handleStatusChangeAndClose('received')}
+                onClick={() => handleStatusChangeAndClose('pending')}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                접수
+                보류
               </button>
               <button
                 onClick={() => handleStatusChangeAndClose('processing')}
@@ -262,12 +298,6 @@ function ComplaintManagementPage() {
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 완료
-              </button>
-              <button
-                onClick={() => handleStatusChangeAndClose('pending')}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                보류
               </button>
               <button
                 onClick={() => handleStatusChangeAndClose('rejected')}
@@ -409,10 +439,9 @@ function ComplaintManagementPage() {
                     className="block w-32 px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="all">전체</option>
-                    <option value="received">접수</option>
+                    <option value="pending">보류</option>
                     <option value="processing">처리중</option>
                     <option value="completed">완료</option>
-                    <option value="pending">보류</option>
                     <option value="rejected">거부됨</option>
                   </select>
                   <select
@@ -452,10 +481,10 @@ function ComplaintManagementPage() {
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-blue-700">일괄 상태 변경:</span>
                     <button
-                      onClick={() => handleBulkStatusChange('received')}
-                      className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
+                      onClick={() => handleBulkStatusChange('pending')}
+                      className="px-3 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 transition-colors"
                     >
-                      접수
+                      보류
                     </button>
                     <button
                       onClick={() => handleBulkStatusChange('processing')}
@@ -468,12 +497,6 @@ function ComplaintManagementPage() {
                       className="px-3 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 transition-colors"
                     >
                       완료
-                    </button>
-                    <button
-                      onClick={() => handleBulkStatusChange('pending')}
-                      className="px-3 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 transition-colors"
-                    >
-                      보류
                     </button>
                     <button
                       onClick={() => handleBulkStatusChange('rejected')}
