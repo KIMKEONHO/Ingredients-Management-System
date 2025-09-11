@@ -26,7 +26,7 @@ export interface Complaint {
   id: string;
   title: string;
   content: string;
-  status: 'received' | 'processing' | 'completed' | 'pending' | 'rejected';
+  status: 'pending' | 'processing' | 'completed' | 'rejected';
   submissionDate: string;
   deadline: string;
   category: '식자재 요청' | '민원';
@@ -47,7 +47,7 @@ export const mapBackendCategoryToFrontend = (backendCategory: 'REQUEST' | 'COMPL
 };
 
 // 상태 매핑 함수 (백엔드 enum 이름을 프론트엔드 상태로 변환)
-export const mapBackendStatusToFrontend = (backendStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED'): 'received' | 'processing' | 'completed' | 'pending' | 'rejected' => {
+export const mapBackendStatusToFrontend = (backendStatus: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED'): 'pending' | 'processing' | 'completed' | 'rejected' => {
   switch (backendStatus) {
     case 'PENDING':
       return 'pending';
@@ -58,7 +58,7 @@ export const mapBackendStatusToFrontend = (backendStatus: 'PENDING' | 'IN_PROGRE
     case 'REJECTED':
       return 'rejected';
     default:
-      return 'received';
+      return 'pending';
   }
 };
 
