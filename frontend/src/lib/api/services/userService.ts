@@ -518,5 +518,83 @@ export const userService = {
       // 네트워크 오류나 기타 오류의 경우
       throw new Error('유저 삭제에 실패했습니다.');
     }
+  },
+
+  // 사용자 통계 조회 (테마별)
+  async getUserStatistics(theme: string): Promise<{
+    success: boolean;
+    data?: {
+      totalUsers: number;
+      activeUsers: number;
+      newUsers: number;
+      activeUserGrowthRate: number;
+      newUserGrowthRate: number;
+      complaintRate: number;
+    };
+    message?: string;
+  }> {
+    try {
+      const response = await apiClient.get<{
+        resultCode: string;
+        msg: string;
+        data: {
+          totalUsers: number;
+          activeUsers: number;
+          newUsers: number;
+          activeUserGrowthRate: number;
+          newUserGrowthRate: number;
+          complaintRate: number;
+        };
+      }>(`/api/v1/users/statistics/${theme}`);
+      
+      console.log('사용자 통계 조회 응답:', response);
+      
+      // 백엔드 RsData 응답 구조 확인 및 처리
+      if (response && typeof response === 'object') {
+        // RsData 형태: { resultCode: "200", msg: "theme 단위의 유저 통계입니다.", data: {...} }
+        if ('resultCode' in response && typeof response.resultCode === 'string') {
+          const resultCode = response.resultCode;
+          const message = response.msg || '사용자 통계를 성공적으로 불러왔습니다.';
+          const data = response.data;
+          
+          // 200번대는 성공
+          if (resultCode.startsWith('2')) {
+            return {
+              success: true,
+              data: data,
+              message: message
+            };
+          } else {
+            return {
+              success: false,
+              message: message
+            };
+          }
+        }
+      }
+      
+      // 응답이 없는 경우
+      return {
+        success: false,
+        message: '사용자 통계를 불러올 수 없습니다.'
+      };
+    } catch (error: unknown) {
+      console.error('사용자 통계 조회 실패:', error);
+      
+      // HTTP 상태 코드에 따른 오류 처리
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as { response?: { status?: number } };
+        const status = errorResponse.response?.status;
+        if (status === 401) {
+          throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+        } else if (status === 403) {
+          throw new Error('관리자 권한이 필요합니다.');
+        } else if (status === 500) {
+          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      }
+      
+      throw new Error('사용자 통계 정보를 불러올 수 없습니다.');
+    }
   }
 };

@@ -64,6 +64,7 @@ public class ComplaintService {
                 .complaintId(complaintId)
                 .title(complaint.getTitle())
                 .content(complaint.getContent())
+                .createdAt(complaint.getCreatedAt())
                 .build();
     }
 
@@ -78,11 +79,13 @@ public class ComplaintService {
                         .content(complaint.getContent())
                         .complaintId(complaint.getId())
                         .status(complaint.getStatus())
+                        .createdAt(complaint.getCreatedAt())
                         .build())
                 .toList();
     }
 
     // 모든 컴플레인 조회
+    @Transactional
     public List<ComplaintDetailResponseDto> getAllComplaints(){
         List<Complaint> complaints = complaintRepository.findAll();
         return complaints.stream()
@@ -90,6 +93,10 @@ public class ComplaintService {
                         .title(complaint.getTitle())
                         .content(complaint.getContent())
                         .complaintId(complaint.getId())
+                        .status(complaint.getStatus())
+                        .category(complaint.getCategory())
+                        .createdAt(complaint.getCreatedAt())
+                        .userName(complaint.getUser().getUserName())
                         .build())
                 .toList();
     }

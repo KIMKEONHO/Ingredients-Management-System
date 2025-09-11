@@ -1,152 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/sidebar';
 import AdminGuard from '@/lib/auth/adminGuard';
+import { getAllComplaints, updateComplaintStatus, getStatusCodeFromStatus } from '@/lib/api/services/complaintService';
+import { Complaint } from '@/lib/backend/apiV1/complaintTypes';
 
-interface Complaint {
-  id: string;
-  title: string;
-  submitter: string;
-  submissionDate: string;
-  deadline: string;
-  status: 'received' | 'processing' | 'completed' | 'pending';
-  handler: string;
-  category: '식자재 요청' | '민원';
-  daysLeft?: number;
-}
-
-const complaints: Complaint[] = [
-  {
-    id: 'C2024-0001',
-    title: '신선 유기농 채소류 품목 추가 요청',
-    submitter: '김지원',
-    submissionDate: '2024.01.15',
-    deadline: '2024.01.22',
-    status: 'processing',
-    handler: '박성민',
-    category: '식자재 요청',
-    daysLeft: 2
-  },
-  {
-    id: 'C2024-0002',
-    title: '식자재 발주 시스템 개선 요청',
-    submitter: '이현주',
-    submissionDate: '2024.01.14',
-    deadline: '2024.01.28',
-    status: 'received',
-    handler: '최준호',
-    category: '민원'
-  },
-  {
-    id: 'C2024-0003',
-    title: '수입 식재료 원산지 표기 오류 수정',
-    submitter: '강동현',
-    submissionDate: '2024.01.13',
-    deadline: '2024.01.27',
-    status: 'completed',
-    handler: '임서영',
-    category: '민원'
-  },
-  {
-    id: 'C2024-0004',
-    title: '식자재 품질 관리 기준 개선 요청',
-    submitter: '송지은',
-    submissionDate: '2024.01.12',
-    deadline: '2024.01.19',
-    status: 'processing',
-    handler: '정민우',
-    category: '민원',
-    daysLeft: 1
-  },
-  {
-    id: 'C2024-0005',
-    title: '계절 과일 품목 확대 제안',
-    submitter: '윤서연',
-    submissionDate: '2024.01.11',
-    deadline: '2024.01.25',
-    status: 'received',
-    handler: '김태호',
-    category: '식자재 요청'
-  },
-  {
-    id: 'C2024-0006',
-    title: '식자재 배송 일정 조정 요청',
-    submitter: '박준영',
-    submissionDate: '2024.01.10',
-    deadline: '2024.01-24',
-    status: 'completed',
-    handler: '이미영',
-    category: '민원'
-  },
-  {
-    id: 'C2024-0007',
-    title: '신규 공급업체 등록 절차 문의',
-    submitter: '최수진',
-    submissionDate: '2024.01.09',
-    deadline: '2024.01.23',
-    status: 'received',
-    handler: '김동현',
-    category: '민원'
-  },
-  {
-    id: 'C2024-0008',
-    title: '식자재 가격 정책 개선 제안',
-    submitter: '정민수',
-    submissionDate: '2024.01.08',
-    deadline: '2024.01.21',
-    status: 'processing',
-    handler: '박지영',
-    category: '민원',
-    daysLeft: 3
-  },
-  {
-    id: 'C2024-0009',
-    title: '식자재 보관 방법 가이드 요청',
-    submitter: '임서연',
-    submissionDate: '2024.01.07',
-    deadline: '2024.01.20',
-    status: 'completed',
-    handler: '최준호',
-    category: '식자재 요청'
-  },
-  {
-    id: 'C2024-0010',
-    title: '식자재 품질 검증 절차 개선',
-    submitter: '한지우',
-    submissionDate: '2024.01.06',
-    deadline: '2024.01.19',
-    status: 'received',
-    handler: '김태호',
-    category: '민원'
-  },
-  {
-    id: 'C2024-0011',
-    title: '식자재 반품 정책 수정 요청',
-    submitter: '윤동훈',
-    submissionDate: '2024.01.05',
-    deadline: '2024.01.18',
-    status: 'pending',
-    handler: '박성민',
-    category: '민원'
-  },
-  {
-    id: 'C2024-0012',
-    title: '식자재 재고 관리 시스템 개선',
-    submitter: '송미영',
-    submissionDate: '2024.01.04',
-    deadline: '2024.01.17',
-    status: 'processing',
-    handler: '정민우',
-    category: '민원'
-  }
-];
 
 
 
 const getDeadlineDisplay = (deadline: string, daysLeft?: number) => {
-  if (daysLeft && daysLeft <= 2) {
-    const color = daysLeft === 1 ? 'text-orange-600' : 'text-red-600';
+  if (daysLeft !== undefined && daysLeft <= 3 && daysLeft >= 0) {
+    const color = daysLeft === 0 ? 'text-red-600' : 
+                  daysLeft === 1 ? 'text-red-600' : 
+                  daysLeft === 2 ? 'text-orange-600' : 'text-orange-600';
     return (
       <span className={color}>
         {deadline} (D-{daysLeft})
@@ -163,13 +30,53 @@ function ComplaintManagementPage() {
   const [selectedComplaints, setSelectedComplaints] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [complaintsData, setComplaintsData] = useState<Complaint[]>(complaints);
+  const [complaintsData, setComplaintsData] = useState<Complaint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const itemsPerPage = 10;
+
+  // 민원 데이터 로드
+  useEffect(() => {
+    const loadComplaints = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getAllComplaints();
+        setComplaintsData(data);
+      } catch (err) {
+        setError('민원 데이터를 불러오는데 실패했습니다.');
+        console.error('민원 로드 오류:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadComplaints();
+  }, []);
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId) {
+        const target = event.target as Element;
+        // 드롭다운 버튼이나 드롭다운 메뉴 내부 클릭이 아닌 경우에만 닫기
+        if (!target.closest(`[data-dropdown-id="${openDropdownId}"]`)) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdownId]);
 
   const filteredComplaints = complaintsData.filter(complaint => {
     const matchesSearch = complaint.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         complaint.submitter.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         complaint.id.toLowerCase().includes(searchTerm.toLowerCase());
+                         complaint.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (complaint.content && complaint.content.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatusFilter = filterStatus === 'all' || complaint.status === filterStatus;
     const matchesCategoryFilter = filterCategory === 'all' || complaint.category === filterCategory;
     return matchesSearch && matchesStatusFilter && matchesCategoryFilter;
@@ -211,43 +118,155 @@ function ComplaintManagementPage() {
     setCurrentPage(1); // 필터 변경 시 첫 페이지로 이동
   };
 
-  const handleStatusChange = (complaintId: string, newStatus: Complaint['status']) => {
-    // 실제 구현에서는 API 호출을 통해 상태를 업데이트해야 합니다
-    console.log(`Complaint ${complaintId} status changed to ${newStatus}`);
-    
-    // 로컬 상태 업데이트
-    setComplaintsData(prev => 
-      prev.map(complaint => 
-        complaint.id === complaintId 
-          ? { ...complaint, status: newStatus }
-          : complaint
-      )
-    );
-    
-    alert(`민원 상태가 ${getStatusText(newStatus)}로 변경되었습니다.`);
+  const handleStatusChange = async (complaintId: string, newStatus: Complaint['status']) => {
+    try {
+      // 민원 ID에서 숫자 부분 추출 (C2024-0001 -> 1)
+      const idNumber = parseInt(complaintId.split('-')[1]);
+      const statusCode = getStatusCodeFromStatus(newStatus);
+      
+      console.log('단일 처리 시작:', {
+        complaintId,
+        idNumber,
+        newStatus,
+        statusCode
+      });
+      
+      await updateComplaintStatus(idNumber, statusCode);
+      
+      console.log('단일 처리 성공:', complaintId);
+      
+      // 로컬 상태 업데이트
+      setComplaintsData(prev => 
+        prev.map(complaint => 
+          complaint.id === complaintId 
+            ? { ...complaint, status: newStatus }
+            : complaint
+        )
+      );
+      
+      // 상태 변경 후 맨 위로 스크롤
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      alert(`민원 상태가 ${getStatusText(newStatus)}로 변경되었습니다.`);
+    } catch (error) {
+      console.error('상태 변경 오류:', error);
+      alert('민원 상태 변경에 실패했습니다.');
+    }
+  };
+
+  // 일괄 상태 변경 함수
+  const handleBulkStatusChange = async (newStatus: Complaint['status']) => {
+    if (selectedComplaints.length === 0) {
+      alert('변경할 민원을 선택해주세요.');
+      return;
+    }
+
+    try {
+      const statusCode = getStatusCodeFromStatus(newStatus);
+      console.log('일괄 처리 시작:', {
+        selectedComplaints,
+        newStatus,
+        statusCode
+      });
+
+      const promises = selectedComplaints.map(async (complaintId, index) => {
+        const idNumber = parseInt(complaintId.split('-')[1]);
+        console.log(`민원 ${index + 1} 처리 중:`, {
+          complaintId,
+          idNumber,
+          statusCode
+        });
+        
+        try {
+          await updateComplaintStatus(idNumber, statusCode);
+          console.log(`민원 ${index + 1} 성공:`, complaintId);
+          return { success: true, complaintId };
+        } catch (error) {
+          console.error(`민원 ${index + 1} 실패:`, complaintId, error);
+          return { success: false, complaintId, error };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      console.log('일괄 처리 결과:', results);
+      
+      // 성공한 민원들만 로컬 상태 업데이트
+      const successfulComplaints = results.filter(r => r.success).map(r => r.complaintId);
+      setComplaintsData(prev => 
+        prev.map(complaint => 
+          successfulComplaints.includes(complaint.id)
+            ? { ...complaint, status: newStatus }
+            : complaint
+        )
+      );
+      
+      // 선택 초기화
+      setSelectedComplaints([]);
+      setSelectAll(false);
+      
+      // 맨 위로 스크롤
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      const successCount = successfulComplaints.length;
+      const failCount = results.length - successCount;
+      
+      if (failCount > 0) {
+        alert(`${successCount}개 민원 성공, ${failCount}개 민원 실패했습니다. 콘솔을 확인해주세요.`);
+      } else {
+        alert(`${successCount}개 민원의 상태가 ${getStatusText(newStatus)}로 변경되었습니다.`);
+      }
+    } catch (error) {
+      console.error('일괄 상태 변경 오류:', error);
+      alert('일괄 상태 변경에 실패했습니다.');
+    }
   };
 
   const getStatusText = (status: Complaint['status']) => {
     const statusMap = {
-      received: '접수',
+      pending: '보류',
       processing: '처리중',
       completed: '완료',
-      pending: '보류'
+      rejected: '거부됨'
     };
     return statusMap[status];
   };
 
   const StatusDropdown: React.FC<{ complaint: Complaint }> = ({ complaint }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const isOpen = openDropdownId === complaint.id;
+    
+    // 현재 페이지의 민원 개수와 위치에 따라 드롭다운 위치 결정
+    const getDropdownPosition = (): 'top' | 'bottom' => {
+      // 현재 페이지의 민원 개수가 7개 이상이면 8번째부터 위로 표시
+      if (currentComplaints.length >= 7) {
+        const complaintIndex = currentComplaints.findIndex(c => c.id === complaint.id);
+        return complaintIndex >= 7 ? 'top' : 'bottom';
+      }
+      return 'bottom';
+    };
+
+    const handleToggle = () => {
+      if (!isOpen) {
+        setOpenDropdownId(complaint.id);
+      } else {
+        setOpenDropdownId(null);
+      }
+    };
+
+    const handleStatusChangeAndClose = (newStatus: Complaint['status']) => {
+      handleStatusChange(complaint.id, newStatus);
+      setOpenDropdownId(null);
+    };
 
     return (
-      <div className="relative">
+      <div className="relative" data-dropdown-id={complaint.id}>
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          id={`status-button-${complaint.id}`}
+          onClick={handleToggle}
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${
-            complaint.status === 'received' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+            complaint.status === 'pending' ? 'bg-gray-100 text-gray-800 border border-gray-200' :
             complaint.status === 'processing' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
             complaint.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-200' :
+            complaint.status === 'rejected' ? 'bg-red-100 text-red-800 border border-red-200' :
             'bg-gray-100 text-gray-800 border border-gray-200'
           }`}
         >
@@ -258,43 +277,33 @@ function ComplaintManagementPage() {
         </button>
 
         {isOpen && (
-          <div className="absolute z-10 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg">
+          <div className={`absolute z-10 w-32 bg-white border border-gray-200 rounded-md shadow-lg ${
+            getDropdownPosition() === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}>
             <div className="py-1">
               <button
-                onClick={() => {
-                  handleStatusChange(complaint.id, 'received');
-                  setIsOpen(false);
-                }}
+                onClick={() => handleStatusChangeAndClose('pending')}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                접수
+                보류
               </button>
               <button
-                onClick={() => {
-                  handleStatusChange(complaint.id, 'processing');
-                  setIsOpen(false);
-                }}
+                onClick={() => handleStatusChangeAndClose('processing')}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 처리중
               </button>
               <button
-                onClick={() => {
-                  handleStatusChange(complaint.id, 'completed');
-                  setIsOpen(false);
-                }}
+                onClick={() => handleStatusChangeAndClose('completed')}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 완료
               </button>
               <button
-                onClick={() => {
-                  handleStatusChange(complaint.id, 'pending');
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => handleStatusChangeAndClose('rejected')}
+                className="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
               >
-                보류
+                거부됨
               </button>
             </div>
           </div>
@@ -306,7 +315,8 @@ function ComplaintManagementPage() {
   const totalComplaints = complaintsData.length;
   const processingComplaints = complaintsData.filter(c => c.status === 'processing').length;
   const completedComplaints = complaintsData.filter(c => c.status === 'completed').length;
-  const urgentComplaints = complaintsData.filter(c => c.daysLeft && c.daysLeft <= 2).length;
+  const rejectedComplaints = complaintsData.filter(c => c.status === 'rejected').length;
+  const urgentComplaints = complaintsData.filter(c => c.daysLeft !== undefined && c.daysLeft <= 3 && c.daysLeft >= 0).length;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -364,18 +374,18 @@ function ComplaintManagementPage() {
               </div>
             </div>
 
-            {/* Urgent Complaints */}
+            {/* Rejected Complaints */}
             <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-lg shadow-sm p-6 border border-red-200">
               <div className="flex items-center">
                 <div className="p-3 rounded-lg bg-red-100">
                   <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">긴급</p>
-                  <p className="text-2xl font-semibold text-gray-900">{urgentComplaints}건</p>
-                  <p className="text-sm text-red-600">D-2 이내</p>
+                  <p className="text-sm font-medium text-gray-600">거부됨</p>
+                  <p className="text-2xl font-semibold text-gray-900">{rejectedComplaints}건</p>
+                  <p className="text-sm text-red-600">처리 거부</p>
                 </div>
               </div>
             </div>
@@ -413,7 +423,7 @@ function ComplaintManagementPage() {
                       </div>
                       <input
                         type="text"
-                        placeholder="민원 제목, 접수자명, 민원번호 검색..."
+                        placeholder="민원 제목, 내용, 민원번호 검색..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
@@ -429,10 +439,10 @@ function ComplaintManagementPage() {
                     className="block w-32 px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="all">전체</option>
-                    <option value="received">접수</option>
+                    <option value="pending">보류</option>
                     <option value="processing">처리중</option>
                     <option value="completed">완료</option>
-                    <option value="pending">보류</option>
+                    <option value="rejected">거부됨</option>
                   </select>
                   <select
                     value={filterCategory}
@@ -450,64 +460,157 @@ function ComplaintManagementPage() {
               </div>
             </div>
 
+            {/* 일괄 처리 UI */}
+            {selectedComplaints.length > 0 && (
+              <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm font-medium text-blue-800">
+                      {selectedComplaints.length}개 민원 선택됨
+                    </span>
+                    <button
+                      onClick={() => {
+                        setSelectedComplaints([]);
+                        setSelectAll(false);
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 underline"
+                    >
+                      선택 해제
+                    </button>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-blue-700">일괄 상태 변경:</span>
+                    <button
+                      onClick={() => handleBulkStatusChange('pending')}
+                      className="px-3 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200 transition-colors"
+                    >
+                      보류
+                    </button>
+                    <button
+                      onClick={() => handleBulkStatusChange('processing')}
+                      className="px-3 py-1 text-xs bg-orange-100 text-orange-800 rounded hover:bg-orange-200 transition-colors"
+                    >
+                      처리중
+                    </button>
+                    <button
+                      onClick={() => handleBulkStatusChange('completed')}
+                      className="px-3 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 transition-colors"
+                    >
+                      완료
+                    </button>
+                    <button
+                      onClick={() => handleBulkStatusChange('rejected')}
+                      className="px-3 py-1 text-xs bg-red-100 text-red-800 rounded hover:bg-red-200 transition-colors"
+                    >
+                      거부됨
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Table */}
-            <div className="overflow-x-auto bg-white">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <input
-                        type="checkbox"
-                        checked={selectAll}
-                        onChange={handleSelectAll}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원번호</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원 제목</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">접수자명</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">접수일자</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">처리기한</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">담당자</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {currentComplaints.map((complaint) => (
-                    <tr key={complaint.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedComplaints.includes(complaint.id)}
-                          onChange={() => handleSelectComplaint(complaint.id)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{complaint.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 max-w-xs truncate">{complaint.title}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{complaint.submitter}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{complaint.submissionDate}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {getDeadlineDisplay(complaint.deadline, complaint.daysLeft)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusDropdown complaint={complaint} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{complaint.handler}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          complaint.category === '식자재 요청' 
-                            ? 'bg-purple-100 text-purple-800 border border-purple-200' 
-                            : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                        }`}>
-                          {complaint.category}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="overflow-x-auto bg-white" style={{ minHeight: '700px', maxHeight: '800px' }}>
+              {loading ? (
+                <div className="flex justify-center items-center h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">민원 데이터를 불러오는 중...</span>
+                </div>
+              ) : error ? (
+                <div className="flex justify-center items-center h-full">
+                  <div className="text-center">
+                    <div className="text-red-600 mb-2">⚠️</div>
+                    <p className="text-gray-600">{error}</p>
+                    <button 
+                      onClick={() => window.location.reload()} 
+                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                      다시 시도
+                    </button>
+                  </div>
+                </div>
+              ) : currentComplaints.length === 0 ? (
+                <div className="flex justify-center items-center h-full">
+                  <div className="text-center">
+                    <div className="text-gray-400 mb-2">📝</div>
+                    <p className="text-gray-600">민원이 없습니다.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col">
+                  <div className="overflow-y-auto flex-1">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <input
+                              type="checkbox"
+                              checked={selectAll}
+                              onChange={handleSelectAll}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원번호</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원 제목</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">민원 내용</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작성자</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">접수일자</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">처리기한</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                    {currentComplaints.map((complaint) => (
+                      <tr key={complaint.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedComplaints.includes(complaint.id)}
+                            onChange={() => handleSelectComplaint(complaint.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{complaint.id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 max-w-xs truncate">{complaint.title}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900 max-w-md">
+                          <div className="truncate" title={complaint.content}>
+                            {complaint.content || '내용 없음'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-blue-600 font-medium text-sm">
+                                {complaint.userName ? complaint.userName.charAt(0).toUpperCase() : '?'}
+                              </span>
+                            </div>
+                            <span className="font-medium">{complaint.userName || '알 수 없음'}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{complaint.submissionDate}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          {getDeadlineDisplay(complaint.deadline, complaint.daysLeft)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <StatusDropdown complaint={complaint} />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            complaint.category === '식자재 요청' 
+                              ? 'bg-purple-100 text-purple-800 border border-purple-200' 
+                              : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                          }`}>
+                            {complaint.category}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Pagination */}
