@@ -5,11 +5,11 @@ import { List, FileText, Clock, CheckCircle, AlertCircle, MessageSquare, Calenda
 import Link from "next/link";
 import { 
   ComplaintService, 
-  ComplaintDetailResponseDto, 
   ComplaintStatus, 
   ComplaintStatusUtils,
   RsData 
 } from "@/lib/api/services/complaintService";
+import { ComplaintDetailResponseDto } from "@/lib/backend/apiV1/complaintTypes";
 
 export default function MyComplaintsPage() {
   const [complaints, setComplaints] = useState<ComplaintDetailResponseDto[]>([]);

@@ -65,7 +65,10 @@ export interface CreateComplaintRequestDto {
 export interface CreateComplaintResponseDto {
   resultCode: string;
   resultMessage: string;
-  data?: any;
+  data?: {
+    complaintId?: number;
+    [key: string]: unknown;
+  };
 }
 
 // 모든 민원 조회
@@ -89,8 +92,7 @@ export const getComplaint = async (complaintId: number): Promise<ComplaintDetail
   try {
     const response = await apiClient.get<ComplaintDetailResponseDto>(`/api/v1/complaints/${complaintId}`);
     console.log('getComplaint 응답:', response);
-    console.log('getComplaint 응답 데이터:', response.data);
-    return response.data || null;
+    return response || null;
   } catch (error) {
     console.error('민원을 가져오는 중 오류가 발생했습니다:', error);
     throw new Error('민원을 가져올 수 없습니다.');
@@ -111,14 +113,19 @@ export const updateComplaintStatus = async (complaintId: number, statusCode: num
     console.log('API 응답 성공:', {
       complaintId,
       statusCode,
-      response: response.data
+      response: response
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+    const errorResponse = error && typeof error === 'object' && 'response' in error ? error.response : null;
+    const errorData = errorResponse && typeof errorResponse === 'object' && 'data' in errorResponse ? errorResponse.data : null;
+    const errorStatus = errorResponse && typeof errorResponse === 'object' && 'status' in errorResponse ? errorResponse.status : null;
+    
     console.error('민원 상태 업데이트 중 오류가 발생했습니다:', {
       complaintId,
       statusCode,
-      error: error.response?.data || error.message,
-      status: error.response?.status
+      error: errorData || errorMessage,
+      status: errorStatus
     });
     throw new Error('민원 상태를 업데이트할 수 없습니다.');
   }
@@ -144,7 +151,7 @@ export const getStatusCodeFromStatus = (status: string): number => {
 export const createComplaint = async (requestData: CreateComplaintRequestDto): Promise<CreateComplaintResponseDto> => {
   try {
     const response = await apiClient.post<CreateComplaintResponseDto>('/api/v1/complaints/', requestData);
-    return response.data;
+    return response;
   } catch (error) {
     console.error('민원 생성 중 오류가 발생했습니다:', error);
     throw new Error('민원을 생성할 수 없습니다.');
@@ -156,8 +163,7 @@ export const getMyComplaints = async (): Promise<ComplaintDetailResponseDto[]> =
   try {
     const response = await apiClient.get<ComplaintDetailResponseDto[]>('/api/v1/complaints/users');
     console.log('getMyComplaints 응답:', response);
-    console.log('getMyComplaints 응답 데이터:', response.data);
-    return response.data;
+    return response || [];
   } catch (error) {
     console.error('내 민원 목록을 가져오는 중 오류가 발생했습니다:', error);
     throw new Error('내 민원 목록을 가져올 수 없습니다.');
