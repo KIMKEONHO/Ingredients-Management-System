@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/sidebar';
 import AdminGuard from '@/lib/auth/adminGuard';
 import { getAllComplaints, updateComplaintStatus, getStatusCodeFromStatus } from '@/lib/api/services/complaintService';
-import { Complaint } from '@/lib/backend/apiV1/complaintTypes';
+import { Complaint, Feedback } from '@/lib/backend/apiV1/complaintTypes';
+import ComplaintDetailModal from './components/ComplaintDetailModal';
 
 
 
@@ -34,6 +35,8 @@ function ComplaintManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const itemsPerPage = 10;
 
   // 민원 데이터 로드
@@ -229,6 +232,29 @@ function ComplaintManagementPage() {
       rejected: '거부됨'
     };
     return statusMap[status];
+  };
+
+  // 민원 상세 모달 열기
+  const handleOpenDetailModal = (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    setIsDetailModalOpen(true);
+  };
+
+  // 민원 상세 모달 닫기
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedComplaint(null);
+  };
+
+  // 피드백 업데이트
+  const handleFeedbackUpdate = (complaintId: string, feedback: Feedback) => {
+    setComplaintsData(prev => 
+      prev.map(complaint => 
+        complaint.id === complaintId 
+          ? { ...complaint, feedback }
+          : complaint
+      )
+    );
   };
 
   const StatusDropdown: React.FC<{ complaint: Complaint }> = ({ complaint }) => {
@@ -562,8 +588,12 @@ function ComplaintManagementPage() {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                     {currentComplaints.map((complaint) => (
-                      <tr key={complaint.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      <tr 
+                        key={complaint.id} 
+                        className="hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => handleOpenDetailModal(complaint)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={selectedComplaints.includes(complaint.id)}
@@ -592,7 +622,7 @@ function ComplaintManagementPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           {getDeadlineDisplay(complaint.deadline, complaint.daysLeft)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <StatusDropdown complaint={complaint} />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -659,6 +689,14 @@ function ComplaintManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* 민원 상세 모달 */}
+      <ComplaintDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        complaint={selectedComplaint}
+        onFeedbackUpdate={handleFeedbackUpdate}
+      />
     </div>
   );
 }
