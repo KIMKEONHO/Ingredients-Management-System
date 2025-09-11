@@ -6,10 +6,10 @@ import { ArrowLeft, FileText, Clock, CheckCircle, AlertCircle, MessageSquare, Ca
 import Link from "next/link";
 import { 
   ComplaintService, 
-  ComplaintDetailResponseDto, 
   ComplaintStatus, 
   ComplaintStatusUtils
 } from "@/lib/api/services/complaintService";
+import { ComplaintDetailResponseDto } from "@/lib/backend/apiV1/complaintTypes";
 
 export default function ComplaintDetailPage() {
   const params = useParams();
