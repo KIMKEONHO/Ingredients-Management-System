@@ -24,14 +24,14 @@ public class ComplaintFeedbackController {
 
     @Operation(summary = "피드백 조회", description = "특정 문의의 모든 피드백내용을 조회합니다.")
     @GetMapping("/{complaintId}")
-    public RsData<?> getFeedback(@PathVariable Long complaintId) {
-        List<ComplaintFeedbackResponseDto> feedbackResponses = complaintFeedbackService.getFeedbacks(complaintId);
-        return new RsData<>("200", "피드백 조회에 성공하였습니다.", feedbackResponses);
+    public RsData<ComplaintFeedbackResponseDto> getFeedback(@PathVariable Long complaintId) {
+        ComplaintFeedbackResponseDto feedbackResponse = complaintFeedbackService.getFeedback(complaintId);
+        return new RsData<>("200", "피드백 조회에 성공하였습니다.", feedbackResponse);
     }
 
     @Operation(summary = "피드백 목록 조회", description = "작성된 모든 피드백의 목록을 조회합니다.")
     @GetMapping("/")
-    public RsData<?> getAllFeedback() {
+    public RsData<List<ComplaintFeedbackResponseDto>> getAllFeedback() {
         List<ComplaintFeedbackResponseDto> responseDtos = complaintFeedbackService.getAllFeedback();
         return new RsData<>("200", "모든 피드백의 조회에 성공하였습니다.",responseDtos);
     }
@@ -46,7 +46,7 @@ public class ComplaintFeedbackController {
     }
 
     @PutMapping("/{feedbackId}")
-    public RsData<?> updateFeedback(
+    public RsData<ComplaintFeedbackResponseDto> updateFeedback(
             @PathVariable Long feedbackId,
             @RequestBody UpdateComplaintFeedbackRequestDto requestDto){
         ComplaintFeedbackResponseDto responseDto = complaintFeedbackService.updateFeedback(feedbackId, requestDto);
@@ -54,7 +54,7 @@ public class ComplaintFeedbackController {
     }
 
     @DeleteMapping("/{feedbackId}")
-    public RsData<?> deleteFeedback(@PathVariable Long feedbackId){
+    public RsData<ComplaintFeedbackResponseDto> deleteFeedback(@PathVariable Long feedbackId){
 
         complaintFeedbackService.deleteFeedback(feedbackId);
         return new RsData<>("200", "피드백이 성공적으로 삭제되었습니다.");
