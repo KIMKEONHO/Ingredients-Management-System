@@ -72,6 +72,13 @@ export const API_ENDPOINTS = {
       DETAIL: '/api/v1/category/:categoryId',
     },
 
+    // 피드백 관련
+    FEEDBACK: {
+      BASE: '/api/v1/feedback/',
+      BY_COMPLAINT: '/api/v1/feedback/:complaintId', // 특정 민원의 피드백 조회/생성
+      BY_ID: '/api/v1/feedback/:feedbackId', // 특정 피드백 수정/삭제
+    },
+
   } as const;
   
   // API URL 생성 헬퍼 함수
