@@ -21,7 +21,8 @@ public enum ExceptionCode {
     FEEDBACK_NOT_FOUND(404, "피드백을 찾을 수 없습니다."),
     NON_MATCHED(404,"인증코드가 올바르지 않습니다."),
     DIET_NOT_FOUND(404, "식단이 존재하지 않습니다."),
-    NOT_ADMIN(403, "관리자 권한이 없습니다.")
+    NOT_ADMIN(403, "관리자 권한이 없습니다."),
+    UNKNOW_THEME(404,"알 수 없는 시간단위 입니다.")
     ;
 
     @Getter
