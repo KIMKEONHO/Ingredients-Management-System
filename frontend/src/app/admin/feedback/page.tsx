@@ -104,22 +104,6 @@ export default function FeedbackListPage() {
     });
   };
 
-  // 상태별 색상
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return 'text-yellow-600 bg-yellow-100';
-      case 'IN_PROGRESS':
-        return 'text-blue-600 bg-blue-100';
-      case 'COMPLETED':
-        return 'text-green-600 bg-green-100';
-      case 'REJECTED':
-        return 'text-red-600 bg-red-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
@@ -171,122 +155,133 @@ export default function FeedbackListPage() {
         <div className="max-w-7xl mx-auto">
           <PageHeader title="피드백 관리" />
           
-        <SectionCard title="전체 피드백 목록">
-          {/* 검색 및 필터 */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1 max-w-md">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+          {/* Main Card Container */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            {/* Feedback List Card */}
+            <div className="bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+              {/* Search and Filter */}
+              <div className="px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="text-sm text-gray-700">
+                      총 {filteredFeedbacks.length}개의 피드백
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="피드백 제목, 내용, 작성자 검색..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-1 max-w-md">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="피드백 제목, 내용, 작성자 검색..."
+                          value={searchTerm}
+                          onChange={(e) => handleSearchChange(e.target.value)}
+                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="text-sm text-gray-500">
-                총 {filteredFeedbacks.length}개의 피드백
-              </div>
-            </div>
-          </div>
 
-          {filteredFeedbacks.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">📝</div>
-                <p className="text-gray-500 text-lg">등록된 피드백이 없습니다.</p>
+              {/* Table */}
+              <div className="overflow-x-auto bg-white" style={{ minHeight: '700px', maxHeight: '800px' }}>
+                {filteredFeedbacks.length === 0 ? (
+                  <div className="flex justify-center items-center h-full">
+                    <div className="text-center">
+                      <div className="text-gray-400 mb-2">📝</div>
+                      <p className="text-gray-600">피드백이 없습니다.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col">
+                    <div className="overflow-y-auto flex-1">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50 sticky top-0 z-10">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              ID
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              제목
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              민원 ID
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              작성자
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              작성일
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              수정일
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              작업
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {currentFeedbacks.map((feedback) => (
+                            <tr key={feedback.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                #{feedback.id}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                                  {feedback.title || '-'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                C2024-{String(feedback.complaintId || 0).padStart(4, '0')}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {feedback.responderNickname || '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {formatDate(feedback.createAt)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {formatDate(feedback.modifiedAt)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => handleViewFeedback(feedback)}
+                                    className="text-blue-600 hover:text-blue-900"
+                                  >
+                                    보기
+                                  </button>
+                                  <button
+                                    onClick={() => handleEditFeedback(feedback)}
+                                    className="text-green-600 hover:text-green-900"
+                                  >
+                                    수정
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteFeedback(feedback.id!)}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    삭제
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        제목
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        민원 ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        작성자
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        작성일
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        수정일
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        작업
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentFeedbacks.map((feedback) => (
-                      <tr key={feedback.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          #{feedback.id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                            {feedback.title || '-'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          C2024-{String(feedback.complaintId || 0).padStart(4, '0')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {feedback.responderNickname || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(feedback.createAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(feedback.modifiedAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleViewFeedback(feedback)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              보기
-                            </button>
-                            <button
-                              onClick={() => handleEditFeedback(feedback)}
-                              className="text-green-600 hover:text-green-900"
-                            >
-                              수정
-                            </button>
-                            <button
-                              onClick={() => handleDeleteFeedback(feedback.id!)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </SectionCard>
 
-          {/* 페이징 */}
-          {filteredFeedbacks.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-4">
-              <div className="px-6 py-4 border-t border-gray-200">
+              {/* Pagination */}
+              <div className="px-6 py-4 border-t border-gray-200 bg-white rounded-b-lg">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-700">
                     {startIndex + 1}-{Math.min(endIndex, filteredFeedbacks.length)} of {filteredFeedbacks.length} results
@@ -329,7 +324,7 @@ export default function FeedbackListPage() {
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
