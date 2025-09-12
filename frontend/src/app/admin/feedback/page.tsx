@@ -106,10 +106,10 @@ export default function FeedbackListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="flex min-h-screen bg-gray-50">
         <AdminSidebar />
         <div className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg shadow-lg p-6">
             <PageHeader title="피드백 관리" />
             <div className="flex justify-center items-center h-64">
               <div className="text-center">
@@ -125,10 +125,10 @@ export default function FeedbackListPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="flex min-h-screen bg-gray-50">
         <AdminSidebar />
         <div className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg shadow-lg p-6">
             <PageHeader title="피드백 관리" />
             <div className="flex justify-center items-center h-64">
               <div className="text-center">
@@ -149,15 +149,13 @@ export default function FeedbackListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
       <div className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg p-6">
           <PageHeader title="피드백 관리" />
           
-          {/* Main Card Container */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            {/* Feedback List Card */}
+          {/* Feedback List Card */}
             <div className="bg-gray-50 rounded-lg shadow-sm border border-gray-200">
               {/* Search and Filter */}
               <div className="px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
@@ -324,7 +322,6 @@ export default function FeedbackListPage() {
                 </div>
               </div>
             </div>
-          </div>
         </div>
       </div>
 
