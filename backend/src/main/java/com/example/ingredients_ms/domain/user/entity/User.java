@@ -4,6 +4,8 @@ import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.complaint.entity.Complaint;
 import com.example.ingredients_ms.domain.diet.entity.Diet;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
+import com.example.ingredients_ms.domain.recipe.entity.Recipe;
+import com.example.ingredients_ms.domain.recipelike.entity.RecipeLike;
 import com.example.ingredients_ms.global.Status;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -76,6 +78,13 @@ public class User extends BaseEntity {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Diet>  diets = new ArrayList<>();
+
+    // 레시피 관련 관계 추가
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
+    private List<Recipe> authoredRecipes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<RecipeLike> recipeLikes = new ArrayList<>();
 
     public Set<GrantedAuthority> getAuthorities() {
         return Set.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
