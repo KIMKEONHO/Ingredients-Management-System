@@ -28,17 +28,17 @@ public class ComplaintFeedbackService {
 
 
     @Transactional
-    // 피드백 조회
-    public List<ComplaintFeedbackResponseDto> getFeedbacks(Long complaintId) {
+    // 피드백 단건 조회
+    public ComplaintFeedbackResponseDto getFeedback(Long complaintId) {
 
         // 예외처리
         if(!complaintFeedbackRepository.existsByComplaintId(complaintId)){
             throw new BusinessLogicException(ExceptionCode.FEEDBACK_NOT_FOUND);
         }
 
-        return complaintFeedbackRepository.findByComplaintId(complaintId).stream()
-                .map(ComplaintFeedbackResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        return ComplaintFeedbackResponseDto.fromEntity(
+                complaintFeedbackRepository.findByComplaintId(complaintId)
+                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FEEDBACK_NOT_FOUND)));
     }
 
     @Transactional

@@ -21,6 +21,14 @@ export interface RsDataListComplaintDetailResponseDto {
   data?: ComplaintDetailResponseDto[];
 }
 
+// 피드백 타입
+export interface Feedback {
+  assignee: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // 프론트엔드에서 사용할 민원 타입 (백엔드 데이터를 변환한 형태)
 export interface Complaint {
   id: string;
@@ -32,6 +40,7 @@ export interface Complaint {
   category: '식자재 요청' | '민원';
   daysLeft?: number;
   userName?: string;
+  feedback?: Feedback;
 }
 
 // 카테고리 매핑 함수 (백엔드 enum 이름을 프론트엔드 표시명으로 변환)

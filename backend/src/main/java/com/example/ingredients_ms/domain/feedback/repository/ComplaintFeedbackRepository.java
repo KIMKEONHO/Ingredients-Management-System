@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface ComplaintFeedbackRepository extends JpaRepository<ComplaintFeedback, Long> {
-    List<ComplaintFeedback> findByComplaintId(Long complaintId);
+    Optional<ComplaintFeedback> findByComplaintId(Long complaintId);
 
 
     boolean existsByComplaintId(Long complaintId);
