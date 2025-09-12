@@ -63,6 +63,7 @@ export const API_ENDPOINTS = {
     // 식재료 관련
     INGREDIENT: {
       BASE: '/api/v1/ingredient/',
+      DETAIL: '/api/v1/ingredient/:ingredientId',
     },
 
     // 카테고리 관련
@@ -79,7 +80,13 @@ export const API_ENDPOINTS = {
     
     let url = endpoint;
     Object.entries(params).forEach(([key, value]) => {
-      url = url.replace(`:${key}`, String(value));
+      // undefined, null, 빈 문자열 체크
+      if (value !== undefined && value !== null && value !== '') {
+        url = url.replace(`:${key}`, String(value));
+      } else {
+        console.error(`createApiUrl: 파라미터 '${key}'가 유효하지 않습니다. 값:`, value);
+        throw new Error(`파라미터 '${key}'가 유효하지 않습니다.`);
+      }
     });
     
     return url;
