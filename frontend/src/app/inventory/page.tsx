@@ -69,7 +69,22 @@ function InventoryContent() {
         const inventoryData = await inventoryService.getInventory();
 
         // 먼저 기본 데이터를 변환
-        const rawItems = inventoryData.map((item: FoodInventory) => {
+        interface RawInventoryItem {
+          id: number;
+          name: string;
+          category: string;
+          quantity: number;
+          originalQuantity: number;
+          unit: string;
+          storageMethod: string;
+          expiryDate: string;
+          addedDate: string;
+          status: '보관중' | '유통기한 임박' | '기간만료' | '사용완료';
+          isExpired: boolean;
+          image: string;
+        }
+
+        const rawItems: RawInventoryItem[] = inventoryData.map((item: FoodInventory) => {
           const ingredient = item.ingredientId ? newIngredientsMap.get(item.ingredientId) : undefined;
           const storageMethodMap: { [key: string]: string } = {
             "REFRIGERATED": "냉장",
@@ -101,7 +116,7 @@ function InventoryContent() {
         });
 
         // 같은 식재료끼리 그룹화하고 통합
-        const groupedItems = new Map<string, any[]>();
+        const groupedItems = new Map<string, RawInventoryItem[]>();
         
         rawItems.forEach(item => {
           const key = `${item.name}_${item.category}`;
