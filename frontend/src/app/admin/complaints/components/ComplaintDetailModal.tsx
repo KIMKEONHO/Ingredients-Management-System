@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Complaint, Feedback } from '@/lib/backend/apiV1/complaintTypes';
-import { createFeedback, getFeedback } from '@/lib/api/services/feedbackService';
+import { createFeedback, getFeedback, updateFeedback } from '@/lib/api/services/feedbackService';
 
 interface ComplaintDetailModalProps {
   isOpen: boolean;
@@ -19,23 +19,65 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
     content: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [existingFeedback, setExistingFeedback] = useState<Feedback | null>(null);
+  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+  const [feedbackId, setFeedbackId] = useState<number | null>(null);
 
-  // 모달이 열릴 때 피드백 데이터 초기화
+  // 모달이 열릴 때 피드백 데이터 로드
   useEffect(() => {
     if (isOpen && complaint) {
-      const existingFeedback = complaint.feedback || {
-        assignee: '관리자 박지원',
-        content: '',
-        createdAt: '',
-        updatedAt: ''
-      };
-      
-      setFeedbackData({
-        assignee: existingFeedback.assignee || '관리자 박지원',
-        content: existingFeedback.content || ''
-      });
+      loadFeedbackData();
     }
   }, [isOpen, complaint]);
+
+  // 피드백 데이터 로드 함수
+  const loadFeedbackData = async () => {
+    if (!complaint) return;
+
+    setIsLoadingFeedback(true);
+    try {
+      // 민원 ID에서 숫자 부분 추출
+      const idNumber = parseInt(complaint.id.split('-')[1]);
+      
+      // 기존 피드백 데이터 가져오기
+      const feedbackResponse = await getFeedback(idNumber);
+      
+      if (feedbackResponse) {
+        // ComplaintFeedbackResponseDto를 Feedback 타입으로 변환
+        const feedback: Feedback = {
+          assignee: feedbackResponse.responderNickname || '',
+          content: feedbackResponse.content || '',
+          createdAt: feedbackResponse.createAt || '',
+          updatedAt: feedbackResponse.modifiedAt || feedbackResponse.createAt || ''
+        };
+        
+        setExistingFeedback(feedback);
+        setFeedbackId(feedbackResponse.id || null);
+        setFeedbackData({
+          assignee: feedback.assignee,
+          content: feedback.content
+        });
+      } else {
+        // 피드백이 없는 경우 초기화
+        setExistingFeedback(null);
+        setFeedbackId(null);
+        setFeedbackData({
+          assignee: '',
+          content: ''
+        });
+      }
+    } catch (error) {
+      console.error('피드백 데이터 로드 오류:', error);
+      // 에러가 발생해도 기본값으로 초기화
+      setExistingFeedback(null);
+      setFeedbackData({
+        assignee: '',
+        content: ''
+      });
+    } finally {
+      setIsLoadingFeedback(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!complaint || !feedbackData.assignee.trim() || !feedbackData.content.trim()) {
@@ -47,24 +89,36 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
     try {
       const idNumber = parseInt(complaint.id.split('-')[1]);
       
-      // 피드백 생성 또는 수정
-      await createFeedback(idNumber, {
-        title: `피드백 - ${complaint.title}`,
-        content: feedbackData.content
-      });
+      // 기존 피드백이 있으면 수정, 없으면 생성
+      if (existingFeedback && feedbackId) {
+        // 피드백 수정
+        await updateFeedback(feedbackId, {
+          title: `피드백 - ${complaint.title}`,
+          content: feedbackData.content
+        });
+      } else {
+        // 피드백 생성
+        await createFeedback(idNumber, {
+          title: `피드백 - ${complaint.title}`,
+          content: feedbackData.content
+        });
+      }
 
       // 로컬 상태 업데이트
+      const newFeedback: Feedback = {
+        assignee: feedbackData.assignee,
+        content: feedbackData.content,
+        createdAt: existingFeedback?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      setExistingFeedback(newFeedback);
+      
       if (onFeedbackUpdate) {
-        const newFeedback: Feedback = {
-          assignee: feedbackData.assignee,
-          content: feedbackData.content,
-          createdAt: complaint.feedback?.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
         onFeedbackUpdate(complaint.id, newFeedback);
       }
 
-      alert('피드백이 성공적으로 저장되었습니다.');
+      alert(existingFeedback ? '피드백이 성공적으로 수정되었습니다.' : '피드백이 성공적으로 저장되었습니다.');
     } catch (error) {
       console.error('피드백 저장 오류:', error);
       alert('피드백 저장에 실패했습니다.');
@@ -80,7 +134,9 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* 모달 헤더 */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">피드백 수정</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {existingFeedback ? '피드백 수정' : '피드백 작성'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -126,12 +182,7 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
 
                 {/* 오른쪽 컬럼 */}
                 <div className="space-y-4">
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">긴급도:</span>
-                    <span className="ml-2 text-sm text-gray-900">
-                      {complaint.daysLeft !== undefined && complaint.daysLeft <= 3 && complaint.daysLeft >= 0 ? '높음' : '보통'}
-                    </span>
-                  </div>
+                  {/* 긴급도 필드 제거됨 */}
                 </div>
               </div>
             </div>
@@ -139,23 +190,33 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
             {/* 기존 피드백 섹션 */}
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">기존 피드백</h3>
-              {complaint.feedback && complaint.feedback.content ? (
+              {isLoadingFeedback ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-500 text-sm">피드백 정보를 불러오는 중...</p>
+                </div>
+              ) : existingFeedback && existingFeedback.content ? (
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <div>
                       <span className="text-sm font-medium text-gray-700">관리자:</span>
-                      <span className="ml-2 text-sm font-medium text-gray-900">{complaint.feedback.assignee}</span>
+                      <span className="ml-2 text-sm font-medium text-gray-900">{existingFeedback.assignee}</span>
                     </div>
                     <span className="text-sm text-gray-500">
-                      {complaint.feedback.createdAt ? new Date(complaint.feedback.createdAt).toLocaleString('ko-KR') : '날짜 없음'}
+                      {existingFeedback.createdAt ? new Date(existingFeedback.createdAt).toLocaleString('ko-KR') : '날짜 없음'}
                     </span>
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gray-700">피드백 내용:</span>
                     <div className="mt-1 text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
-                      {complaint.feedback.content}
+                      {existingFeedback.content}
                     </div>
                   </div>
+                  {existingFeedback.updatedAt && existingFeedback.updatedAt !== existingFeedback.createdAt && (
+                    <div className="text-xs text-gray-400">
+                      마지막 수정: {new Date(existingFeedback.updatedAt).toLocaleString('ko-KR')}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -172,6 +233,9 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
 
             {/* 피드백 작성 섹션 */}
             <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {existingFeedback ? '피드백 수정' : '피드백 작성'}
+              </h3>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   담당자명 <span className="text-red-500">*</span>
@@ -220,10 +284,14 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
             disabled={isLoading || !feedbackData.assignee.trim() || !feedbackData.content.trim()}
             className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isLoading ? '저장 중...' : '저장'}
+            {isLoading 
+              ? (existingFeedback ? '수정 중...' : '저장 중...') 
+              : (existingFeedback ? '수정' : '저장')
+            }
           </button>
         </div>
       </div>
     </div>
   );
 }
+
