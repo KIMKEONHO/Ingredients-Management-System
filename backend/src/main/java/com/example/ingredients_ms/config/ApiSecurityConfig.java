@@ -112,6 +112,9 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/*/category/").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/*/category/").hasAnyRole("ADMIN")
 
+                        // 이미지 업로드 관련 api
+                        .requestMatchers(HttpMethod.POST,"/api/*/images/upload").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,"/api/*/images/*").hasAnyRole("USER","ADMIN")
 
                 )
                 .csrf(csrf->csrf.disable())

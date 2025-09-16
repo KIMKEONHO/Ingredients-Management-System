@@ -19,7 +19,7 @@ resource "aws_vpc" "vpc_1" {
   cidr_block = "10.0.0.0/16"
 
   # 무조건 켜세요.
-  enable_dns_support = true
+  enable_dns_support   = true
   # 무조건 켜세요.
   enable_dns_hostnames = true
 
@@ -188,13 +188,13 @@ END_OF_FILE
 # EC2 인스턴스 생성
 resource "aws_instance" "ec2_1" {
   # 사용할 AMI ID
-  ami = "ami-04c596dcf23eb98d8"
+  ami                         = "ami-07eff2bc4837a9e01"
   # EC2 인스턴스 유형
-  instance_type = "t2.micro"
+  instance_type               = "t2.micro"
   # 사용할 서브넷 ID
-  subnet_id = aws_subnet.subnet_1.id
+  subnet_id                   = aws_subnet.subnet_1.id
   # 적용할 보안 그룹 ID
-  vpc_security_group_ids = [aws_security_group.sg_1.id]
+  vpc_security_group_ids      = [aws_security_group.sg_1.id]
   # 퍼블릭 IP 연결 설정
   associate_public_ip_address = true
 
@@ -209,7 +209,7 @@ resource "aws_instance" "ec2_1" {
   # 루트 볼륨 설정
   root_block_device {
     volume_type = "gp3"
-    volume_size = 30  # 볼륨 크기를 30GB로 설정
+    volume_size = 32  # 볼륨 크기를 32GB로 설정
   }
 
   # User data script for ec2_1
@@ -217,3 +217,70 @@ resource "aws_instance" "ec2_1" {
 ${local.ec2_user_data_base}
 EOF
 }
+# S3 설정 시작
+resource "aws_s3_bucket" "bucket_1" {
+  bucket = "${var.prefix}-bucket-${var.nickname}-1"
+
+  tags = {
+    Name = "${var.prefix}-bucket-${var.nickname}-1"
+  }
+}
+
+data "aws_iam_policy_document" "bucket_1_policy_1_statement" {
+  statement {
+    sid    = "PublicReadGetObject"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.bucket_1.arn}/*"]
+  }
+}
+
+resource "aws_s3_bucket_policy" "bucket_1_policy_1" {
+  bucket = aws_s3_bucket.bucket_1.id
+
+  policy = data.aws_iam_policy_document.bucket_1_policy_1_statement.json
+
+  depends_on = [aws_s3_bucket_public_access_block.bucket_1_public_access_block_1]
+}
+
+resource "aws_s3_bucket_public_access_block" "bucket_1_public_access_block_1" {
+  bucket = aws_s3_bucket.bucket_1.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket" "bucket_2" {
+  bucket = "${var.prefix}-bucket-${var.nickname}-2"
+
+  tags = {
+    Name = "${var.prefix}-bucket-${var.nickname}-2"
+  }
+}
+
+resource "aws_s3_object" "object_1" {
+  bucket       = aws_s3_bucket.bucket_1.id
+  key          = "/index.html"
+  content      = "Hello"  # 직접 문자열 사용
+  content_type = "text/html"
+  etag       = md5("Hello")
+  depends_on = [aws_s3_bucket.bucket_2]
+}
+
+resource "aws_s3_object" "object_2" {
+  bucket       = aws_s3_bucket.bucket_2.id
+  key          = "/index.html"
+  content      = "Hello"  # 직접 문자열 사용
+  content_type = "text/html"
+  etag       = md5("Hello")
+  depends_on = [aws_s3_bucket.bucket_2]
+}
+# S3 설정 끝
