@@ -52,13 +52,24 @@ export function useLoginMember() {
         try {
           const parsedUserData = JSON.parse(userData);
           console.log('로컬 스토리지에서 사용자 데이터 복원:', parsedUserData);
-          _setLoginMember(parsedUserData);
+          // 유효한 사용자 데이터인지 확인 (id가 0이 아니고 nickname이 있는지)
+          if (parsedUserData.id && parsedUserData.nickname) {
+            _setLoginMember(parsedUserData);
+          } else {
+            console.log('유효하지 않은 사용자 데이터, 로그아웃 처리');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userData');
+          }
         } catch (error) {
           console.error('사용자 데이터 파싱 실패:', error);
           localStorage.removeItem('isLoggedIn');
           localStorage.removeItem('userData');
         }
       }
+      // 로그인 상태 확인 완료 후 pending 상태 해제
+      setLoginMemberPending(false);
+    } else {
+      // 서버 사이드에서는 항상 pending 상태 해제
       setLoginMemberPending(false);
     }
   }, []);
