@@ -1,14 +1,13 @@
 package com.example.ingredients_ms.domain.image.controller;
 
+import com.example.ingredients_ms.global.rsdata.RsData;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -17,6 +16,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/images")
 public class ImageController{
 
     private final S3Client s3Client;
@@ -35,19 +35,10 @@ public class ImageController{
         return bucketList.stream().map(Bucket::name).collect(Collectors.toList());
     }
 
-    @GetMapping("/upload")
-    public String upload() {
-        return """
-                <form action="/upload" method="post" enctype="multipart/form-data">
-                    <input type="file" name="file" accept="image/*">
-                    <input type="submit" value="Upload">
-                </form>
-                """;
-    }
-
+    // 이미지 업로드
     @PostMapping("/upload")
     @ResponseBody
-    public String handleFileUpload(MultipartFile file) throws IOException {
+    public RsData<?> handleFileUpload(MultipartFile file) throws IOException {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(BUCKET_NAME)
                 .key(IMG_DIR_NAME + "/" + file.getOriginalFilename())
@@ -57,7 +48,20 @@ public class ImageController{
         s3Client.putObject(putObjectRequest,
                 RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-        return "Uploaded Success";
+        return new RsData<>("201","이미지가 추가되었습니다.");
+    }
+
+    // 이미지 삭제
+    @PostMapping("/deleteFile")
+    @ResponseBody
+    public RsData<?> deleteFile(String fileName) {
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(BUCKET_NAME)
+                .key(IMG_DIR_NAME + "/" + fileName)
+                .build();
+
+        s3Client.deleteObject(deleteObjectRequest);
+        return new RsData<>("204","이미지가 삭제되었습니다.");
     }
 
 }
