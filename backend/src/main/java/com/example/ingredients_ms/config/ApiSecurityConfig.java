@@ -121,7 +121,7 @@ public class ApiSecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .cors(cors -> cors.configurationSource(configurationSource()))
                 .formLogin(formLogin -> formLogin.disable())
-                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sessionManagement -> sessionManagement.disable())
                 .addFilterBefore(
                         jwtAuthorizationFilter,
                         UsernamePasswordAuthenticationFilter.class
