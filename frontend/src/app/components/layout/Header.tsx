@@ -7,10 +7,12 @@ import { useEffect, useRef, useState } from "react";
 export default function Header() {
   const { isLogin, loginMember, logoutAndHome } = useGlobalLoginMember();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<
     Array<{ id: number; message: string; read: boolean }>
   >([]);
   const notifRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -28,14 +30,17 @@ export default function Header() {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setIsNotifOpen(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
     };
-    if (isNotifOpen) {
+    if (isNotifOpen || isUserMenuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isNotifOpen]);
+  }, [isNotifOpen, isUserMenuOpen]);
 
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -127,24 +132,53 @@ export default function Header() {
           </Link>
           {isLogin ? (
             <div className="flex items-center gap-3">
-              <Link 
-                href="/mypage" 
-                className="text-gray-700 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-              >
-                {loginMember.nickname}
-              </Link>
-              <Link 
-                href="/mypage" 
-                className="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-              >
-                마이 페이지
-              </Link>
-              <button 
-                onClick={logoutAndHome} 
-                className="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
-              >
-                로그아웃
-              </button>
+              {/* 사용자 프로필 영역 */}
+              <div className="flex items-center gap-2">
+                {/* 프로필 아바타 */}
+                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  {loginMember.nickname ? loginMember.nickname.charAt(0).toUpperCase() : 'U'}
+                </div>
+                {/* 닉네임 (마이페이지 링크) */}
+                <Link 
+                  href="/mypage" 
+                  className="text-gray-700 hover:text-gray-900 font-medium px-2 py-1 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  {loginMember.nickname || '사용자'}
+                </Link>
+              </div>
+              
+              {/* 사용자 메뉴 드롭다운 */}
+              <div className="relative" ref={userMenuRef}>
+                <button 
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  ▼
+                </button>
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-50">
+                    <div className="py-1">
+                      <Link 
+                        href="/mypage" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        마이페이지
+                      </Link>
+                      <hr className="my-1" />
+                      <button 
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          logoutAndHome();
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        로그아웃
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <>
