@@ -53,8 +53,6 @@ spring:
       max-request-size: 500MB
 
 
-
-
 logging:
   level:
     com.ll.blog: DEBUG
