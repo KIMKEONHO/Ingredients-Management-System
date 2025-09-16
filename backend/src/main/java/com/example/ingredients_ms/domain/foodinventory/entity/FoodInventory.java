@@ -8,8 +8,8 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -51,6 +51,9 @@ public class FoodInventory extends BaseEntity {
     @Column(name = "status", nullable = false)
     @Builder.Default
     private FoodStatus status = FoodStatus.NORMAL;
+
+    @OneToMany(mappedBy = "inventory", cascade = CascadeType.ALL)
+    private List<ConsumedLog> logs = new ArrayList<>();
 
     public void updateStatus(FoodStatus status) {
         this.status = status;
