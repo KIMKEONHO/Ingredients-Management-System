@@ -22,7 +22,14 @@ public enum ExceptionCode {
     NON_MATCHED(404,"인증코드가 올바르지 않습니다."),
     DIET_NOT_FOUND(404, "식단이 존재하지 않습니다."),
     NOT_ADMIN(403, "관리자 권한이 없습니다."),
-    UNKNOW_THEME(404,"알 수 없는 시간단위 입니다.")
+    UNKNOW_THEME(404,"알 수 없는 시간단위 입니다."),
+    
+    // 이미지 관련 예외
+    IMAGE_UPLOAD_FAILED(500, "이미지 업로드에 실패했습니다."),
+    IMAGE_DELETE_FAILED(500, "이미지 삭제에 실패했습니다."),
+    INVALID_IMAGE_FILE(400, "유효하지 않은 이미지 파일입니다."),
+    IMAGE_FILE_TOO_LARGE(400, "이미지 파일 크기가 너무 큽니다."),
+    IMAGE_FILE_NOT_FOUND(404, "이미지 파일을 찾을 수 없습니다.")
     ;
 
     @Getter

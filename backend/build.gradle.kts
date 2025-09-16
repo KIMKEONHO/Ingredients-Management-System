@@ -94,6 +94,10 @@ dependencies {
     // Apache POI for Excel export - 추가된 부분
 //    implementation("org.apache.poi:poi:5.2.3")
 //    implementation("org.apache.poi:poi-ooxml:5.2.3")
+
+    // AWS
+    implementation(platform("software.amazon.awssdk:bom:2.24.0"))
+    implementation("software.amazon.awssdk:s3")
 }
 
 tasks.test {
