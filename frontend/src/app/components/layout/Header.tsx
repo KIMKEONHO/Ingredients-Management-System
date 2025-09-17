@@ -70,6 +70,20 @@ export default function Header() {
               식단 관리
             </Link>
             <Link 
+              href="/recipes" 
+              className="hover:text-gray-900"
+              onClick={(e) => handleFeatureClick(e, '/recipes')}
+            >
+              레시피 추천
+            </Link>
+            <Link 
+              href="/recipe-community" 
+              className="hover:text-gray-900"
+              onClick={(e) => handleFeatureClick(e, '/recipe-community')}
+            >
+              레시피 공유
+            </Link>
+            <Link 
               href="/statistics" 
               className="hover:text-gray-900"
               onClick={(e) => handleFeatureClick(e, '/statistics')}
