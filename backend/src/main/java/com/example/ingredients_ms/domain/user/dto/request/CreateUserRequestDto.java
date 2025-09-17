@@ -27,7 +27,7 @@ public class CreateUserRequestDto {
     private String nickName;
 
     @NotBlank(message = "이름은 필수 입력 값입니다.")
-    @Size(min = 2, max = 15, message = "이름은 2자 이상 15자 이하로 입력해주세요.")
+    @Pattern(regexp = "^[가-힣a-zA-Z]*$", message = "이름은 한글과 영문만 입력 가능합니다.")
     private String name;
 
 
