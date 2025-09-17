@@ -249,7 +249,7 @@ export default function MyPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        전화번호 변경 기능은 준비 중입니다. 현재는 닉네임만 변경 가능합니다.
+                        전화번호를 변경할 수 있습니다. 010-1234-5678 형식으로 입력해주세요.
                       </p>
                     </div>
 
