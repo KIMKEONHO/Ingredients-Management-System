@@ -171,17 +171,8 @@ export const userService = {
     }
   },
 
-  // 전화번호 변경 (백엔드 API 구현 전까지 임시 비활성화)
+  // 전화번호 변경
   async updatePhone(phoneNum: string): Promise<UserProfileResponse> {
-    // 백엔드에 전화번호 변경 API가 구현될 때까지 임시로 성공 응답 반환
-    console.log('전화번호 변경 API가 아직 구현되지 않음:', phoneNum);
-    return { 
-      success: true, 
-      message: '전화번호 변경 기능은 준비 중입니다.' 
-    };
-    
-    // 백엔드 API 구현 후 아래 코드 사용
-    /*
     try {
       const response = await apiClient.post('/api/v1/users/exchange/phone', {
         phoneNum: phoneNum
@@ -191,7 +182,6 @@ export const userService = {
       console.error('전화번호 변경 실패:', error);
       throw new Error('전화번호 변경에 실패했습니다.');
     }
-    */
   },
 
   // 사용자 프로필 업데이트 (기존 호환성 유지)
