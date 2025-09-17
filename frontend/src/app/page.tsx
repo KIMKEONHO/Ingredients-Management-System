@@ -100,18 +100,18 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* AI 메뉴 추천 */}
+              {/* 레시피 추천 */}
               <Link 
                 href="/callender" 
-                className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-blue-100 transition hover:shadow-md hover:ring-blue-200"
+                className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-green-100 transition hover:shadow-md hover:ring-green-200"
                 onClick={(e) => handleFeatureClick(e, '/callender')}
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-600">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M12 2.25a9.75 9.75 0 1 0 9.75 9.75A9.761 9.761 0 0 0 12 2.25Zm.75 4.5a.75.75 0 0 0-1.5 0v6a.75.75 0 0 0 .44.68l4.5 2.25a.75.75 0 1 0 .66-1.34L12.75 12.3V6.75Z"/></svg>
                 </div>
-                <h3 className="mt-6 text-xl font-semibold text-black">AI 메뉴 추천</h3>
-                <p className="mt-2 text-blue-700">보유 재고와 판매 추이를 기반으로 판매 가능한 메뉴를 추천합니다.</p>
-                <div className="mt-4 flex items-center text-sm text-blue-600 group-hover:text-blue-700">
+                <h3 className="mt-6 text-xl font-semibold text-black">레시피 추천</h3>
+                <p className="mt-2 text-green-700">보유 재고를 활용한 다양한 레시피를 추천하고 요리법을 제공합니다.</p>
+                <div className="mt-4 flex items-center text-sm text-green-600 group-hover:text-green-700">
                   <span>{!isLogin && !isLoginMemberPending ? '로그인 후 사용하기' : '바로 사용하기'}</span>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1">
                     <path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/>
@@ -177,10 +177,10 @@ export default function Home() {
                 <h3 className="mt-2 text-xl font-semibold text-black">사용 기록</h3>
                 <p className="mt-2 text-purple-700">입고/출고를 기록하면 통계와 알림이 자동으로 생성됩니다.</p>
               </li>
-              <li className="rounded-2xl bg-white p-8 ring-1 ring-blue-100 shadow-sm">
-                <div className="text-sm font-semibold text-blue-600">Step 3</div>
-                <h3 className="mt-2 text-xl font-semibold text-black">추천 활용</h3>
-                <p className="mt-2 text-blue-700">AI 메뉴 추천으로 재고 소진을 최적화하고 매출을 높입니다.</p>
+              <li className="rounded-2xl bg-white p-8 ring-1 ring-green-100 shadow-sm">
+                <div className="text-sm font-semibold text-green-600">Step 3</div>
+                <h3 className="mt-2 text-xl font-semibold text-black">레시피 활용</h3>
+                <p className="mt-2 text-green-700">레시피 추천으로 재고 소진을 최적화하고 다양한 요리를 제공합니다.</p>
               </li>
             </ol>
           </section>
