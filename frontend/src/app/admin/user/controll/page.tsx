@@ -154,20 +154,6 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSa
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">가입일</label>
-              <input
-                type="date"
-                value={formData.joinDate}
-                onChange={(e) => handleInputChange('joinDate', e.target.value)}
-                disabled={mode === 'view'}
-                className={`w-full px-3 py-2 border rounded-md ${
-                  mode === 'view' 
-                    ? 'bg-gray-100 text-gray-600' 
-                    : 'border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
-                }`}
-              />
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
@@ -181,10 +167,10 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSa
                     : 'border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
                 }`}
               >
-                <option value="ACTIVE">활동중</option>
-                <option value="INACTIVE">비활성</option>
-                <option value="SUSPENDED">정지됨</option>
-                <option value="DELETED">삭제됨</option>
+                <option value="active">활동중</option>
+                <option value="inactive">비활성</option>
+                <option value="pending">대기중</option>
+                <option value="withdrawn">철회됨</option>
               </select>
             </div>
           </div>
@@ -300,12 +286,59 @@ function MemberManagementPage() {
     setSelectedUsers(newSelected);
   };
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = async (action: string) => {
     if (selectedUsers.size === 0) return;
     
-    // 여기에 일괄 처리 로직을 구현할 수 있습니다
-    console.log(`${action} for users:`, Array.from(selectedUsers));
-    alert(`${action} 처리: ${selectedUsers.size}명의 사용자`);
+    const userIds = Array.from(selectedUsers);
+    let status: Member['status'];
+    
+    // 액션에 따른 상태 매핑
+    switch (action) {
+      case '활성화':
+        status = 'active';
+        break;
+      case '비활성화':
+        status = 'inactive';
+        break;
+      case '대기중':
+        status = 'pending';
+        break;
+      case '철회':
+        status = 'withdrawn';
+        break;
+      default:
+        alert('지원하지 않는 액션입니다.');
+        return;
+    }
+    
+    try {
+      // 일괄 상태 변경 API 호출
+      const response = await userService.bulkChangeUserStatus({
+        userIds: userIds,
+        status: status
+      });
+      
+      if (response.success) {
+        // 성공 시 로컬 상태 업데이트
+        setMembersData(prev => 
+          prev.map(member => 
+            selectedUsers.has(member.id) 
+              ? { ...member, status: status }
+              : member
+          )
+        );
+        
+        // 선택 해제
+        setSelectedUsers(new Set());
+        
+        alert(`${action} 처리 완료: ${selectedUsers.size}명의 사용자`);
+      } else {
+        alert(`${action} 처리에 실패했습니다: ${response.message}`);
+      }
+    } catch (error) {
+      console.error('일괄 상태 변경 실패:', error);
+      alert(`${action} 처리 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+    }
   };
 
   const openModal = (user: Member, mode: 'view' | 'edit') => {
@@ -324,10 +357,35 @@ function MemberManagementPage() {
     });
   };
 
-  const handleSaveUser = (updatedUser: Member) => {
-    // 여기에 실제 저장 로직을 구현할 수 있습니다
-    console.log('Updated user:', updatedUser);
-    alert('사용자 정보가 수정되었습니다.');
+  const handleSaveUser = async (updatedUser: Member) => {
+    try {
+      // API 호출을 통해 유저 데이터 변경
+      const response = await userService.changeUserData({
+        userId: updatedUser.id,
+        userName: updatedUser.name,
+        userEmail: updatedUser.email,
+        userPhone: updatedUser.phone || '',
+        userStatus: updatedUser.status
+      });
+      
+      if (response.success) {
+        // 성공 시 로컬 상태 업데이트
+        setMembersData(prev => 
+          prev.map(member => 
+            member.id === updatedUser.id 
+              ? updatedUser
+              : member
+          )
+        );
+        
+        alert('사용자 정보가 성공적으로 수정되었습니다.');
+      } else {
+        alert(`사용자 정보 수정에 실패했습니다: ${response.message}`);
+      }
+    } catch (error) {
+      console.error('사용자 정보 수정 실패:', error);
+      alert(`사용자 정보 수정 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+    }
   };
 
   const handleStatusChange = async (userId: number, newStatus: Member['status']) => {
@@ -563,16 +621,22 @@ function MemberManagementPage() {
                       일괄 활성화
                     </button>
                     <button
-                      onClick={() => handleBulkAction('차단')}
-                      className="px-3 py-1 text-sm text-red-700 bg-red-100 hover:bg-red-200 rounded-md"
-                    >
-                      일괄 차단
-                    </button>
-                    <button
-                      onClick={() => handleBulkAction('삭제')}
+                      onClick={() => handleBulkAction('비활성화')}
                       className="px-3 py-1 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
                     >
-                      일괄 삭제
+                      일괄 비활성화
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('대기중')}
+                      className="px-3 py-1 text-sm text-yellow-700 bg-yellow-100 hover:bg-yellow-200 rounded-md"
+                    >
+                      일괄 대기중
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('철회')}
+                      className="px-3 py-1 text-sm text-red-700 bg-red-100 hover:bg-red-200 rounded-md"
+                    >
+                      일괄 철회
                     </button>
                   </div>
                 </div>
@@ -661,7 +725,6 @@ function MemberManagementPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">회원명</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">이메일</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">전화번호</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">가입일</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">최근 로그인</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">액션</th>
@@ -698,7 +761,6 @@ function MemberManagementPage() {
                           <span className="text-gray-400 italic">전화번호 없음</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.joinDate}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.lastLogin}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <StatusDropdown member={member} />
