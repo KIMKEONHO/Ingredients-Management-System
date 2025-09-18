@@ -3,6 +3,7 @@ package com.example.ingredients_ms.domain.user.service;
 import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.email.service.EmailService;
 import com.example.ingredients_ms.domain.user.dto.request.ChangeStatusRequestDto;
+import com.example.ingredients_ms.domain.user.dto.request.ChangeUserDataRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
@@ -360,6 +361,24 @@ public class UserService {
     public void dropUser(Long userId){
 
         userRepository.deleteById(userId);
+
+    }
+
+    public void changeUserData(ChangeUserDataRequestDto requestDto){
+
+        Optional<User> opUser = userRepository.findById(requestDto.getUserId());
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+
+        user.setUserName(requestDto.getUserName());
+        user.setStatus(Status.fromValue(requestDto.getUserStatus()));
+        user.setPhoneNum(requestDto.getUserPhone());
+        user.setEmail(requestDto.getUserEmail());
+
+        userRepository.save(user);
 
     }
 }
