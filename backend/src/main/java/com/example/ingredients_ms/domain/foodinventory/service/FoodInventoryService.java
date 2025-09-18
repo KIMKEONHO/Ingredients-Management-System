@@ -6,11 +6,11 @@ import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInv
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.ExpiringSoonResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
-import com.example.ingredients_ms.domain.foodinventory.entity.ConsumedLog;
+import com.example.ingredients_ms.domain.consumedlog.entity.ConsumedLog;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodStatus;
 import com.example.ingredients_ms.domain.foodinventory.entity.Place;
-import com.example.ingredients_ms.domain.foodinventory.repository.ConsumedLogRepository;
+import com.example.ingredients_ms.domain.consumedlog.repository.ConsumedLogRepository;
 import com.example.ingredients_ms.domain.foodinventory.repository.FoodInventoryRepository;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.ingredients.repository.IngredientsRepository;
@@ -49,7 +49,6 @@ public class FoodInventoryService {
         //저장할 재고 객체 생성
         FoodInventory foodInventory = FoodInventory.builder()
                 .quantity(requestDto.getQuantity())
-                .unit(requestDto.getUnit())
                 .boughtDate(requestDto.getBoughtDate())
                 .expirationDate(requestDto.getExpirationDate())
                 .place(requestDto.getPlace())
@@ -114,7 +113,6 @@ public class FoodInventoryService {
 
         // 저장할 객체에 값 할당
         foodInventory.setQuantity(requestDto.getQuantity());
-        foodInventory.setUnit(requestDto.getUnit());
         foodInventory.setBoughtDate(requestDto.getBoughtDate());
         foodInventory.setExpirationDate(requestDto.getExpirationDate());
         foodInventory.setPlace(requestDto.getPlace());
@@ -175,7 +173,6 @@ public class FoodInventoryService {
                         .ingredientsName(i.getIngredient().getName())
                         .quantity(i.getQuantity())
                         .place(i.getPlace())
-                        .unit(i.getUnit())
                         .expirationDate(i.getExpirationDate())
                         .boughtDate(i.getBoughtDate())
                         .build())

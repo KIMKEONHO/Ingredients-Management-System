@@ -21,13 +21,10 @@ import java.util.List;
 public class FoodInventory extends BaseEntity {
 
     @Column(name = "quantity", length = 255, nullable = false)
-    private Integer quantity;
+    private Integer quantity; // 현재 수량 (단위: g)
 
     @Column(name = "original_quantity", nullable = false)
-    private Integer originalQuantity; // 처음 구매한 개수
-
-    @Column(name = "unit", length = 255, nullable = false)
-    private String unit;
+    private Integer originalQuantity; // 처음 구매한 개수 (단위: g)
 
     @Column(name="bought_date", nullable = false)
     private LocalDateTime boughtDate;

@@ -13,8 +13,7 @@ public class ExpiringSoonResponseDto {
 
     private LocalDateTime boughtDate;
     private String ingredientsName;
-    private Integer quantity;
-    private String unit;
+    private Integer quantity; // 수량 (단위: g)
     private LocalDateTime expirationDate;
     private Place place;
 }
