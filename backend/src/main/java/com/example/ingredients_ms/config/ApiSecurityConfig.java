@@ -31,6 +31,9 @@ public class ApiSecurityConfig {
                 .securityMatcher("/api/**")
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
 
+                        .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/").hasAnyRole("USER","ADMIN")
+
+
                         // 재고 관리 api
                         .requestMatchers(HttpMethod.PUT, "/api/*/inventory/").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/*/inventory/**").hasAnyRole("USER","ADMIN")

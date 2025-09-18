@@ -131,6 +131,7 @@ public class FoodInventoryService {
         ConsumedLog log = ConsumedLog.builder()
                 .consumedQuantity(foodInventory.getQuantity() - requestDto.getQuantity())
                 .inventory(foodInventory)
+                .user(userRepository.findById(userId).orElseThrow())
                 .build();
 
         foodInventory.setQuantity(requestDto.getQuantity());

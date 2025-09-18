@@ -1,5 +1,7 @@
-package com.example.ingredients_ms.domain.foodinventory.entity;
+package com.example.ingredients_ms.domain.consumedlog.entity;
 
+import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
+import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,13 +25,17 @@ public class ConsumedLog extends BaseEntity {
     @Column(name = "consumed_quantity", nullable = false)
     private Integer consumedQuantity; // 사용 개수
 
+    @CreatedDate
+    @Column(name="consumed_date", nullable = false)
+    private LocalDateTime consumedDate;//묵은 날짜
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inventory_id")
     private FoodInventory inventory;
 
-    @CreatedDate
-    @Column(name="consumed_date", nullable = false)
-    private LocalDateTime consumedDate;//묵은 날짜
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
 
 
