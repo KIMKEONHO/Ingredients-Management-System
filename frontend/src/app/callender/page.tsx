@@ -538,10 +538,18 @@ function AddItemModal({
             <div>
               <label className="block text-sm mb-1">칼로리 (kcal)</label>
               <input
+                type="number"
                 value={calories}
-                onChange={e => setCalories(e.target.value)}
+                onChange={e => {
+                  const value = e.target.value;
+                  // 숫자만 허용 (빈 문자열도 허용)
+                  if (value === '' || /^\d+$/.test(value)) {
+                    setCalories(value);
+                  }
+                }}
                 placeholder="예: 350"
-                inputMode="numeric"
+                min="0"
+                step="1"
                 className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -557,10 +565,10 @@ function AddItemModal({
             <button
               onClick={() => {
                 const caloriesNum = parseInt(calories)
-                if (name.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
+                if (name.trim() && calories.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
                   onSubmit(name.trim(), caloriesNum)
                 } else {
-                  alert('올바른 값을 입력해주세요.')
+                  alert('메뉴명과 칼로리를 올바르게 입력해주세요. (칼로리는 1 이상의 숫자여야 합니다)')
                 }
               }}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -593,10 +601,10 @@ function EditItemModal({
   // 수정 시 유효성 검사 추가
   const handleSubmit = () => {
     const caloriesNum = parseInt(calories)
-    if (name.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
+    if (name.trim() && calories.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
       onSubmit(name.trim(), caloriesNum)
     } else {
-      alert('올바른 값을 입력해주세요.')
+      alert('메뉴명과 칼로리를 올바르게 입력해주세요. (칼로리는 1 이상의 숫자여야 합니다)')
     }
   }
 
@@ -623,10 +631,18 @@ function EditItemModal({
             <div>
               <label className="block text-sm mb-1">칼로리 (kcal)</label>
               <input
+                type="number"
                 value={calories}
-                onChange={e => setCalories(e.target.value)}
+                onChange={e => {
+                  const value = e.target.value;
+                  // 숫자만 허용 (빈 문자열도 허용)
+                  if (value === '' || /^\d+$/.test(value)) {
+                    setCalories(value);
+                  }
+                }}
                 placeholder="예: 350"
-                inputMode="numeric"
+                min="0"
+                step="1"
                 className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
