@@ -186,4 +186,13 @@ public class UserController {
 
         return new RsData<>("204","유저를 삭제했습니다.");
     }
+
+    @PatchMapping("/change/userdata")
+    public RsData<?> changeUser(@RequestBody ChangeUserDataRequestDto requestDto){
+
+        userService.changeUserData(requestDto);
+
+        return new RsData<>("201","유저를 업데이트하였습니다");
+    }
+
 }
