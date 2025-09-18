@@ -8,7 +8,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -80,6 +79,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/api/*/users/profile").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST,"/api/*/users/change/status").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE,"/api/*/users/drop/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,"/api/*/users/change/userdata").hasRole("ADMIN")
 
                         // 유저 통계 및 관리 api
                         .requestMatchers(HttpMethod.GET, "/api/*/users/statistics/").hasRole("ADMIN")
