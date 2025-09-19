@@ -34,10 +34,23 @@ export interface MonthlyDiet {
 
 // 백엔드 통계 DTO 구조에 맞는 인터페이스
 export interface WeekStatisticsResponseDto {
-  date: string; // yyyy-MM-dd 형식
+  date: string; // yyyy-MM-dd 형식 (기존)
   averageKcal: number;
 }
 
+// 새로운 백엔드 DTO 구조
+export interface NewWeekStatisticsResponseDto {
+  date: string; // LocalDate -> yyyy-MM-dd 형식
+  averageKcal: number;
+}
+
+export interface DietStatisticsResponseDto {
+  averageKcal: number;
+  diffFromLast: number | null; // 이전 기간 대비 차이
+  diffRate: number | null; // 이전 기간 대비 변화율
+}
+
+// 기존 인터페이스 (호환성을 위해 유지)
 export interface MonthStatisticsResponseDto {
   month: number;
   averageKcal: number;
@@ -325,10 +338,10 @@ export class DietService {
   }
 
   /**
-   * 월간 칼로리 통계를 가져옵니다.
+   * 월간 칼로리 통계를 가져옵니다. (새로운 API 사용)
    * @returns 월간 통계 데이터
    */
-  static async getMonthStatistics(): Promise<MonthStatisticsResponseDto | null> {
+  static async getMonthStatistics(): Promise<DietStatisticsResponseDto | null> {
     try {
       console.log('[DEBUG] getMonthStatistics 요청 시작');
       
@@ -338,8 +351,8 @@ export class DietService {
         return null;
       }
       
-      const response = await apiClient.get<BackendApiResponse<MonthStatisticsResponseDto>>(
-        API_ENDPOINTS.DIET.MONTH_STATISTICS
+      const response = await apiClient.get<BackendApiResponse<DietStatisticsResponseDto>>(
+        API_ENDPOINTS.DIET_STATISTICS.MONTH
       );
       
       console.log('[DEBUG] getMonthStatistics 응답:', response);
@@ -358,21 +371,21 @@ export class DietService {
   }
 
   /**
-   * 주간 칼로리 통계를 가져옵니다.
-   * @returns 주간 통계 데이터 배열 (최근 7일)
+   * 주간 칼로리 통계를 가져옵니다. (새로운 API 사용)
+   * @returns 주간 통계 데이터
    */
-  static async getWeekStatistics(): Promise<WeekStatisticsResponseDto[]> {
+  static async getWeekStatistics(): Promise<DietStatisticsResponseDto | null> {
     try {
       console.log('[DEBUG] getWeekStatistics 요청 시작');
       
       // API 클라이언트 상태 검증
       if (!await this.validateBeforeRequest()) {
         console.log('[DEBUG] getWeekStatistics - API 클라이언트 검증 실패');
-        return [];
+        return null;
       }
       
-      const response = await apiClient.get<BackendApiResponse<WeekStatisticsResponseDto[]>>(
-        API_ENDPOINTS.DIET.WEEK_STATISTICS
+      const response = await apiClient.get<BackendApiResponse<DietStatisticsResponseDto>>(
+        API_ENDPOINTS.DIET_STATISTICS.WEEK
       );
       
       console.log('[DEBUG] getWeekStatistics 응답:', response);
@@ -383,156 +396,110 @@ export class DietService {
       }
       
       console.log('[DEBUG] getWeekStatistics 실패 - resultCode:', response.resultCode);
-      return [];
+      return null;
     } catch (error) {
       console.error('주간 통계 조회 실패:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 주간 그래프 통계를 가져옵니다. (새로운 API 사용)
+   * @returns 주간 그래프 통계 데이터 배열 (최근 7일)
+   */
+  static async getWeekGraphStatistics(): Promise<NewWeekStatisticsResponseDto[]> {
+    try {
+      console.log('[DEBUG] getWeekGraphStatistics 요청 시작');
+      
+      // API 클라이언트 상태 검증
+      if (!await this.validateBeforeRequest()) {
+        console.log('[DEBUG] getWeekGraphStatistics - API 클라이언트 검증 실패');
+        return [];
+      }
+      
+      const response = await apiClient.get<BackendApiResponse<NewWeekStatisticsResponseDto[]>>(
+        API_ENDPOINTS.DIET_STATISTICS.WEEK_GRAPH
+      );
+      
+      console.log('[DEBUG] getWeekGraphStatistics 응답:', response);
+      
+      if (response.resultCode === '200' && response.data) {
+        console.log('[DEBUG] getWeekGraphStatistics 성공:', response.data);
+        return response.data;
+      }
+      
+      console.log('[DEBUG] getWeekGraphStatistics 실패 - resultCode:', response.resultCode);
+      return [];
+    } catch (error) {
+      console.error('주간 그래프 통계 조회 실패:', error);
       return [];
     }
   }
 
   /**
-   * 3개월 칼로리 통계를 계산합니다.
-   * 현재 월간 API를 여러 번 호출하여 3개월 데이터를 계산합니다.
+   * 3개월 칼로리 통계를 가져옵니다. (새로운 API 사용)
    * @returns 3개월 통계 데이터
    */
-  static async getQuarterStatistics(): Promise<QuarterStatisticsResponseDto | null> {
+  static async getQuarterStatistics(): Promise<DietStatisticsResponseDto | null> {
     try {
       console.log('[DEBUG] getQuarterStatistics 요청 시작');
       
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth() + 1; // 1-12
-      const currentYear = currentDate.getFullYear();
-      
-      // 최근 3개월 데이터 수집
-      const monthlyData: { month: number; averageKcal: number }[] = [];
-      let totalKcal = 0;
-      let validMonths = 0;
-      
-      for (let i = 0; i < 3; i++) {
-        const targetDate = new Date(currentYear, currentMonth - 1 - i, 1);
-        const year = targetDate.getFullYear();
-        const month = targetDate.getMonth() + 1;
-        
-        try {
-          // 해당 월의 식단 데이터 가져오기
-          const monthlyDiet = await this.getMonthlyDiet(year, month);
-          
-          // 해당 월의 평균 칼로리 계산
-          let monthTotalKcal = 0;
-          let dayCount = 0;
-          
-          Object.values(monthlyDiet).forEach(dayData => {
-            Object.values(dayData).forEach(meals => {
-              meals.forEach(meal => {
-                monthTotalKcal += meal.calories;
-                dayCount++;
-              });
-            });
-          });
-          
-          const averageKcal = dayCount > 0 ? monthTotalKcal / dayCount : 0;
-          
-          monthlyData.unshift({ month, averageKcal }); // 최신 순으로 정렬
-          totalKcal += monthTotalKcal;
-          if (dayCount > 0) validMonths++;
-          
-        } catch (error) {
-          console.warn(`월간 데이터 조회 실패 (${year}-${month}):`, error);
-          monthlyData.unshift({ month, averageKcal: 0 });
-        }
+      // API 클라이언트 상태 검증
+      if (!await this.validateBeforeRequest()) {
+        console.log('[DEBUG] getQuarterStatistics - API 클라이언트 검증 실패');
+        return null;
       }
       
-      const averageKcal = validMonths > 0 ? totalKcal / validMonths : 0;
+      const response = await apiClient.get<BackendApiResponse<DietStatisticsResponseDto>>(
+        API_ENDPOINTS.DIET_STATISTICS.QUARTER
+      );
       
-      // 이전 분기 대비 변화율 계산 (현재는 임시로 0)
-      const diffFromPreviousQuarter = null;
-      const diffRate = null;
+      console.log('[DEBUG] getQuarterStatistics 응답:', response);
       
-      const result: QuarterStatisticsResponseDto = {
-        averageKcal,
-        totalKcal,
-        diffFromPreviousQuarter,
-        diffRate,
-        monthlyBreakdown: monthlyData
-      };
+      if (response.resultCode === '200' && response.data) {
+        console.log('[DEBUG] getQuarterStatistics 성공:', response.data);
+        return response.data;
+      }
       
-      console.log('[DEBUG] getQuarterStatistics 성공:', result);
-      return result;
-      
+      console.log('[DEBUG] getQuarterStatistics 실패 - resultCode:', response.resultCode);
+      return null;
     } catch (error) {
-      console.error('3개월 통계 계산 실패:', error);
+      console.error('3개월 통계 조회 실패:', error);
       return null;
     }
   }
 
   /**
-   * 연간 칼로리 통계를 계산합니다.
-   * 현재 월간 API를 여러 번 호출하여 연간 데이터를 계산합니다.
+   * 연간 칼로리 통계를 가져옵니다. (새로운 API 사용)
    * @returns 연간 통계 데이터
    */
-  static async getYearStatistics(): Promise<YearStatisticsResponseDto | null> {
+  static async getYearStatistics(): Promise<DietStatisticsResponseDto | null> {
     try {
       console.log('[DEBUG] getYearStatistics 요청 시작');
       
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth() + 1; // 1-12
-      const currentYear = currentDate.getFullYear();
-      
-      // 올해 1월부터 현재 월까지 데이터 수집
-      const monthlyData: { month: number; averageKcal: number }[] = [];
-      let totalKcal = 0;
-      let validMonths = 0;
-      
-      for (let month = 1; month <= currentMonth; month++) {
-        try {
-          // 해당 월의 식단 데이터 가져오기
-          const monthlyDiet = await this.getMonthlyDiet(currentYear, month);
-          
-          // 해당 월의 평균 칼로리 계산
-          let monthTotalKcal = 0;
-          let dayCount = 0;
-          
-          Object.values(monthlyDiet).forEach(dayData => {
-            Object.values(dayData).forEach(meals => {
-              meals.forEach(meal => {
-                monthTotalKcal += meal.calories;
-                dayCount++;
-              });
-            });
-          });
-          
-          const averageKcal = dayCount > 0 ? monthTotalKcal / dayCount : 0;
-          
-          monthlyData.push({ month, averageKcal });
-          totalKcal += monthTotalKcal;
-          if (dayCount > 0) validMonths++;
-          
-        } catch (error) {
-          console.warn(`월간 데이터 조회 실패 (${currentYear}-${month}):`, error);
-          monthlyData.push({ month, averageKcal: 0 });
-        }
+      // API 클라이언트 상태 검증
+      if (!await this.validateBeforeRequest()) {
+        console.log('[DEBUG] getYearStatistics - API 클라이언트 검증 실패');
+        return null;
       }
       
-      const averageKcal = validMonths > 0 ? totalKcal / validMonths : 0;
+      const response = await apiClient.get<BackendApiResponse<DietStatisticsResponseDto>>(
+        API_ENDPOINTS.DIET_STATISTICS.YEAR
+      );
       
-      // 작년 대비 변화율 계산 (현재는 임시로 0)
-      const diffFromLastYear = null;
-      const diffRate = null;
+      console.log('[DEBUG] getYearStatistics 응답:', response);
       
-      const result: YearStatisticsResponseDto = {
-        averageKcal,
-        totalKcal,
-        diffFromLastYear,
-        diffRate,
-        monthlyBreakdown: monthlyData
-      };
+      if (response.resultCode === '200' && response.data) {
+        console.log('[DEBUG] getYearStatistics 성공:', response.data);
+        return response.data;
+      }
       
-      console.log('[DEBUG] getYearStatistics 성공:', result);
-      return result;
-      
+      console.log('[DEBUG] getYearStatistics 실패 - resultCode:', response.resultCode);
+      return null;
     } catch (error) {
-      console.error('연간 통계 계산 실패:', error);
+      console.error('연간 통계 조회 실패:', error);
       return null;
     }
   }
+
 }
