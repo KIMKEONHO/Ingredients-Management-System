@@ -31,6 +31,13 @@ export interface RsDataListMonthlyConsumedLogResponseDto {
 // 공통 응답 처리 타입
 type ApiResponse<T> = RsDataListConsumedLogResponseDto | RsDataListMonthlyConsumedLogResponseDto | T[] | T;
 
+// API 응답의 공통 필드를 위한 타입
+interface ApiResponseBase {
+  resultCode?: string;
+  msg?: string;
+  data?: unknown;
+}
+
 // 디버그 모드 확인
 const isDebugMode = process.env.NODE_ENV === 'development';
 
@@ -44,32 +51,34 @@ export class ConsumedService {
     endpoint: string,
     period: string
   ): T[] {
+    const responseBase = response as ApiResponseBase;
+    
     if (isDebugMode) {
       console.log(`[DEBUG] ${period} 사용량 API 응답 상세:`, {
         endpoint,
-        resultCode: (response as any)?.resultCode,
-        msg: (response as any)?.msg,
-        data: (response as any)?.data,
-        dataType: typeof (response as any)?.data,
-        isArray: Array.isArray((response as any)?.data),
+        resultCode: responseBase?.resultCode,
+        msg: responseBase?.msg,
+        data: responseBase?.data,
+        dataType: typeof responseBase?.data,
+        isArray: Array.isArray(responseBase?.data),
         fullResponse: response
       });
     }
 
     // 표준 응답 구조: { resultCode: 'S-1', data: [...] }
-    if ((response as any)?.resultCode === 'S-1' && (response as any)?.data) {
+    if (responseBase?.resultCode === 'S-1' && responseBase?.data) {
       if (isDebugMode) {
-        console.log(`[DEBUG] ${period} 사용량 데이터 성공 (resultCode S-1):`, (response as any).data);
+        console.log(`[DEBUG] ${period} 사용량 데이터 성공 (resultCode S-1):`, responseBase.data);
       }
-      return Array.isArray((response as any).data) ? (response as any).data : [(response as any).data];
+      return Array.isArray(responseBase.data) ? responseBase.data as T[] : [responseBase.data as T];
     }
 
     // data 필드가 있는 경우
-    if ((response as any)?.data) {
+    if (responseBase?.data) {
       if (isDebugMode) {
-        console.log(`[DEBUG] ${period} 사용량 데이터 성공 (data 필드):`, (response as any).data);
+        console.log(`[DEBUG] ${period} 사용량 데이터 성공 (data 필드):`, responseBase.data);
       }
-      return Array.isArray((response as any).data) ? (response as any).data : [(response as any).data];
+      return Array.isArray(responseBase.data) ? responseBase.data as T[] : [responseBase.data as T];
     }
 
     // 응답 자체가 배열인 경우
@@ -89,12 +98,12 @@ export class ConsumedService {
     }
 
     // 처리할 수 없는 응답 구조
-    const errorMsg = (response as any)?.msg || `${period} 사용량 데이터를 가져오는데 실패했습니다.`;
+    const errorMsg = responseBase?.msg || `${period} 사용량 데이터를 가져오는데 실패했습니다.`;
     if (isDebugMode) {
       console.error(`[DEBUG] ${period} 사용량 API 응답 실패:`, {
-        resultCode: (response as any)?.resultCode,
-        msg: (response as any)?.msg,
-        data: (response as any)?.data,
+        resultCode: responseBase?.resultCode,
+        msg: responseBase?.msg,
+        data: responseBase?.data,
         fullResponse: response
       });
     }

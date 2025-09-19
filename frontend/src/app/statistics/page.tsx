@@ -262,11 +262,6 @@ export default function StatisticsPage() {
   };
 
   const monthlyChartData = processMonthlyData(monthlyData);
-  const months = Array.from(monthlyChartData.keys()).sort((a, b) => {
-    const monthA = parseInt(a.replace('월', ''));
-    const monthB = parseInt(b.replace('월', ''));
-    return monthA - monthB;
-  });
   
   // 모든 카테고리 수집
   const allCategories = new Set<string>();
@@ -431,7 +426,7 @@ export default function StatisticsPage() {
                           >
                             전체
                           </button>
-                          {categories.slice(0, 4).map((category, index) => (
+                          {categories.slice(0, 4).map((category) => (
                             <button
                               key={category}
                               onClick={() => {
@@ -475,7 +470,7 @@ export default function StatisticsPage() {
                         {showAllCategoryFilters && categories.length > 4 && (
                           <div className="mt-3 pt-3 border-t border-gray-200">
                             <div className="flex gap-2 flex-wrap">
-                              {categories.slice(4).map((category, index) => (
+                              {categories.slice(4).map((category) => (
                                 <button
                                   key={category}
                                   onClick={() => {
@@ -497,7 +492,7 @@ export default function StatisticsPage() {
                       </div>
                       <div className="h-64">
                         <div className="h-full flex items-end justify-between gap-2">
-                          {filteredMonths.map((month, monthIndex) => {
+                          {filteredMonths.map((month) => {
                             const monthData = filteredChartData.get(month);
                             const maxValue = Math.max(
                               ...Array.from(filteredChartData.values()).map(monthData => 
