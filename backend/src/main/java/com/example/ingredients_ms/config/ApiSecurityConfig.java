@@ -94,8 +94,14 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/*/diet/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/*/diet/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/diet/*/*").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/diet/week/statistics").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/diet/month/statistics").hasAnyRole("USER","ADMIN")
+
+                        // 식단 통계 api
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/week").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/month").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/quarter").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/year").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/week/graph").hasAnyRole("USER","ADMIN")
+
 
                         // 민원 관리 api
                         .requestMatchers(HttpMethod.POST, "/api/*/complaints/").hasAnyRole("USER","ADMIN")

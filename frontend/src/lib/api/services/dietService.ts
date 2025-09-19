@@ -34,15 +34,52 @@ export interface MonthlyDiet {
 
 // 백엔드 통계 DTO 구조에 맞는 인터페이스
 export interface WeekStatisticsResponseDto {
-  date: string; // yyyy-MM-dd 형식
+  date: string; // yyyy-MM-dd 형식 (기존)
   averageKcal: number;
 }
 
+// 새로운 백엔드 DTO 구조
+export interface NewWeekStatisticsResponseDto {
+  date: string; // LocalDate -> yyyy-MM-dd 형식
+  averageKcal: number;
+}
+
+export interface DietStatisticsResponseDto {
+  averageKcal: number;
+  diffFromLast: number | null; // 이전 기간 대비 차이
+  diffRate: number | null; // 이전 기간 대비 변화율
+}
+
+// 기존 인터페이스 (호환성을 위해 유지)
 export interface MonthStatisticsResponseDto {
   month: number;
   averageKcal: number;
   diffFromLast: number | null; // 지난달 대비 차이
   diffRate: number | null; // 지난달 대비 변화율
+}
+
+// 3개월 통계를 위한 인터페이스
+export interface QuarterStatisticsResponseDto {
+  averageKcal: number;
+  totalKcal: number;
+  diffFromPreviousQuarter: number | null; // 이전 분기 대비 차이
+  diffRate: number | null; // 이전 분기 대비 변화율
+  monthlyBreakdown: {
+    month: number;
+    averageKcal: number;
+  }[];
+}
+
+// 연간 통계를 위한 인터페이스
+export interface YearStatisticsResponseDto {
+  averageKcal: number;
+  totalKcal: number;
+  diffFromLastYear: number | null; // 작년 대비 차이
+  diffRate: number | null; // 작년 대비 변화율
+  monthlyBreakdown: {
+    month: number;
+    averageKcal: number;
+  }[];
 }
 
 export class DietService {
@@ -301,10 +338,10 @@ export class DietService {
   }
 
   /**
-   * 월간 칼로리 통계를 가져옵니다.
+   * 월간 칼로리 통계를 가져옵니다. (새로운 API 사용)
    * @returns 월간 통계 데이터
    */
-  static async getMonthStatistics(): Promise<MonthStatisticsResponseDto | null> {
+  static async getMonthStatistics(): Promise<DietStatisticsResponseDto | null> {
     try {
       console.log('[DEBUG] getMonthStatistics 요청 시작');
       
@@ -314,8 +351,8 @@ export class DietService {
         return null;
       }
       
-      const response = await apiClient.get<BackendApiResponse<MonthStatisticsResponseDto>>(
-        API_ENDPOINTS.DIET.MONTH_STATISTICS
+      const response = await apiClient.get<BackendApiResponse<DietStatisticsResponseDto>>(
+        API_ENDPOINTS.DIET_STATISTICS.MONTH
       );
       
       console.log('[DEBUG] getMonthStatistics 응답:', response);
@@ -334,21 +371,21 @@ export class DietService {
   }
 
   /**
-   * 주간 칼로리 통계를 가져옵니다.
-   * @returns 주간 통계 데이터 배열 (최근 7일)
+   * 주간 칼로리 통계를 가져옵니다. (새로운 API 사용)
+   * @returns 주간 통계 데이터
    */
-  static async getWeekStatistics(): Promise<WeekStatisticsResponseDto[]> {
+  static async getWeekStatistics(): Promise<DietStatisticsResponseDto | null> {
     try {
       console.log('[DEBUG] getWeekStatistics 요청 시작');
       
       // API 클라이언트 상태 검증
       if (!await this.validateBeforeRequest()) {
         console.log('[DEBUG] getWeekStatistics - API 클라이언트 검증 실패');
-        return [];
+        return null;
       }
       
-      const response = await apiClient.get<BackendApiResponse<WeekStatisticsResponseDto[]>>(
-        API_ENDPOINTS.DIET.WEEK_STATISTICS
+      const response = await apiClient.get<BackendApiResponse<DietStatisticsResponseDto>>(
+        API_ENDPOINTS.DIET_STATISTICS.WEEK
       );
       
       console.log('[DEBUG] getWeekStatistics 응답:', response);
@@ -359,10 +396,110 @@ export class DietService {
       }
       
       console.log('[DEBUG] getWeekStatistics 실패 - resultCode:', response.resultCode);
-      return [];
+      return null;
     } catch (error) {
       console.error('주간 통계 조회 실패:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 주간 그래프 통계를 가져옵니다. (새로운 API 사용)
+   * @returns 주간 그래프 통계 데이터 배열 (최근 7일)
+   */
+  static async getWeekGraphStatistics(): Promise<NewWeekStatisticsResponseDto[]> {
+    try {
+      console.log('[DEBUG] getWeekGraphStatistics 요청 시작');
+      
+      // API 클라이언트 상태 검증
+      if (!await this.validateBeforeRequest()) {
+        console.log('[DEBUG] getWeekGraphStatistics - API 클라이언트 검증 실패');
+        return [];
+      }
+      
+      const response = await apiClient.get<BackendApiResponse<NewWeekStatisticsResponseDto[]>>(
+        API_ENDPOINTS.DIET_STATISTICS.WEEK_GRAPH
+      );
+      
+      console.log('[DEBUG] getWeekGraphStatistics 응답:', response);
+      
+      if (response.resultCode === '200' && response.data) {
+        console.log('[DEBUG] getWeekGraphStatistics 성공:', response.data);
+        return response.data;
+      }
+      
+      console.log('[DEBUG] getWeekGraphStatistics 실패 - resultCode:', response.resultCode);
+      return [];
+    } catch (error) {
+      console.error('주간 그래프 통계 조회 실패:', error);
       return [];
     }
   }
+
+  /**
+   * 3개월 칼로리 통계를 가져옵니다. (새로운 API 사용)
+   * @returns 3개월 통계 데이터
+   */
+  static async getQuarterStatistics(): Promise<DietStatisticsResponseDto | null> {
+    try {
+      console.log('[DEBUG] getQuarterStatistics 요청 시작');
+      
+      // API 클라이언트 상태 검증
+      if (!await this.validateBeforeRequest()) {
+        console.log('[DEBUG] getQuarterStatistics - API 클라이언트 검증 실패');
+        return null;
+      }
+      
+      const response = await apiClient.get<BackendApiResponse<DietStatisticsResponseDto>>(
+        API_ENDPOINTS.DIET_STATISTICS.QUARTER
+      );
+      
+      console.log('[DEBUG] getQuarterStatistics 응답:', response);
+      
+      if (response.resultCode === '200' && response.data) {
+        console.log('[DEBUG] getQuarterStatistics 성공:', response.data);
+        return response.data;
+      }
+      
+      console.log('[DEBUG] getQuarterStatistics 실패 - resultCode:', response.resultCode);
+      return null;
+    } catch (error) {
+      console.error('3개월 통계 조회 실패:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 연간 칼로리 통계를 가져옵니다. (새로운 API 사용)
+   * @returns 연간 통계 데이터
+   */
+  static async getYearStatistics(): Promise<DietStatisticsResponseDto | null> {
+    try {
+      console.log('[DEBUG] getYearStatistics 요청 시작');
+      
+      // API 클라이언트 상태 검증
+      if (!await this.validateBeforeRequest()) {
+        console.log('[DEBUG] getYearStatistics - API 클라이언트 검증 실패');
+        return null;
+      }
+      
+      const response = await apiClient.get<BackendApiResponse<DietStatisticsResponseDto>>(
+        API_ENDPOINTS.DIET_STATISTICS.YEAR
+      );
+      
+      console.log('[DEBUG] getYearStatistics 응답:', response);
+      
+      if (response.resultCode === '200' && response.data) {
+        console.log('[DEBUG] getYearStatistics 성공:', response.data);
+        return response.data;
+      }
+      
+      console.log('[DEBUG] getYearStatistics 실패 - resultCode:', response.resultCode);
+      return null;
+    } catch (error) {
+      console.error('연간 통계 조회 실패:', error);
+      return null;
+    }
+  }
+
 }

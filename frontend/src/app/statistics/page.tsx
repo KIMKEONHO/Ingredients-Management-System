@@ -4,24 +4,344 @@ import { useState, useEffect } from 'react';
 import { COLOR_PRESETS } from '@/lib/constants/colors';
 import PageHeader from '../components/ui/PageHeader';
 import SectionCard from '../components/ui/SectionCard';
-import { DietService, MonthStatisticsResponseDto, WeekStatisticsResponseDto } from '@/lib/api/services/dietService';
+import { DietService, DietStatisticsResponseDto, NewWeekStatisticsResponseDto } from '@/lib/api/services/dietService';
 import { UserGuard } from '@/lib/auth/authGuard';
 
 export default function StatisticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('이번 달');
-  const [monthStats, setMonthStats] = useState<MonthStatisticsResponseDto | null>(null);
-  const [weekStats, setWeekStats] = useState<WeekStatisticsResponseDto[]>([]);
+  const [monthStats, setMonthStats] = useState<DietStatisticsResponseDto | null>(null);
+  const [weekStats, setWeekStats] = useState<DietStatisticsResponseDto | null>(null);
+  const [weekGraphStats, setWeekGraphStats] = useState<NewWeekStatisticsResponseDto[]>([]);
+  const [quarterStats, setQuarterStats] = useState<DietStatisticsResponseDto | null>(null);
+  const [yearStats, setYearStats] = useState<DietStatisticsResponseDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false); // 중복 로드 방지
   const [retryCount, setRetryCount] = useState(0); // 재시도 횟수
 
+  // 기간이 변경될 때마다 로드 상태 초기화
+  useEffect(() => {
+    setHasLoaded(false);
+    setRetryCount(0);
+  }, [selectedPeriod]);
+
   const timePeriods = ['이번 주', '이번 달', '지난 3개월', '올해'];
 
-  // 식단 통계 데이터 로드
-  useEffect(() => {
-    // 이미 로드된 경우 중복 실행 방지
-    if (hasLoaded) return;
+  // 칼로리 통계 헬퍼 함수들
+  const getCalorieTitle = () => {
+    switch (selectedPeriod) {
+      case '이번 주': return '이번 주 평균 칼로리';
+      case '이번 달': return '이번 달 평균 칼로리';
+      case '지난 3개월': return '3개월 평균 칼로리';
+      case '올해': return '올해 평균 칼로리';
+      default: return '평균 칼로리';
+    }
+  };
 
+  const getCalorieValue = () => {
+    if (isLoading) return '로딩 중...';
+    
+    switch (selectedPeriod) {
+      case '이번 주':
+        return weekStats ? `${Math.round(weekStats.averageKcal)}kcal` : '데이터 없음';
+      case '이번 달':
+        return monthStats ? `${Math.round(monthStats.averageKcal)}kcal` : '데이터 없음';
+      case '지난 3개월':
+        return quarterStats ? `${Math.round(quarterStats.averageKcal)}kcal` : '데이터 없음';
+      case '올해':
+        return yearStats ? `${Math.round(yearStats.averageKcal)}kcal` : '데이터 없음';
+      default:
+        return monthStats ? `${Math.round(monthStats.averageKcal)}kcal` : '데이터 없음';
+    }
+  };
+
+  const getCalorieTrend = () => {
+    switch (selectedPeriod) {
+      case '이번 주':
+        if (weekStats && weekStats.diffRate) {
+          return `${weekStats.diffRate > 0 ? '+' : ''}${Math.round(weekStats.diffRate)}% ${weekStats.diffRate > 0 ? '증가' : '감소'}`;
+        }
+        return '변화 없음';
+      case '이번 달':
+        if (monthStats && monthStats.diffRate) {
+          return `${monthStats.diffRate > 0 ? '+' : ''}${Math.round(monthStats.diffRate)}% ${monthStats.diffRate > 0 ? '증가' : '감소'}`;
+        }
+        return '변화 없음';
+      case '지난 3개월':
+        if (quarterStats && quarterStats.diffRate) {
+          return `${quarterStats.diffRate > 0 ? '+' : ''}${Math.round(quarterStats.diffRate)}% ${quarterStats.diffRate > 0 ? '증가' : '감소'}`;
+        }
+        return '변화 없음';
+      case '올해':
+        if (yearStats && yearStats.diffRate) {
+          return `${yearStats.diffRate > 0 ? '+' : ''}${Math.round(yearStats.diffRate)}% ${yearStats.diffRate > 0 ? '증가' : '감소'}`;
+        }
+        return '변화 없음';
+      default:
+        return '변화 없음';
+    }
+  };
+
+  const getCalorieTrendColor = () => {
+    switch (selectedPeriod) {
+      case '이번 주':
+        if (weekStats && weekStats.diffRate) {
+          return weekStats.diffRate > 0 ? 'text-red-600' : 'text-green-600';
+        }
+        return 'text-gray-600';
+      case '이번 달':
+        if (monthStats && monthStats.diffRate) {
+          return monthStats.diffRate > 0 ? 'text-red-600' : 'text-green-600';
+        }
+        return 'text-gray-600';
+      case '지난 3개월':
+        if (quarterStats && quarterStats.diffRate) {
+          return quarterStats.diffRate > 0 ? 'text-red-600' : 'text-green-600';
+        }
+        return 'text-gray-600';
+      case '올해':
+        if (yearStats && yearStats.diffRate) {
+          return yearStats.diffRate > 0 ? 'text-red-600' : 'text-green-600';
+        }
+        return 'text-gray-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  const getChangeValue = () => {
+    switch (selectedPeriod) {
+      case '이번 주':
+        if (weekStats && weekStats.diffFromLast !== null) {
+          return (
+            <p className={`text-2xl font-bold ${
+              weekStats.diffFromLast > 0 ? 'text-red-600' : 'text-green-600'
+            }`}>
+              {weekStats.diffFromLast > 0 ? '+' : ''}{Math.round(weekStats.diffFromLast)}kcal
+            </p>
+          );
+        }
+        return <p className="text-lg text-gray-500">변화 없음</p>;
+      case '이번 달':
+        if (monthStats && monthStats.diffFromLast !== null) {
+          return (
+            <p className={`text-2xl font-bold ${
+              monthStats.diffFromLast > 0 ? 'text-red-600' : 'text-green-600'
+            }`}>
+              {monthStats.diffFromLast > 0 ? '+' : ''}{Math.round(monthStats.diffFromLast)}kcal
+            </p>
+          );
+        }
+        return <p className="text-lg text-gray-500">변화 없음</p>;
+      case '지난 3개월':
+        if (quarterStats && quarterStats.diffFromLast !== null) {
+          return (
+            <p className={`text-2xl font-bold ${
+              quarterStats.diffFromLast > 0 ? 'text-red-600' : 'text-green-600'
+            }`}>
+              {quarterStats.diffFromLast > 0 ? '+' : ''}{Math.round(quarterStats.diffFromLast)}kcal
+            </p>
+          );
+        }
+        return <p className="text-lg text-gray-500">변화 없음</p>;
+      case '올해':
+        if (yearStats && yearStats.diffFromLast !== null) {
+          return (
+            <p className={`text-2xl font-bold ${
+              yearStats.diffFromLast > 0 ? 'text-red-600' : 'text-green-600'
+            }`}>
+              {yearStats.diffFromLast > 0 ? '+' : ''}{Math.round(yearStats.diffFromLast)}kcal
+            </p>
+          );
+        }
+        return <p className="text-lg text-gray-500">변화 없음</p>;
+      default:
+        return <p className="text-lg text-gray-500">변화 없음</p>;
+    }
+  };
+
+  // 주간 차트 전용 함수
+  const getWeekChartData = () => {
+    console.log('[DEBUG] getWeekChartData - weekGraphStats:', weekGraphStats);
+    
+    // 임시 더미 데이터 (API가 작동하지 않을 경우를 위한 테스트)
+    const testData = weekGraphStats.length > 0 ? weekGraphStats : [
+      { date: '2024-01-15', averageKcal: 1800 },
+      { date: '2024-01-16', averageKcal: 2200 },
+      { date: '2024-01-17', averageKcal: 1600 },
+      { date: '2024-01-18', averageKcal: 2400 },
+      { date: '2024-01-19', averageKcal: 2000 },
+      { date: '2024-01-20', averageKcal: 1900 },
+      { date: '2024-01-21', averageKcal: 2100 }
+    ];
+    
+    if (testData && testData.length > 0) {
+      const maxKcal = Math.max(...testData.map(s => s.averageKcal));
+      const minKcal = Math.min(...testData.map(s => s.averageKcal));
+      
+      return (
+        <div className="w-full h-48 flex items-end justify-between gap-2 px-2">
+          {testData.map((stat, index) => {
+            const date = new Date(stat.date);
+            const dayName = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+            const height = maxKcal > 0 ? Math.max((stat.averageKcal / maxKcal) * 100, 10) : 10;
+            
+            return (
+              <div key={index} className="flex-1 flex flex-col items-center group">
+                {/* 막대 */}
+                <div 
+                  className="w-full bg-gradient-to-t from-orange-400 via-orange-500 to-red-500 rounded-t-lg relative group/bar transition-all duration-500 hover:from-orange-300 hover:via-orange-400 hover:to-red-400 shadow-md hover:shadow-lg"
+                  style={{ height: `${height}px` }}
+                >
+                  {/* 호버 시 표시되는 툴팁 */}
+                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10">
+                    {Math.round(stat.averageKcal)}kcal
+                  </div>
+                  
+                  {/* 막대 상단에 값 표시 */}
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-gray-700 opacity-0 group-hover/bar:opacity-100 transition-opacity">
+                    {Math.round(stat.averageKcal)}
+                  </div>
+                </div>
+                
+                {/* 요일 표시 */}
+                <div className="mt-2 text-center">
+                  <div className="text-sm font-medium text-gray-700">{dayName}</div>
+                  <div className="text-xs text-gray-500">{date.getMonth() + 1}/{date.getDate()}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    return <div className="h-48 flex items-center justify-center w-full"><div className="text-gray-500">주간 그래프 데이터가 없습니다</div></div>;
+  };
+
+  const getChartData = () => {
+    switch (selectedPeriod) {
+      case '지난 3개월':
+        // 3개월 통계는 단일 값이므로 간단한 표시
+        if (quarterStats) {
+          return (
+            <div className="h-48 flex items-center justify-center w-full">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-blue-600 mb-2">
+                  {Math.round(quarterStats.averageKcal)}kcal
+                </div>
+                <div className="text-gray-600">3개월 평균</div>
+              </div>
+            </div>
+          );
+        }
+        return <div className="h-48 flex items-center justify-center w-full"><div className="text-gray-500">데이터가 없습니다</div></div>;
+      
+      case '올해':
+        // 연간 통계는 단일 값이므로 간단한 표시
+        if (yearStats) {
+          return (
+            <div className="h-48 flex items-center justify-center w-full">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-green-600 mb-2">
+                  {Math.round(yearStats.averageKcal)}kcal
+                </div>
+                <div className="text-gray-600">연간 평균</div>
+              </div>
+            </div>
+          );
+        }
+        return <div className="h-48 flex items-center justify-center w-full"><div className="text-gray-500">데이터가 없습니다</div></div>;
+      
+      default:
+        return <div className="h-48 flex items-center justify-center w-full"><div className="text-gray-500">데이터가 없습니다</div></div>;
+    }
+  };
+
+  // 주간 차트 요약 전용 함수
+  const getWeekChartSummary = () => {
+    if (weekGraphStats.length > 0) {
+      const maxKcal = Math.max(...weekGraphStats.map(s => s.averageKcal));
+      const minKcal = Math.min(...weekGraphStats.map(s => s.averageKcal));
+      const avgKcal = weekGraphStats.reduce((sum, stat) => sum + stat.averageKcal, 0) / weekGraphStats.length;
+      
+      return (
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+            <div className="text-sm text-gray-600 mb-1">주간 평균</div>
+            <div className="text-lg font-bold text-orange-600">
+              {Math.round(avgKcal)}kcal
+            </div>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+            <div className="text-sm text-gray-600 mb-1">최고 섭취량</div>
+            <div className="text-lg font-bold text-blue-600">
+              {Math.round(maxKcal)}kcal
+            </div>
+          </div>
+          <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+            <div className="text-sm text-gray-600 mb-1">최저 섭취량</div>
+            <div className="text-lg font-bold text-green-600">
+              {Math.round(minKcal)}kcal
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const getChartSummary = () => {
+    switch (selectedPeriod) {
+      case '지난 3개월':
+        if (quarterStats) {
+          return (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-600">
+                3개월 평균: <span className="font-semibold text-blue-600">
+                  {Math.round(quarterStats.averageKcal)}kcal
+                </span>
+              </p>
+            </div>
+          );
+        }
+        return null;
+      
+      case '올해':
+        if (yearStats) {
+          return (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-600">
+                연간 평균: <span className="font-semibold text-green-600">
+                  {Math.round(yearStats.averageKcal)}kcal
+                </span>
+              </p>
+            </div>
+          );
+        }
+        return null;
+      
+      default:
+        return null;
+    }
+  };
+
+  // 페이지 로드 시 주간 그래프 데이터 로드 (항상 고정)
+  useEffect(() => {
+    const loadWeekGraphData = async () => {
+      try {
+        console.log('[DEBUG] 주간 그래프 데이터 로드 시작');
+        const weekGraphData = await DietService.getWeekGraphStatistics();
+        setWeekGraphStats(weekGraphData);
+        console.log('[DEBUG] 주간 그래프 데이터 로드 성공:', weekGraphData);
+      } catch (error) {
+        console.error('주간 그래프 데이터 로드 실패:', error);
+      }
+    };
+
+    loadWeekGraphData();
+  }, []); // 페이지 로드 시 한 번만 실행
+
+  // 선택된 기간에 따른 통계 데이터 로드
+  useEffect(() => {
     const loadDietStatistics = async () => {
       try {
         setIsLoading(true);
@@ -29,17 +349,35 @@ export default function StatisticsPage() {
         // API 요청 전에 약간의 지연을 두어 인증 토큰이 준비되도록 함
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        console.log('[DEBUG] 식단 통계 로드 시작, 재시도 횟수:', retryCount);
+        console.log('[DEBUG] 식단 통계 로드 시작, 선택된 기간:', selectedPeriod);
         
-        const [monthData, weekData] = await Promise.all([
-          DietService.getMonthStatistics(),
-          DietService.getWeekStatistics()
-        ]);
-        
-        console.log('[DEBUG] 식단 통계 로드 성공:', { monthData, weekData });
-        
-        setMonthStats(monthData);
-        setWeekStats(weekData);
+        // 선택된 기간에 따라 다른 데이터 로드
+        switch (selectedPeriod) {
+          case '이번 주':
+            const weekData = await DietService.getWeekStatistics();
+            setWeekStats(weekData);
+            console.log('[DEBUG] 주간 통계 로드 성공:', weekData);
+            break;
+          case '이번 달':
+            const monthData = await DietService.getMonthStatistics();
+            setMonthStats(monthData);
+            console.log('[DEBUG] 월간 통계 로드 성공:', monthData);
+            break;
+          case '지난 3개월':
+            const quarterData = await DietService.getQuarterStatistics();
+            setQuarterStats(quarterData);
+            console.log('[DEBUG] 3개월 통계 로드 성공:', quarterData);
+            break;
+          case '올해':
+            const yearData = await DietService.getYearStatistics();
+            setYearStats(yearData);
+            console.log('[DEBUG] 연간 통계 로드 성공:', yearData);
+            break;
+          default:
+            const defaultMonthData = await DietService.getMonthStatistics();
+            setMonthStats(defaultMonthData);
+            console.log('[DEBUG] 기본 월간 통계 로드 성공:', defaultMonthData);
+        }
         setHasLoaded(true); // 로드 완료 표시
       } catch (error) {
         console.error('식단 통계 로드 실패:', error);
@@ -52,15 +390,31 @@ export default function StatisticsPage() {
           setTimeout(async () => {
             try {
               console.log('[DEBUG] 재시도 실행 중...');
-              const [monthData, weekData] = await Promise.all([
-                DietService.getMonthStatistics(),
-                DietService.getWeekStatistics()
-              ]);
               
-              console.log('[DEBUG] 재시도 성공:', { monthData, weekData });
+              // 선택된 기간에 따라 재시도
+              switch (selectedPeriod) {
+                case '이번 주':
+                  const weekData = await DietService.getWeekStatistics();
+                  setWeekStats(weekData);
+                  break;
+                case '이번 달':
+                  const monthData = await DietService.getMonthStatistics();
+                  setMonthStats(monthData);
+                  break;
+                case '지난 3개월':
+                  const quarterData = await DietService.getQuarterStatistics();
+                  setQuarterStats(quarterData);
+                  break;
+                case '올해':
+                  const yearData = await DietService.getYearStatistics();
+                  setYearStats(yearData);
+                  break;
+                default:
+                  const defaultMonthData = await DietService.getMonthStatistics();
+                  setMonthStats(defaultMonthData);
+              }
               
-              setMonthStats(monthData);
-              setWeekStats(weekData);
+              console.log('[DEBUG] 재시도 성공');
               setHasLoaded(true);
             } catch (retryError) {
               console.error('재시도 실패:', retryError);
@@ -79,7 +433,7 @@ export default function StatisticsPage() {
     };
 
     loadDietStatistics();
-  }, [hasLoaded, retryCount]); // hasLoaded와 retryCount를 의존성으로 추가
+  }, [selectedPeriod, retryCount]); // selectedPeriod를 의존성으로 추가
 
   const summaryStats = [
     {
@@ -106,14 +460,10 @@ export default function StatisticsPage() {
       )
     },
     {
-      title: '이번 달 평균 칼로리',
-      value: monthStats ? `${Math.round(monthStats.averageKcal)}kcal` : '로딩 중...',
-      trend: monthStats && monthStats.diffRate 
-        ? `${monthStats.diffRate > 0 ? '+' : ''}${Math.round(monthStats.diffRate)}% ${monthStats.diffRate > 0 ? '증가' : '감소'}`
-        : '변화 없음',
-      trendColor: monthStats && monthStats.diffRate 
-        ? monthStats.diffRate > 0 ? 'text-red-600' : 'text-green-600'
-        : 'text-gray-600',
+      title: getCalorieTitle(),
+      value: getCalorieValue(),
+      trend: getCalorieTrend(),
+      trendColor: getCalorieTrendColor(),
       icon: (
         <svg className="w-8 h-8 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
@@ -170,9 +520,9 @@ export default function StatisticsPage() {
       icon: monthStats.diffRate > 0 ? '📈' : '📉',
       color: monthStats.diffRate > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
     }] : []),
-    ...(weekStats.length > 0 ? [{
+    ...(weekStats ? [{
       title: '주간 칼로리 패턴',
-      description: `최근 7일간 평균 ${Math.round(weekStats.reduce((sum, stat) => sum + stat.averageKcal, 0) / weekStats.length)}kcal를 섭취하고 있습니다.`,
+      description: `이번 주 평균 ${Math.round(weekStats.averageKcal)}kcal를 섭취하고 있습니다.`,
       icon: '📊',
       color: 'bg-indigo-50 border-indigo-200'
     }] : [])
@@ -281,110 +631,59 @@ export default function StatisticsPage() {
               </div>
             </SectionCard>
 
-            {/* Monthly Diet Statistics Card */}
-            <SectionCard title="월간 식단 통계" variant="statistics">
+            {/* Period-based Diet Statistics Card */}
+            <SectionCard title={`${selectedPeriod} 식단 통계`} variant="statistics">
               <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
                 {isLoading ? (
                   <div className="h-32 flex items-center justify-center">
                     <div className="text-gray-500">로딩 중...</div>
                   </div>
-                ) : monthStats ? (
+                ) : (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* 이번 달 평균 칼로리 */}
+                    {/* 평균 칼로리 */}
                     <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg border border-orange-200">
                       <div className="text-2xl mb-2">🔥</div>
-                      <h4 className="font-semibold text-gray-900 mb-2">이번 달 평균</h4>
+                      <h4 className="font-semibold text-gray-900 mb-2">{getCalorieTitle()}</h4>
                       <p className="text-2xl font-bold text-orange-600">
-                        {Math.round(monthStats.averageKcal)}kcal
+                        {getCalorieValue()}
                       </p>
                     </div>
 
-                    {/* 지난달 대비 변화 */}
+                    {/* 변화량 */}
                     <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
                       <div className="text-2xl mb-2">📊</div>
-                      <h4 className="font-semibold text-gray-900 mb-2">지난달 대비</h4>
-                      {monthStats.diffFromLast !== null ? (
-                        <p className={`text-2xl font-bold ${
-                          monthStats.diffFromLast > 0 ? 'text-red-600' : 'text-green-600'
-                        }`}>
-                          {monthStats.diffFromLast > 0 ? '+' : ''}{Math.round(monthStats.diffFromLast)}kcal
-                        </p>
-                      ) : (
-                        <p className="text-lg text-gray-500">변화 없음</p>
-                      )}
+                      <h4 className="font-semibold text-gray-900 mb-2">
+                        {selectedPeriod === '이번 주' ? '주간 패턴' : 
+                         selectedPeriod === '이번 달' ? '지난달 대비' :
+                         selectedPeriod === '지난 3개월' ? '이전 분기 대비' :
+                         selectedPeriod === '올해' ? '작년 대비' : '변화량'}
+                      </h4>
+                      {getChangeValue()}
                     </div>
 
                     {/* 변화율 */}
                     <div className="text-center p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200">
                       <div className="text-2xl mb-2">📈</div>
                       <h4 className="font-semibold text-gray-900 mb-2">변화율</h4>
-                      {monthStats.diffRate !== null ? (
-                        <p className={`text-2xl font-bold ${
-                          monthStats.diffRate > 0 ? 'text-red-600' : 'text-green-600'
-                        }`}>
-                          {monthStats.diffRate > 0 ? '+' : ''}{Math.round(monthStats.diffRate)}%
-                        </p>
-                      ) : (
-                        <p className="text-lg text-gray-500">변화 없음</p>
-                      )}
+                      <p className={`text-2xl font-bold ${getCalorieTrendColor()}`}>
+                        {getCalorieTrend()}
+                      </p>
                     </div>
-                  </div>
-                ) : (
-                  <div className="h-32 flex items-center justify-center">
-                    <div className="text-gray-500">데이터를 불러올 수 없습니다</div>
                   </div>
                 )}
               </div>
             </SectionCard>
 
-            {/* Weekly Usage Card */}
+            {/* 주간 칼로리 추이 차트 (고정) */}
             <SectionCard title="주간 칼로리 추이" variant="statistics">
               <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 7일 칼로리 섭취량</h3>
-                {isLoading ? (
-                  <div className="h-48 flex items-center justify-center">
-                    <div className="text-gray-500">로딩 중...</div>
-                  </div>
-                ) : weekStats.length > 0 ? (
-                  <div className="h-48 flex items-end justify-between gap-2">
-                    {weekStats.map((stat, index) => {
-                      const date = new Date(stat.date);
-                      const dayName = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
-                      const maxKcal = Math.max(...weekStats.map(s => s.averageKcal));
-                      const height = maxKcal > 0 ? (stat.averageKcal / maxKcal) * 100 : 0;
-                      
-                      return (
-                        <div key={index} className="flex-1 flex flex-col items-center">
-                          <div className="w-full bg-gradient-to-t from-orange-500 to-red-500 rounded-t-sm relative group">
-                            <div 
-                              className="w-full bg-gradient-to-t from-orange-500 to-red-500 rounded-t-sm transition-all duration-300"
-                              style={{ height: `${Math.max(height, 10)}px` }}
-                            ></div>
-                            {/* 툴팁 */}
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                              {Math.round(stat.averageKcal)}kcal
-                            </div>
-                          </div>
-                          <span className="text-sm text-gray-600 mt-2">{dayName}</span>
-                          <span className="text-xs text-gray-500">{date.getMonth() + 1}/{date.getDate()}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="h-48 flex items-center justify-center">
-                    <div className="text-gray-500">데이터가 없습니다</div>
-                  </div>
-                )}
-                {weekStats.length > 0 && (
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-600">
-                      주간 평균: <span className="font-semibold text-orange-600">
-                        {Math.round(weekStats.reduce((sum, stat) => sum + stat.averageKcal, 0) / weekStats.length)}kcal
-                      </span>
-                    </p>
-                  </div>
-                )}
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  최근 7일 칼로리 섭취량 (막대 그래프)
+                </h3>
+                <div>
+                  {getWeekChartData()}
+                </div>
+                {getWeekChartSummary()}
               </div>
             </SectionCard>
 
