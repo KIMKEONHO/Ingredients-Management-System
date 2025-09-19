@@ -5,18 +5,21 @@ import { COLOR_PRESETS } from '@/lib/constants/colors';
 import PageHeader from '../components/ui/PageHeader';
 import SectionCard from '../components/ui/SectionCard';
 import { DietService, MonthStatisticsResponseDto, WeekStatisticsResponseDto } from '@/lib/api/services/dietService';
-import { inventoryService, CategoryUsageStats, ConsumedLogResponseDto } from '@/lib/api/services/inventoryService';
+import { ConsumedService, ConsumedLogResponseDto, MonthlyConsumedLogResponseDto } from '@/lib/api/services/consumedService';
 import { UserGuard } from '@/lib/auth/authGuard';
 
 export default function StatisticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('이번 달');
   const [monthStats, setMonthStats] = useState<MonthStatisticsResponseDto | null>(null);
   const [weekStats, setWeekStats] = useState<WeekStatisticsResponseDto[]>([]);
-  const [categoryStats, setCategoryStats] = useState<CategoryUsageStats[]>([]);
-  const [consumedLogStats, setConsumedLogStats] = useState<ConsumedLogResponseDto[]>([]);
+  const [consumedData, setConsumedData] = useState<ConsumedLogResponseDto[]>([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlyConsumedLogResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false); // 중복 로드 방지
   const [retryCount, setRetryCount] = useState(0); // 재시도 횟수
+  const [showAllCategories, setShowAllCategories] = useState(false); // 카테고리 더보기 상태
+  const [selectedCategory, setSelectedCategory] = useState<string>('전체'); // 선택된 카테고리
+  const [showAllCategoryFilters, setShowAllCategoryFilters] = useState(false); // 카테고리 필터 패널 확장 상태
 
   const timePeriods = ['이번 주', '이번 달', '지난 3개월', '올해'];
 
@@ -34,19 +37,15 @@ export default function StatisticsPage() {
         
         console.log('[DEBUG] 식단 통계 로드 시작, 재시도 횟수:', retryCount);
         
-        const [monthData, weekData, categoryData, consumedLogData] = await Promise.all([
+        const [monthData, weekData] = await Promise.all([
           DietService.getMonthStatistics(),
-          DietService.getWeekStatistics(),
-          inventoryService.getCategoryUsageStats(),
-          inventoryService.getConsumedLogStatistics()
+          DietService.getWeekStatistics()
         ]);
         
-        console.log('[DEBUG] 식단 통계 로드 성공:', { monthData, weekData, categoryData, consumedLogData });
+        console.log('[DEBUG] 식단 통계 로드 성공:', { monthData, weekData });
         
         setMonthStats(monthData);
         setWeekStats(weekData);
-        setCategoryStats(categoryData);
-        setConsumedLogStats(consumedLogData);
         setHasLoaded(true); // 로드 완료 표시
       } catch (error) {
         console.error('식단 통계 로드 실패:', error);
@@ -59,19 +58,15 @@ export default function StatisticsPage() {
           setTimeout(async () => {
             try {
               console.log('[DEBUG] 재시도 실행 중...');
-              const [monthData, weekData, categoryData, consumedLogData] = await Promise.all([
+              const [monthData, weekData] = await Promise.all([
                 DietService.getMonthStatistics(),
-                DietService.getWeekStatistics(),
-                inventoryService.getCategoryUsageStats(),
-                inventoryService.getConsumedLogStatistics()
+                DietService.getWeekStatistics()
               ]);
               
-              console.log('[DEBUG] 재시도 성공:', { monthData, weekData, categoryData, consumedLogData });
+              console.log('[DEBUG] 재시도 성공:', { monthData, weekData });
               
               setMonthStats(monthData);
               setWeekStats(weekData);
-              setCategoryStats(categoryData);
-              setConsumedLogStats(consumedLogData);
               setHasLoaded(true);
             } catch (retryError) {
               console.error('재시도 실패:', retryError);
@@ -91,6 +86,45 @@ export default function StatisticsPage() {
 
     loadDietStatistics();
   }, [hasLoaded, retryCount]); // hasLoaded와 retryCount를 의존성으로 추가
+
+  // 선택된 기간에 따른 사용량 데이터 로드
+  useEffect(() => {
+    const loadConsumedData = async () => {
+      try {
+        setIsLoading(true);
+        console.log('[DEBUG] 사용량 데이터 로드 시작, 기간:', selectedPeriod);
+        
+        const data = await ConsumedService.getConsumedLogByPeriod(selectedPeriod);
+        console.log('[DEBUG] 사용량 데이터 로드 성공:', data);
+        
+        setConsumedData(data);
+      } catch (error) {
+        console.error('사용량 데이터 로드 실패:', error);
+        setConsumedData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadConsumedData();
+  }, [selectedPeriod]);
+
+  // 월별 사용량 데이터 로드
+  useEffect(() => {
+    const loadMonthlyData = async () => {
+      try {
+        console.log('[DEBUG] 월별 사용량 데이터 로드 시작');
+        const data = await ConsumedService.getMonthlyConsumedLog();
+        console.log('[DEBUG] 월별 사용량 데이터 로드 성공:', data);
+        setMonthlyData(data);
+      } catch (error) {
+        console.error('월별 사용량 데이터 로드 실패:', error);
+        setMonthlyData([]);
+      }
+    };
+
+    loadMonthlyData();
+  }, []);
 
   const summaryStats = [
     {
@@ -144,31 +178,129 @@ export default function StatisticsPage() {
     }
   ];
 
-  // 자주 사용하는 식재료 데이터 (ConsumedLogResponseDto 기반)
-  const topIngredients = consumedLogStats.slice(0, 6).map((item, index) => {
-    // 카테고리명으로 아이콘 결정
-    const getCategoryIcon = (categoryName: string) => {
-      const lowerName = categoryName.toLowerCase();
-      if (lowerName.includes('채소') || lowerName.includes('야채')) return '🥬';
-      if (lowerName.includes('육류') || lowerName.includes('고기')) return '🥩';
-      if (lowerName.includes('유제품') || lowerName.includes('우유') || lowerName.includes('치즈')) return '🥛';
-      if (lowerName.includes('곡물') || lowerName.includes('쌀') || lowerName.includes('빵')) return '🍞';
-      if (lowerName.includes('해산물') || lowerName.includes('생선') || lowerName.includes('새우')) return '🐟';
-      if (lowerName.includes('과일')) return '🍎';
-      if (lowerName.includes('견과') || lowerName.includes('씨앗')) return '🥜';
-      if (lowerName.includes('조미료') || lowerName.includes('양념')) return '🧂';
-      return '🥘'; // 기본 아이콘
-    };
+  const topIngredients = [
+    { name: '양파', category: '채소류', usage: '45회', totalCost: '67,500원', avgPrice: '1,500원', icon: '🧅' },
+    { name: '닭고기', category: '육류', usage: '32회', totalCost: '128,000원', avgPrice: '4,000원', icon: '🍗' },
+    { name: '우유', category: '유제품', usage: '28회', totalCost: '84,000원', avgPrice: '3,000원', icon: '🥛' },
+    { name: '쌀', category: '곡물류', usage: '25회', totalCost: '75,000원', avgPrice: '3,000원', icon: '🍚' },
+    { name: '토마토', category: '채소류', usage: '22회', totalCost: '66,000원', avgPrice: '3,000원', icon: '🍅' },
+    { name: '계란', category: '유제품', usage: '38회', totalCost: '76,000원', avgPrice: '2,000원', icon: '🥚' }
+  ];
 
-    return {
-      name: item.categoryName || '알 수 없음',
-      category: item.categoryName || '알 수 없음',
-      usage: `${item.totalConsumedQuantity || 0}개`,
-      quantity: item.totalConsumedQuantity || 0,
-      rank: index + 1,
-      icon: getCategoryIcon(item.categoryName || '')
-    };
+  // 카테고리별 비율 계산 (중복 카테고리 합치기)
+  const calculateCategoryRatios = (data: ConsumedLogResponseDto[]) => {
+    // 중복 카테고리 합치기
+    const categoryMap = new Map<string, { totalQuantity: number; categoryName: string }>();
+    
+    data.forEach(item => {
+      const categoryName = item.categoryName || '기타';
+      const quantity = item.totalConsumedQuantity || 0;
+      
+      if (categoryMap.has(categoryName)) {
+        const existing = categoryMap.get(categoryName)!;
+        existing.totalQuantity += quantity;
+      } else {
+        categoryMap.set(categoryName, {
+          totalQuantity: quantity,
+          categoryName: categoryName
+        });
+      }
+    });
+    
+    // Map을 배열로 변환
+    const mergedData = Array.from(categoryMap.values());
+    const totalQuantity = mergedData.reduce((sum, item) => sum + item.totalQuantity, 0);
+    
+    if (totalQuantity === 0) return [];
+    
+    const colors = [
+      { bg: 'bg-blue-500', hex: '#3B82F6' },
+      { bg: 'bg-purple-500', hex: '#8B5CF6' },
+      { bg: 'bg-green-500', hex: '#10B981' },
+      { bg: 'bg-orange-500', hex: '#F97316' },
+      { bg: 'bg-pink-500', hex: '#EC4899' },
+      { bg: 'bg-indigo-500', hex: '#6366F1' },
+      { bg: 'bg-red-500', hex: '#EF4444' },
+      { bg: 'bg-yellow-500', hex: '#EAB308' }
+    ];
+    
+    return mergedData.map((item, index) => ({
+      label: item.categoryName,
+      percentage: Math.round((item.totalQuantity / totalQuantity) * 100),
+      quantity: item.totalQuantity,
+      color: colors[index % 8]
+    })).sort((a, b) => b.quantity - a.quantity);
+  };
+
+  const categoryRatios = calculateCategoryRatios(consumedData);
+  const maxVisibleCategories = 5; // 최대 표시할 카테고리 수
+  const visibleCategories = showAllCategories ? categoryRatios : categoryRatios.slice(0, maxVisibleCategories);
+  const hasMoreCategories = categoryRatios.length > maxVisibleCategories;
+
+  // 월별 카테고리 사용량 데이터 처리
+  const processMonthlyData = (data: MonthlyConsumedLogResponseDto[]) => {
+    const monthlyMap = new Map<string, Map<string, number>>();
+    
+    data.forEach(item => {
+      const monthKey = `${item.month}월`;
+      const categoryName = item.categoryName || '기타';
+      const quantity = item.totalConsumedQuantity || 0;
+      
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, new Map());
+      }
+      
+      const monthData = monthlyMap.get(monthKey)!;
+      if (monthData.has(categoryName)) {
+        monthData.set(categoryName, monthData.get(categoryName)! + quantity);
+      } else {
+        monthData.set(categoryName, quantity);
+      }
+    });
+    
+    return monthlyMap;
+  };
+
+  const monthlyChartData = processMonthlyData(monthlyData);
+  const months = Array.from(monthlyChartData.keys()).sort((a, b) => {
+    const monthA = parseInt(a.replace('월', ''));
+    const monthB = parseInt(b.replace('월', ''));
+    return monthA - monthB;
   });
+  
+  // 모든 카테고리 수집
+  const allCategories = new Set<string>();
+  monthlyChartData.forEach(monthData => {
+    monthData.forEach((_, category) => allCategories.add(category));
+  });
+  const categories = Array.from(allCategories);
+
+  // 선택된 카테고리에 따른 차트 데이터 필터링
+  const getFilteredChartData = () => {
+    if (selectedCategory === '전체') {
+      return monthlyChartData;
+    }
+    
+    const filteredData = new Map<string, Map<string, number>>();
+    monthlyChartData.forEach((monthData, month) => {
+      const categoryData = monthData.get(selectedCategory);
+      if (categoryData !== undefined) {
+        const newMonthData = new Map<string, number>();
+        newMonthData.set(selectedCategory, categoryData);
+        filteredData.set(month, newMonthData);
+      }
+    });
+    
+    return filteredData;
+  };
+
+  const filteredChartData = getFilteredChartData();
+
+  // 모든 월 (1월~12월) 생성
+  const allMonths = Array.from({ length: 12 }, (_, index) => `${index + 1}월`);
+  
+  // 선택된 카테고리가 변경될 때마다 차트 업데이트
+  const filteredMonths = allMonths; // 모든 월을 표시
 
   const insights = [
     {
@@ -203,6 +335,13 @@ export default function StatisticsPage() {
       description: `최근 7일간 평균 ${Math.round(weekStats.reduce((sum, stat) => sum + stat.averageKcal, 0) / weekStats.length)}kcal를 섭취하고 있습니다.`,
       icon: '📊',
       color: 'bg-indigo-50 border-indigo-200'
+    }] : []),
+    // 사용량 관련 인사이트 추가
+    ...(categoryRatios.length > 0 ? [{
+      title: '주요 소비 카테고리',
+      description: `${categoryRatios[0]?.label}이 전체 사용량의 ${categoryRatios[0]?.percentage}%를 차지합니다.`,
+      icon: '📊',
+      color: 'bg-green-50 border-green-200'
     }] : [])
   ];
 
@@ -262,160 +401,268 @@ export default function StatisticsPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Monthly Category Usage */}
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">월별 카테고리 사용량</h3>
-                  <div className="flex gap-2 mb-4 flex-wrap">
-                    <button className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                      전체
-                    </button>
-                    {categoryStats.map((category, index) => (
-                      <button
-                        key={category.categoryId}
-                        className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700"
-                      >
-                        {category.categoryName}
-                      </button>
-                    ))}
-                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    월별 카테고리 사용량
+                    {selectedCategory !== '전체' && (
+                      <span className="text-sm font-normal text-blue-600 ml-2">
+                        ({selectedCategory})
+                      </span>
+                    )}
+                  </h3>
                   {isLoading ? (
                     <div className="h-64 flex items-center justify-center">
                       <div className="text-gray-500">로딩 중...</div>
                     </div>
-                  ) : categoryStats.length > 0 ? (
-                    <div className="h-64 bg-gradient-to-b from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
-                      <div className="h-full flex items-end justify-between gap-2">
-                        {categoryStats.map((category, index) => {
-                          const maxUsage = Math.max(...categoryStats.map(stat => stat.totalUsage));
-                          const height = maxUsage > 0 ? (category.totalUsage / maxUsage) * 200 : 20;
-                          
-                          return (
-                            <div key={category.categoryId} className="flex-1 flex flex-col items-center group">
-                              <div className="w-full bg-gradient-to-t from-blue-500 to-purple-500 rounded-t-sm relative">
-                                <div 
-                                  className="w-full bg-gradient-to-t from-blue-500 to-purple-500 rounded-t-sm transition-all duration-300"
-                                  style={{ height: `${Math.max(height, 20)}px` }}
-                                ></div>
-                                {/* 툴팁 */}
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                  {category.categoryName}: {category.totalUsage}회
-                                </div>
-                              </div>
-                              <span className="text-xs text-gray-600 mt-2 text-center">{category.categoryName}</span>
+                  ) : monthlyData.length > 0 ? (
+                    <>
+                      <div className="mb-4">
+                        {/* 기본 카테고리 필터 */}
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            onClick={() => {
+                              setSelectedCategory('전체');
+                              setShowAllCategoryFilters(false); // 카테고리 선택 시 패널 접기
+                            }}
+                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                              selectedCategory === '전체'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                            }`}
+                          >
+                            전체
+                          </button>
+                          {categories.slice(0, 4).map((category, index) => (
+                            <button
+                              key={category}
+                              onClick={() => {
+                                setSelectedCategory(category);
+                                setShowAllCategoryFilters(false); // 카테고리 선택 시 패널 접기
+                              }}
+                              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                selectedCategory === category
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                              }`}
+                            >
+                              {category}
+                            </button>
+                          ))}
+                          {categories.length > 4 && (
+                            <button 
+                              onClick={() => setShowAllCategoryFilters(!showAllCategoryFilters)}
+                              className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                            >
+                              {showAllCategoryFilters ? (
+                                <>
+                                  <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                  접기
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                  +{categories.length - 4}개 더
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                        
+                        {/* 확장된 카테고리 필터 */}
+                        {showAllCategoryFilters && categories.length > 4 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <div className="flex gap-2 flex-wrap">
+                              {categories.slice(4).map((category, index) => (
+                                <button
+                                  key={category}
+                                  onClick={() => {
+                                    setSelectedCategory(category);
+                                    setShowAllCategoryFilters(false); // 카테고리 선택 시 패널 접기
+                                  }}
+                                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                    selectedCategory === category
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                                  }`}
+                                >
+                                  {category}
+                                </button>
+                              ))}
                             </div>
-                          );
-                        })}
+                          </div>
+                        )}
                       </div>
-                    </div>
+                      <div className="h-64">
+                        <div className="h-full flex items-end justify-between gap-2">
+                          {filteredMonths.map((month, monthIndex) => {
+                            const monthData = filteredChartData.get(month);
+                            const maxValue = Math.max(
+                              ...Array.from(filteredChartData.values()).map(monthData => 
+                                Array.from(monthData.values()).reduce((sum, val) => sum + val, 0)
+                              )
+                            );
+                            
+                            const totalForMonth = monthData ? 
+                              Array.from(monthData.values()).reduce((sum, val) => sum + val, 0) : 0;
+                            const height = maxValue > 0 ? (totalForMonth / maxValue) * 100 : 0;
+                            
+                            // 사용량이 없는 월도 최소 높이로 표시
+                            const displayHeight = totalForMonth > 0 ? Math.max(height, 10) : 5;
+                            
+                            return (
+                              <div key={month} className="flex-1 flex flex-col items-center group">
+                                <div className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-sm relative mb-2">
+                                  <div 
+                                    className={`w-full rounded-t-sm transition-all duration-300 ${
+                                      totalForMonth > 0 
+                                        ? 'bg-gradient-to-t from-blue-500 to-blue-400' 
+                                        : 'bg-gradient-to-t from-gray-300 to-gray-200'
+                                    }`}
+                                    style={{ height: `${displayHeight}px` }}
+                                  ></div>
+                                  {/* 툴팁 */}
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    {totalForMonth > 0 ? `${totalForMonth.toLocaleString()}g` : '사용량 없음'}
+                                  </div>
+                                </div>
+                                <span className="text-xs text-gray-600 font-medium">{month}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {filteredMonths.length === 0 && (
+                          <div className="h-full flex items-center justify-center">
+                            <div className="text-gray-500">월별 데이터를 불러올 수 없습니다</div>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   ) : (
                     <div className="h-64 flex items-center justify-center">
-                      <div className="text-gray-500">카테고리 사용량 데이터가 없습니다</div>
+                      <div className="text-gray-500">데이터가 없습니다</div>
                     </div>
                   )}
                 </div>
 
                 {/* Category Ratio */}
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">카테고리별 사용량 비율</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">카테고리별 비율</h3>
                   {isLoading ? (
-                    <div className="h-48 flex items-center justify-center">
+                    <div className="h-80 flex items-center justify-center">
                       <div className="text-gray-500">로딩 중...</div>
                     </div>
-                  ) : categoryStats.length > 0 ? (
-                    <>
-                      <div className="flex items-center justify-center mb-4">
-                        <div className="w-40 h-40 relative">
-                          {/* 도넛 차트 시각화 */}
-                          <svg className="w-40 h-40" viewBox="0 0 100 100">
-                            {(() => {
-                              let cumulativePercentage = 0;
-                              const radius = 35;
-                              const strokeWidth = 8;
-                              const centerX = 50;
-                              const centerY = 50;
+                  ) : categoryRatios.length > 0 ? (
+                    <div className="h-80 flex items-center gap-8">
+                      {/* 도넛 차트 - 왼쪽 */}
+                      <div className="flex-shrink-0">
+                        <div className="relative w-56 h-56">
+                          <svg className="w-56 h-56 transform -rotate-90" viewBox="0 0 100 100">
+                            {categoryRatios.map((item, index) => {
+                              const startAngle = categoryRatios.slice(0, index).reduce((sum, prev) => sum + (prev.percentage * 3.6), 0);
+                              const endAngle = startAngle + (item.percentage * 3.6);
+                              const largeArcFlag = item.percentage > 50 ? 1 : 0;
                               
-                              return categoryStats.map((item, index) => {
-                                const percentage = item.percentage;
-                                const startAngle = (cumulativePercentage / 100) * 360 - 90; // -90도부터 시작
-                                const endAngle = ((cumulativePercentage + percentage) / 100) * 360 - 90;
-                                
-                                const startAngleRad = (startAngle * Math.PI) / 180;
-                                const endAngleRad = (endAngle * Math.PI) / 180;
-                                
-                                const x1 = centerX + radius * Math.cos(startAngleRad);
-                                const y1 = centerY + radius * Math.sin(startAngleRad);
-                                const x2 = centerX + radius * Math.cos(endAngleRad);
-                                const y2 = centerY + radius * Math.sin(endAngleRad);
-                                
-                                const largeArcFlag = percentage > 50 ? 1 : 0;
-                                
-                                const pathData = [
-                                  `M ${centerX} ${centerY}`,
-                                  `L ${x1} ${y1}`,
-                                  `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-                                  'Z'
-                                ].join(' ');
-                                
-                                cumulativePercentage += percentage;
-                                
-                                // 색상 매핑
-                                const colorMap: { [key: string]: string } = {
-                                  'bg-blue-500': '#3B82F6',
-                                  'bg-purple-500': '#8B5CF6',
-                                  'bg-blue-400': '#60A5FA',
-                                  'bg-purple-400': '#A78BFA',
-                                  'bg-blue-300': '#93C5FD',
-                                  'bg-green-500': '#10B981',
-                                  'bg-orange-500': '#F59E0B',
-                                  'bg-red-500': '#EF4444'
-                                };
-                                
-                                const fillColor = colorMap[item.color] || '#6B7280';
-                                
-                                return (
-                                  <path
-                                    key={index}
-                                    d={pathData}
-                                    fill={fillColor}
-                                    className="opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
-                                  />
-                                );
-                              });
-                            })()}
-                            
-                            {/* 중앙 원 (도넛 효과) */}
-                            <circle
-                              cx="50"
-                              cy="50"
-                              r="25"
-                              fill="white"
-                              stroke="#E5E7EB"
-                              strokeWidth="1"
-                            />
+                              const x1 = 50 + 40 * Math.cos((startAngle * Math.PI) / 180);
+                              const y1 = 50 + 40 * Math.sin((startAngle * Math.PI) / 180);
+                              const x2 = 50 + 40 * Math.cos((endAngle * Math.PI) / 180);
+                              const y2 = 50 + 40 * Math.sin((endAngle * Math.PI) / 180);
+                              
+                              const pathData = [
+                                `M 50 50`,
+                                `L ${x1} ${y1}`,
+                                `A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                                'Z'
+                              ].join(' ');
+                              
+                              return (
+                                <path
+                                  key={index}
+                                  d={pathData}
+                                  fill={`url(#gradient-${index})`}
+                                  stroke="white"
+                                  strokeWidth="2"
+                                />
+                              );
+                            })}
+                            <defs>
+                              {categoryRatios.map((item, index) => (
+                                <linearGradient key={index} id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor={item.color.hex} />
+                                  <stop offset="100%" stopColor={item.color.hex} />
+                                </linearGradient>
+                              ))}
+                            </defs>
+                            <circle cx="50" cy="50" r="20" fill="white" />
                           </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-gray-900">
-                                {Math.round(categoryStats.reduce((sum, stat) => sum + stat.percentage, 0))}%
-                              </div>
-                              <div className="text-xs text-gray-500">총 사용량</div>
-                            </div>
-                          </div>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        {categoryStats.map((item, index) => (
-                          <div key={index} className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                            <span className="text-sm text-gray-600">{item.categoryName}</span>
-                            <span className="text-sm font-medium text-gray-900 ml-auto">
-                              {item.percentage.toFixed(1)}%
-                            </span>
+                      
+                      {/* 카테고리 비율 목록 - 오른쪽 */}
+                      <div className="flex-1 min-w-0 h-full flex flex-col">
+                        <div className="flex-1 overflow-y-auto">
+                          <div className="space-y-3">
+                            {visibleCategories.map((item, index) => (
+                              <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div 
+                                  className="w-4 h-4 rounded-full flex-shrink-0" 
+                                  style={{ backgroundColor: item.color.hex }}
+                                ></div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-gray-900 truncate">{item.label}</span>
+                                    <span className="text-sm font-bold text-gray-900 ml-2">{item.percentage}%</span>
+                                  </div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="text-xs text-gray-500">수량: {item.quantity.toLocaleString()}g</span>
+                                  <div className="w-16 bg-gray-200 rounded-full h-1.5 ml-2">
+                                    <div 
+                                      className="h-1.5 rounded-full transition-all duration-300"
+                                      style={{ 
+                                        width: `${item.percentage}%`,
+                                        backgroundColor: item.color.hex
+                                      }}
+                                    ></div>
+                                  </div>
+                                </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        </div>
+                        
+                        {/* 더보기/접기 버튼 */}
+                        {hasMoreCategories && (
+                          <div className="mt-4 pt-3 border-t border-gray-200">
+                            <button
+                              onClick={() => setShowAllCategories(!showAllCategories)}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              {showAllCategories ? (
+                                <>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                  접기
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                  더보기 ({categoryRatios.length - maxVisibleCategories}개 더)
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </>
+                    </div>
                   ) : (
-                    <div className="h-48 flex items-center justify-center">
-                      <div className="text-gray-500">카테고리 사용량 데이터가 없습니다</div>
+                    <div className="h-80 flex items-center justify-center">
+                      <div className="text-gray-500">데이터가 없습니다</div>
                     </div>
                   )}
                 </div>
@@ -542,49 +789,42 @@ export default function StatisticsPage() {
               </div>
             </SectionCard>
 
-            {/* Top Categories Card */}
-            <SectionCard title="카테고리별 소비량" variant="statistics">
+            {/* Top Ingredients Card */}
+            <SectionCard title="자주 사용하는 식재료" variant="statistics">
               <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">TOP {Math.min(6, consumedLogStats.length)}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">TOP 6</h3>
                   <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
                     전체 보기
                   </button>
                 </div>
-                {isLoading ? (
-                  <div className="h-48 flex items-center justify-center">
-                    <div className="text-gray-500">로딩 중...</div>
-                  </div>
-                ) : topIngredients.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {topIngredients.map((ingredient, index) => (
-                      <div key={index} className="border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white hover:border-blue-300">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="text-2xl">{ingredient.icon}</span>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium text-gray-900">{ingredient.name}</h4>
-                              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                                #{ingredient.rank}
-                              </span>
-                            </div>
-                            <span className="text-sm text-gray-500">카테고리</span>
-                          </div>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">총 소비량:</span>
-                            <span className="font-medium text-blue-600">{ingredient.usage}</span>
-                          </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {topIngredients.map((ingredient, index) => (
+                    <div key={index} className="border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white hover:border-blue-300">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-2xl">{ingredient.icon}</span>
+                        <div>
+                          <h4 className="font-medium text-gray-900">{ingredient.name}</h4>
+                          <span className="text-sm text-gray-500">{ingredient.category}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="h-48 flex items-center justify-center">
-                    <div className="text-gray-500">소비량 데이터가 없습니다</div>
-                  </div>
-                )}
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">사용 횟수:</span>
+                          <span className="font-medium">{ingredient.usage}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">총 비용:</span>
+                          <span className="font-medium">{ingredient.totalCost}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">평균 가격:</span>
+                          <span className="font-medium">{ingredient.avgPrice}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </SectionCard>
           </div>
