@@ -45,6 +45,30 @@ export interface MonthStatisticsResponseDto {
   diffRate: number | null; // 지난달 대비 변화율
 }
 
+// 3개월 통계를 위한 인터페이스
+export interface QuarterStatisticsResponseDto {
+  averageKcal: number;
+  totalKcal: number;
+  diffFromPreviousQuarter: number | null; // 이전 분기 대비 차이
+  diffRate: number | null; // 이전 분기 대비 변화율
+  monthlyBreakdown: {
+    month: number;
+    averageKcal: number;
+  }[];
+}
+
+// 연간 통계를 위한 인터페이스
+export interface YearStatisticsResponseDto {
+  averageKcal: number;
+  totalKcal: number;
+  diffFromLastYear: number | null; // 작년 대비 차이
+  diffRate: number | null; // 작년 대비 변화율
+  monthlyBreakdown: {
+    month: number;
+    averageKcal: number;
+  }[];
+}
+
 export class DietService {
   /**
    * API 클라이언트가 준비되었는지 확인합니다.
@@ -363,6 +387,152 @@ export class DietService {
     } catch (error) {
       console.error('주간 통계 조회 실패:', error);
       return [];
+    }
+  }
+
+  /**
+   * 3개월 칼로리 통계를 계산합니다.
+   * 현재 월간 API를 여러 번 호출하여 3개월 데이터를 계산합니다.
+   * @returns 3개월 통계 데이터
+   */
+  static async getQuarterStatistics(): Promise<QuarterStatisticsResponseDto | null> {
+    try {
+      console.log('[DEBUG] getQuarterStatistics 요청 시작');
+      
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1; // 1-12
+      const currentYear = currentDate.getFullYear();
+      
+      // 최근 3개월 데이터 수집
+      const monthlyData: { month: number; averageKcal: number }[] = [];
+      let totalKcal = 0;
+      let validMonths = 0;
+      
+      for (let i = 0; i < 3; i++) {
+        const targetDate = new Date(currentYear, currentMonth - 1 - i, 1);
+        const year = targetDate.getFullYear();
+        const month = targetDate.getMonth() + 1;
+        
+        try {
+          // 해당 월의 식단 데이터 가져오기
+          const monthlyDiet = await this.getMonthlyDiet(year, month);
+          
+          // 해당 월의 평균 칼로리 계산
+          let monthTotalKcal = 0;
+          let dayCount = 0;
+          
+          Object.values(monthlyDiet).forEach(dayData => {
+            Object.values(dayData).forEach(meals => {
+              meals.forEach(meal => {
+                monthTotalKcal += meal.calories;
+                dayCount++;
+              });
+            });
+          });
+          
+          const averageKcal = dayCount > 0 ? monthTotalKcal / dayCount : 0;
+          
+          monthlyData.unshift({ month, averageKcal }); // 최신 순으로 정렬
+          totalKcal += monthTotalKcal;
+          if (dayCount > 0) validMonths++;
+          
+        } catch (error) {
+          console.warn(`월간 데이터 조회 실패 (${year}-${month}):`, error);
+          monthlyData.unshift({ month, averageKcal: 0 });
+        }
+      }
+      
+      const averageKcal = validMonths > 0 ? totalKcal / validMonths : 0;
+      
+      // 이전 분기 대비 변화율 계산 (현재는 임시로 0)
+      const diffFromPreviousQuarter = null;
+      const diffRate = null;
+      
+      const result: QuarterStatisticsResponseDto = {
+        averageKcal,
+        totalKcal,
+        diffFromPreviousQuarter,
+        diffRate,
+        monthlyBreakdown: monthlyData
+      };
+      
+      console.log('[DEBUG] getQuarterStatistics 성공:', result);
+      return result;
+      
+    } catch (error) {
+      console.error('3개월 통계 계산 실패:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 연간 칼로리 통계를 계산합니다.
+   * 현재 월간 API를 여러 번 호출하여 연간 데이터를 계산합니다.
+   * @returns 연간 통계 데이터
+   */
+  static async getYearStatistics(): Promise<YearStatisticsResponseDto | null> {
+    try {
+      console.log('[DEBUG] getYearStatistics 요청 시작');
+      
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1; // 1-12
+      const currentYear = currentDate.getFullYear();
+      
+      // 올해 1월부터 현재 월까지 데이터 수집
+      const monthlyData: { month: number; averageKcal: number }[] = [];
+      let totalKcal = 0;
+      let validMonths = 0;
+      
+      for (let month = 1; month <= currentMonth; month++) {
+        try {
+          // 해당 월의 식단 데이터 가져오기
+          const monthlyDiet = await this.getMonthlyDiet(currentYear, month);
+          
+          // 해당 월의 평균 칼로리 계산
+          let monthTotalKcal = 0;
+          let dayCount = 0;
+          
+          Object.values(monthlyDiet).forEach(dayData => {
+            Object.values(dayData).forEach(meals => {
+              meals.forEach(meal => {
+                monthTotalKcal += meal.calories;
+                dayCount++;
+              });
+            });
+          });
+          
+          const averageKcal = dayCount > 0 ? monthTotalKcal / dayCount : 0;
+          
+          monthlyData.push({ month, averageKcal });
+          totalKcal += monthTotalKcal;
+          if (dayCount > 0) validMonths++;
+          
+        } catch (error) {
+          console.warn(`월간 데이터 조회 실패 (${currentYear}-${month}):`, error);
+          monthlyData.push({ month, averageKcal: 0 });
+        }
+      }
+      
+      const averageKcal = validMonths > 0 ? totalKcal / validMonths : 0;
+      
+      // 작년 대비 변화율 계산 (현재는 임시로 0)
+      const diffFromLastYear = null;
+      const diffRate = null;
+      
+      const result: YearStatisticsResponseDto = {
+        averageKcal,
+        totalKcal,
+        diffFromLastYear,
+        diffRate,
+        monthlyBreakdown: monthlyData
+      };
+      
+      console.log('[DEBUG] getYearStatistics 성공:', result);
+      return result;
+      
+    } catch (error) {
+      console.error('연간 통계 계산 실패:', error);
+      return null;
     }
   }
 }
