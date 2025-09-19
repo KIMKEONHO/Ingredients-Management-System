@@ -36,6 +36,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/monthly").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/thisyear").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/last3months").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/all").hasAnyRole("USER","ADMIN")
 
 
 

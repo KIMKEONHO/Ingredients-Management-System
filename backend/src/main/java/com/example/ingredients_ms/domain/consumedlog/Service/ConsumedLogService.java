@@ -14,6 +14,7 @@ import java.time.YearMonth;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -183,6 +184,18 @@ public class ConsumedLogService {
 
             result.add(dto);
         }
+
+        return result;
+    }
+
+    public List<ConsumedLogResponseDto> getAllLogs(Long userId) {
+
+
+
+        List<ConsumedLogResponseDto> result = consumedLogRepository.findAll().stream()
+                .map(ConsumedLogResponseDto::fromEntity) // 생성자를 통해 DTO로 변환
+                .collect(Collectors.toList());
+
 
         return result;
     }

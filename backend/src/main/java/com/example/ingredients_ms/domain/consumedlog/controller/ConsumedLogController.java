@@ -79,6 +79,14 @@ public class ConsumedLogController {
         return new RsData<>("200","월별 식품 재고 사용량을 성공적으로 조회하였습니다.",responseDtos);
     }
 
+    @Operation(summary = "전체 식품 재고 사용량 조회", description = "식품 재고 사용량을 모두 조회합니다.")
+    @GetMapping("/all")
+    public RsData<List<ConsumedLogResponseDto>> getALlLogs(){
+        Long userId = tokenService.getIdFromToken();
+        List<ConsumedLogResponseDto> responseDtos = consumedLogService.getAllLogs(userId);
+        return new RsData<>("200","모든 식품 재고 사용량을 성공적으로 조회하였습니다.",responseDtos);
+    }
+
 
 
 
