@@ -41,18 +41,39 @@ class ApiClient {
         return response;
       },
       (error) => {
-        // 401 Unauthorized 에러 처리
-        if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'status' in error.response && error.response.status === 401) {
-          this.handleUnauthorized();
+        console.error('API 응답 오류:', error);
+        
+        // 세션 관련 오류 처리
+        if (error && typeof error === 'object' && 'response' in error && error.response) {
+          const response = error.response as { status?: number; data?: unknown };
+          
+          // 401 Unauthorized 에러 처리
+          if (response.status === 401) {
+            console.warn('인증 실패 (401 Unauthorized)');
+            this.handleUnauthorized();
+          }
+          // 403 Forbidden 에러 처리
+          else if (response.status === 403) {
+            this.handleForbidden();
+          }
+          // 500 Internal Server Error 처리
+          else if (response.status === 500) {
+            this.handleInternalServerError();
+          }
         }
-        // 403 Forbidden 에러 처리
-        if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'status' in error.response && error.response.status === 403) {
-          this.handleForbidden();
+        
+        // 세션 무효화 오류 처리
+        if (error && typeof error === 'object' && 'message' in error) {
+          const message = error.message as string;
+          if (message.includes('Session was invalidated') || 
+              message.includes('세션') || 
+              message.includes('인증') || 
+              message.includes('만료')) {
+            console.warn('세션 무효화 감지, 로그인 페이지로 리다이렉트');
+            this.handleSessionInvalidated();
+          }
         }
-        // 500 Internal Server Error 처리
-        if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'status' in error.response && error.response.status === 500) {
-          this.handleInternalServerError();
-        }
+        
         return Promise.reject(error);
       }
     );
@@ -91,6 +112,11 @@ class ApiClient {
   // 401 에러 처리 (인증 실패)
   private handleUnauthorized(): void {
     if (typeof window !== 'undefined') {
+      // 로컬 스토리지 정리
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userData');
+      sessionStorage.clear();
+      
       // 로그인 페이지로 리다이렉트
       window.location.href = '/login';
     }
@@ -106,6 +132,19 @@ class ApiClient {
   private handleInternalServerError(): void {
     // 500 에러는 자동으로 리다이렉트하지 않고, 컴포넌트에서 처리하도록 함
     console.error('서버 내부 오류가 발생했습니다. (500 Internal Server Error)');
+  }
+
+  // 세션 무효화 처리
+  private handleSessionInvalidated(): void {
+    if (typeof window !== 'undefined') {
+      // 로컬 스토리지 정리
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userData');
+      sessionStorage.clear();
+      
+      // 로그인 페이지로 리다이렉트
+      window.location.href = '/login';
+    }
   }
 }
 

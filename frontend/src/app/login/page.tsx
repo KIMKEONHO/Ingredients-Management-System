@@ -393,14 +393,6 @@ export default function LoginPage() {
               </button>
             </div>
             
-            <div className="text-center">
-              <Link 
-                href="/admin/login" 
-                className={`text-sm ${COLOR_PRESETS.LOGIN_PAGE.accent} hover:underline`}
-              >
-                관리자 로그인
-              </Link>
-            </div>
 
             <div className="relative py-1">
               <div className="absolute inset-0 flex items-center" aria-hidden="true">

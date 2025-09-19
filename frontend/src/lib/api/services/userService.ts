@@ -60,6 +60,31 @@ export interface DeleteUserResponse {
   message?: string;
 }
 
+// 일괄 상태 변경 관련 타입 정의
+export interface BulkChangeUserStatusRequest {
+  userIds: number[];
+  status: 'active' | 'inactive' | 'pending' | 'withdrawn';
+}
+
+export interface BulkChangeUserStatusResponse {
+  success: boolean;
+  message?: string;
+}
+
+// 관리자용 유저 데이터 변경 관련 타입 정의
+export interface ChangeUserDataRequest {
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userPhone: string;
+  userStatus: 'active' | 'inactive' | 'pending' | 'withdrawn';
+}
+
+export interface ChangeUserDataResponse {
+  success: boolean;
+  message?: string;
+}
+
 export const userService = {
   // UserProfile 타입 가드
   isUserProfile(obj: unknown): obj is UserProfile {
@@ -171,27 +196,41 @@ export const userService = {
     }
   },
 
-  // 전화번호 변경 (백엔드 API 구현 전까지 임시 비활성화)
+  // 전화번호 변경
   async updatePhone(phoneNum: string): Promise<UserProfileResponse> {
-    // 백엔드에 전화번호 변경 API가 구현될 때까지 임시로 성공 응답 반환
-    console.log('전화번호 변경 API가 아직 구현되지 않음:', phoneNum);
-    return { 
-      success: true, 
-      message: '전화번호 변경 기능은 준비 중입니다.' 
-    };
-    
-    // 백엔드 API 구현 후 아래 코드 사용
-    /*
     try {
-      const response = await apiClient.post('/api/v1/users/exchange/phone', {
+      const response = await apiClient.post<Record<string, unknown>>('/api/v1/users/exchange/phone', {
         phoneNum: phoneNum
       });
-      return response.data;
-    } catch (error) {
+      
+      console.log('전화번호 변경 응답:', response);
+      
+      // 백엔드 응답 구조 확인 및 안전한 처리
+      if (response && typeof response === 'object' && 'data' in response) {
+        const responseData = response.data as Record<string, unknown>;
+        // 백엔드에서 RsData 형태로 응답하는 경우
+        if ('resultCode' in responseData || 'success' in responseData) {
+          return {
+            success: true,
+            message: (responseData.msg as string) || '전화번호가 성공적으로 변경되었습니다.'
+          };
+        }
+        // 기타 응답 구조는 기본 성공 응답으로 처리
+        return {
+          success: true,
+          message: '전화번호가 성공적으로 변경되었습니다.'
+        };
+      }
+      
+      // 응답이 없는 경우 기본 성공 응답
+      return {
+        success: true,
+        message: '전화번호가 성공적으로 변경되었습니다.'
+      };
+    } catch (error: unknown) {
       console.error('전화번호 변경 실패:', error);
       throw new Error('전화번호 변경에 실패했습니다.');
     }
-    */
   },
 
   // 사용자 프로필 업데이트 (기존 호환성 유지)
@@ -517,6 +556,125 @@ export const userService = {
       
       // 네트워크 오류나 기타 오류의 경우
       throw new Error('유저 삭제에 실패했습니다.');
+    }
+  },
+
+  // 관리자용 유저 데이터 변경
+  async changeUserData(request: ChangeUserDataRequest): Promise<ChangeUserDataResponse> {
+    try {
+      const response = await apiClient.patch<{
+        resultCode: string;
+        msg: string;
+        data: unknown;
+      }>('/api/v1/users/change/userdata', {
+        userId: request.userId,
+        userName: request.userName,
+        userEmail: request.userEmail,
+        userPhone: request.userPhone,
+        userStatus: request.userStatus
+      });
+      
+      console.log('유저 데이터 변경 응답:', response);
+      
+      // 백엔드 RsData 응답 구조 확인 및 처리
+      if (response && typeof response === 'object') {
+        // RsData 형태: { resultCode: "201", msg: "유저를 업데이트하였습니다", data: null }
+        if ('resultCode' in response && typeof response.resultCode === 'string') {
+          const resultCode = response.resultCode;
+          const message = response.msg || '유저 데이터가 성공적으로 변경되었습니다.';
+          
+          // 200번대는 성공
+          if (resultCode.startsWith('2')) {
+            return {
+              success: true,
+              message: message
+            };
+          } else {
+            return {
+              success: false,
+              message: message
+            };
+          }
+        }
+      }
+      
+      // 응답이 없는 경우
+      return {
+        success: false,
+        message: '유저 데이터 변경에 실패했습니다.'
+      };
+    } catch (error: unknown) {
+      console.error('유저 데이터 변경 실패:', error);
+      
+      // HTTP 상태 코드에 따른 오류 처리
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as { response?: { status?: number } };
+        const status = errorResponse.response?.status;
+        if (status === 401) {
+          throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+        } else if (status === 403) {
+          throw new Error('관리자 권한이 필요합니다.');
+        } else if (status === 404) {
+          throw new Error('유저를 찾을 수 없습니다.');
+        } else if (status === 500) {
+          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      }
+      
+      throw new Error('유저 데이터 변경에 실패했습니다.');
+    }
+  },
+
+  // 일괄 유저 상태 변경 (기존 API를 여러 번 호출)
+  async bulkChangeUserStatus(request: BulkChangeUserStatusRequest): Promise<BulkChangeUserStatusResponse> {
+    try {
+      const results = [];
+      const errors = [];
+      
+      // 각 유저에 대해 개별적으로 상태 변경 API 호출
+      for (const userId of request.userIds) {
+        try {
+          const response = await this.changeUserStatus({
+            userId: userId,
+            status: request.status
+          });
+          
+          if (response.success) {
+            results.push({ userId, success: true });
+          } else {
+            errors.push({ userId, error: response.message || '상태 변경 실패' });
+          }
+        } catch (error) {
+          errors.push({ 
+            userId, 
+            error: error instanceof Error ? error.message : '알 수 없는 오류' 
+          });
+        }
+      }
+      
+      // 결과 요약
+      const successCount = results.length;
+      const errorCount = errors.length;
+      
+      if (errorCount === 0) {
+        return {
+          success: true,
+          message: `${successCount}명의 유저 상태가 성공적으로 변경되었습니다.`
+        };
+      } else if (successCount > 0) {
+        return {
+          success: true,
+          message: `${successCount}명 성공, ${errorCount}명 실패. 실패한 유저: ${errors.map(e => e.userId).join(', ')}`
+        };
+      } else {
+        return {
+          success: false,
+          message: `모든 유저 상태 변경에 실패했습니다. 오류: ${errors.map(e => e.error).join(', ')}`
+        };
+      }
+    } catch (error: unknown) {
+      console.error('일괄 유저 상태 변경 실패:', error);
+      throw new Error('일괄 유저 상태 변경에 실패했습니다.');
     }
   },
 

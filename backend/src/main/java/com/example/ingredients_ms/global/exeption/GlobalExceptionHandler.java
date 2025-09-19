@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.data.redis.RedisSystemException;
 
 import java.util.Objects;
 
@@ -40,6 +42,64 @@ public class GlobalExceptionHandler {
                 .body(new RsData<>(
                         String.valueOf(HttpStatus.BAD_REQUEST.value()),
                         errorMessage
+                ));
+    }
+
+    /**
+     * 세션 무효화 관련 예외 처리
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<RsData<?>> handleSessionInvalidatedException(IllegalStateException ex) {
+        if (ex.getMessage() != null && ex.getMessage().contains("Session was invalidated")) {
+            // JWT 기반 인증에서는 세션이 없어야 하므로 이 오류가 발생하면 안됨
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new RsData<>(
+                            String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                            "인증 시스템 오류가 발생했습니다. 관리자에게 문의하세요."
+                    ));
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new RsData<>(
+                        String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                        "서버 내부 오류가 발생했습니다."
+                ));
+    }
+
+    /**
+     * Redis 시스템 예외 처리
+     */
+    @ExceptionHandler(RedisSystemException.class)
+    public ResponseEntity<RsData<?>> handleRedisSystemException(RedisSystemException ex) {
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new RsData<>(
+                        String.valueOf(HttpStatus.SERVICE_UNAVAILABLE.value()),
+                        "Redis 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+                ));
+    }
+
+    /**
+     * HTTP 메시지 직렬화 예외 처리
+     */
+    @ExceptionHandler(HttpMessageNotWritableException.class)
+    public ResponseEntity<RsData<?>> handleHttpMessageNotWritableException(HttpMessageNotWritableException ex) {
+        if (ex.getMessage() != null && ex.getMessage().contains("Session was invalidated")) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new RsData<>(
+                            String.valueOf(HttpStatus.UNAUTHORIZED.value()),
+                            "세션이 만료되었습니다. 다시 로그인해주세요."
+                    ));
+        }
+        
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new RsData<>(
+                        String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                        "응답 생성 중 오류가 발생했습니다."
                 ));
     }
 
