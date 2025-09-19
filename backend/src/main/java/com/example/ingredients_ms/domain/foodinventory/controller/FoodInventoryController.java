@@ -95,16 +95,7 @@ public class FoodInventoryController {
         return new RsData<>("200", "식품 재고 수량이 성공적으로 수정되었습니다.", responseDto);
     }
 
-    // 식품 재고 수량만 수정하는 엔드포인트 추가
-    @Operation(summary = "식품 재고 사용량 조회", description = "해당 식품 재고의 사용량을 조회합니다.")
-    @PatchMapping("/{foodInventoryId}/quant")
-    public RsData<FoodInventoryResponseDto> getConsumedQuantity(@PathVariable Long foodInventoryId, @RequestBody UpdateFoodInventoryQuantityRequestDto requestDto) {
 
-        Long userId = tokenService.getIdFromToken();
-
-        FoodInventoryResponseDto responseDto = foodInventoryService.updateFoodInventoryQuantity(userId, foodInventoryId, requestDto);
-        return new RsData<>("200", "식품 재고 수량이 성공적으로 수정되었습니다.", responseDto);
-    }
 
     @Operation(summary = "식품 재고 상태 수정", description = "기존 식품 재고의 상태만 수정합니다.")
     @PatchMapping("/{foodInventoryId}/status")

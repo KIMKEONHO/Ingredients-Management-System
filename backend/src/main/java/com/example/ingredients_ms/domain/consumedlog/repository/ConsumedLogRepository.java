@@ -24,4 +24,18 @@ public interface ConsumedLogRepository extends JpaRepository <ConsumedLog, Long>
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
+    // 이번년도 월별 카테고리별 사용량 조회 (단위: g)
+    @Query("SELECT MONTH(cl.consumedDate) as month, " +
+           "cl.inventory.ingredient.category.id as categoryId, " +
+           "cl.inventory.ingredient.category.name as categoryName, " +
+           "SUM(cl.consumedQuantity) as totalConsumedQuantity " +
+           "FROM ConsumedLog cl " +
+           "WHERE cl.user.id = :userId " +
+           "AND YEAR(cl.consumedDate) = :year " +
+           "GROUP BY MONTH(cl.consumedDate), cl.inventory.ingredient.category.id, cl.inventory.ingredient.category.name " +
+           "ORDER BY MONTH(cl.consumedDate), cl.inventory.ingredient.category.id")
+    List<Object[]> findMonthlyConsumedQuantityByCategory(
+            @Param("userId") Long userId,
+            @Param("year") int year);
+
 }

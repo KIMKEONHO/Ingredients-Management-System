@@ -1,5 +1,6 @@
 package com.example.ingredients_ms.domain.foodinventory.entity;
 
+import com.example.ingredients_ms.domain.consumedlog.entity.ConsumedLog;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.global.entity.BaseEntity;

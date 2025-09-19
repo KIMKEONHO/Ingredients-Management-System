@@ -31,7 +31,12 @@ public class ApiSecurityConfig {
                 .securityMatcher("/api/**")
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
 
-                        .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/thismonth").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/thisweek").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/monthly").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/thisyear").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/last3months").hasAnyRole("USER","ADMIN")
+
 
 
                         // 재고 관리 api
