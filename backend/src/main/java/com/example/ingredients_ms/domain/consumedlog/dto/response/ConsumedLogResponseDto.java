@@ -14,6 +14,7 @@ public class ConsumedLogResponseDto {
     
     private Long categoryId;
     private String categoryName;
+    private String ingredientName;
     private Integer totalConsumedQuantity; // 사용량 (단위: g)
 
 
@@ -21,6 +22,7 @@ public class ConsumedLogResponseDto {
         return ConsumedLogResponseDto.builder()
                 .categoryId(log.getId())
                 .categoryName(log.getInventory().getIngredient().getCategory().getName())
+                .ingredientName(log.getInventory().getIngredient().getName())
                 .totalConsumedQuantity(log.getConsumedQuantity())
                 .build();
 

@@ -161,9 +161,15 @@ export const createComplaint = async (requestData: CreateComplaintRequestDto): P
 // 내 민원 조회
 export const getMyComplaints = async (): Promise<ComplaintDetailResponseDto[]> => {
   try {
-    const response = await apiClient.get<ComplaintDetailResponseDto[]>('/api/v1/complaints/users');
+    const response = await apiClient.get<RsDataListComplaintDetailResponseDto>('/api/v1/complaints/users');
     console.log('getMyComplaints 응답:', response);
-    return response || [];
+    
+    // RsData 형태의 응답에서 data 배열 추출
+    if (response && response.data && Array.isArray(response.data)) {
+      return response.data;
+    }
+    
+    return [];
   } catch (error) {
     console.error('내 민원 목록을 가져오는 중 오류가 발생했습니다:', error);
     throw new Error('내 민원 목록을 가져올 수 없습니다.');

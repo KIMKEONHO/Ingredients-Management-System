@@ -80,13 +80,21 @@ export default function SignupPage() {
     }
 
     // 닉네임 검사
-    if (formData.nickName && formData.nickName.trim().length < 2) {
-      errors.nickName = "닉네임은 2자 이상이어야 합니다.";
+    if (formData.nickName) {
+      if (formData.nickName.includes(' ')) {
+        errors.nickName = "닉네임에는 띄어쓰기를 사용할 수 없습니다.";
+      } else if (formData.nickName.trim().length < 2) {
+        errors.nickName = "닉네임은 2자 이상이어야 합니다.";
+      }
     }
 
     // 이름 검사
-    if (formData.name && formData.name.trim().length < 2) {
-      errors.name = "이름은 2자 이상이어야 합니다.";
+    if (formData.name) {
+      if (formData.name.includes(' ')) {
+        errors.name = "이름에는 띄어쓰기를 사용할 수 없습니다.";
+      } else if (formData.name.trim().length < 2) {
+        errors.name = "이름은 2자 이상이어야 합니다.";
+      }
     }
 
     // 전화번호 검사

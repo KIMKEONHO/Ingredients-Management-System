@@ -8,7 +8,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -89,6 +88,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/api/*/users/profile").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST,"/api/*/users/change/status").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE,"/api/*/users/drop/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,"/api/*/users/change/userdata").hasRole("ADMIN")
 
                         // 유저 통계 및 관리 api
                         .requestMatchers(HttpMethod.GET, "/api/*/users/statistics/").hasRole("ADMIN")
@@ -103,8 +103,14 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/*/diet/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/*/diet/*").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/diet/*/*").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/diet/week/statistics").hasAnyRole("USER","ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/*/diet/month/statistics").hasAnyRole("USER","ADMIN")
+
+                        // 식단 통계 api
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/week").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/month").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/quarter").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/year").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/week/graph").hasAnyRole("USER","ADMIN")
+
 
                         // 민원 관리 api
                         .requestMatchers(HttpMethod.POST, "/api/*/complaints/").hasAnyRole("USER","ADMIN")
@@ -130,7 +136,7 @@ public class ApiSecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .cors(cors -> cors.configurationSource(configurationSource()))
                 .formLogin(formLogin -> formLogin.disable())
-                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sessionManagement -> sessionManagement.disable())
                 .addFilterBefore(
                         jwtAuthorizationFilter,
                         UsernamePasswordAuthenticationFilter.class

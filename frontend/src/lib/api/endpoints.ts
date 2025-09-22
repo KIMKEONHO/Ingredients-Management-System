@@ -44,8 +44,17 @@ export const API_ENDPOINTS = {
       CALENDAR: '/api/v1/diet/calendar',
       MONTHLY: '/api/v1/diet/:year/:month', // 월별 식단 조회
       ITEM: '/api/v1/diet/:id', // 개별 식단 항목 (수정/삭제)
-      MONTH_STATISTICS: '/api/v1/diet/month/statistics', // 월간 칼로리 통계
-      WEEK_STATISTICS: '/api/v1/diet/week/statistics', // 주간 칼로리 통계
+      MONTH_STATISTICS: '/api/v1/diet/month/statistics', // 월간 칼로리 통계 (기존)
+      WEEK_STATISTICS: '/api/v1/diet/week/statistics', // 주간 칼로리 통계 (기존)
+    },
+
+    // 식단 통계 관련 (새로운 통계 API)
+    DIET_STATISTICS: {
+      MONTH: '/api/v1/diet/statistics/month', // 월간 통계
+      WEEK: '/api/v1/diet/statistics/week', // 주간 통계
+      WEEK_GRAPH: '/api/v1/diet/statistics/week/graph', // 주간 그래프 통계
+      QUARTER: '/api/v1/diet/statistics/quarter', // 3개월 통계
+      YEAR: '/api/v1/diet/statistics/year', // 연간 통계
     },
 
     // 민원 관련

@@ -110,12 +110,13 @@ export default function MyPage() {
         
         // 세션 오류인 경우 자동 로그아웃 후 로그인 페이지로 리다이렉트
         if (error instanceof Error && (error.message.includes('세션') || 
-            error.message.includes('인증') || error.message.includes('만료'))) {
+            error.message.includes('인증') || error.message.includes('만료') ||
+            error.message.includes('Session was invalidated'))) {
           setMessage('세션이 만료되었습니다. 다시 로그인해주세요.');
-          // 3초 후 자동 로그아웃
+          // 2초 후 자동 로그아웃
           setTimeout(() => {
             logoutAndHome();
-          }, 3000);
+          }, 2000);
           return;
         }
         
@@ -170,11 +171,12 @@ export default function MyPage() {
         console.error('프로필 정보 복원 실패:', error);
         // 세션 오류인 경우 자동 로그아웃
         if (error instanceof Error && (error.message.includes('세션') || 
-            error.message.includes('인증') || error.message.includes('만료'))) {
+            error.message.includes('인증') || error.message.includes('만료') ||
+            error.message.includes('Session was invalidated'))) {
           setMessage('세션이 만료되었습니다. 다시 로그인해주세요.');
           setTimeout(() => {
             logoutAndHome();
-          }, 3000);
+          }, 2000);
           return;
         }
       }
@@ -185,10 +187,6 @@ export default function MyPage() {
     setMessage("");
   };
 
-  const handlePasswordChange = () => {
-    // 비밀번호 변경 페이지로 이동
-    router.push('/mypage/change-password');
-  };
 
   if (!isLogin) {
     return null;
@@ -251,7 +249,7 @@ export default function MyPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        전화번호 변경 기능은 준비 중입니다. 현재는 닉네임만 변경 가능합니다.
+                        전화번호를 변경할 수 있습니다. 010-1234-5678 형식으로 입력해주세요.
                       </p>
                     </div>
 
@@ -287,12 +285,6 @@ export default function MyPage() {
                     className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
                   >
                     수정하기
-                  </button>
-                  <button
-                    onClick={handlePasswordChange}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    비밀번호 변경
                   </button>
                 </>
               ) : (

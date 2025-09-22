@@ -42,7 +42,10 @@ export default function Footer() {
                     <a href="/complaints" className="hover:text-indigo-600">민원 센터</a>
                   </li>
                   <li>
-                    <a href="/ai/menu" className="hover:text-indigo-600">AI 메뉴 추천</a>
+                    <a href="/callender" className="hover:text-indigo-600">식단 관리</a>
+                  </li>
+                  <li>
+                    <a href="/ai/menu" className="hover:text-indigo-600">레시피 추천</a>
                   </li>
                 </ul>
               </div>

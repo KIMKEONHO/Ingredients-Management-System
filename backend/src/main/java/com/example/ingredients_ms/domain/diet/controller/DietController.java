@@ -3,8 +3,6 @@ package com.example.ingredients_ms.domain.diet.controller;
 import com.example.ingredients_ms.domain.diet.dto.request.CreateDietRequestDto;
 import com.example.ingredients_ms.domain.diet.dto.request.DietRequestDto;
 import com.example.ingredients_ms.domain.diet.dto.response.DietResponseDto;
-import com.example.ingredients_ms.domain.diet.dto.response.MonthStatisticsResponseDto;
-import com.example.ingredients_ms.domain.diet.dto.response.WeekStatisticsResponseDto;
 import com.example.ingredients_ms.domain.diet.service.DietService;
 import com.example.ingredients_ms.global.rsdata.RsData;
 import com.example.ingredients_ms.global.security.CurrentUser;
@@ -75,26 +73,5 @@ public class DietController {
 
         return new RsData<>("204", "식단이 삭제되었습니다.");
     }
-
-    // 월간 칼로리 통계 기능 + 지난달에 비해 증가/감소량
-    @GetMapping("/month/statistics")
-    public RsData<?> getMonthStatistics(
-            @CurrentUser SecurityUser securityUser
-    ){
-
-        MonthStatisticsResponseDto responseDto = dietService.monthStatistics(securityUser.getId());
-
-        return new RsData<>("200", "월간 통계를 조회하였습니다.", responseDto);
-    }
-
-    // 근 일주일간 섭취 칼로리 ( 그래프용 )
-    @GetMapping("/week/statistics")
-    public RsData<?> getWeekStatistics(
-            @CurrentUser SecurityUser securityUser
-    ){
-        List<WeekStatisticsResponseDto> stats = dietService.weekStatistics(securityUser.getId());
-        return new RsData<>("200", "최근 7일 통계 조회 성공", stats);
-    }
-
 
 }

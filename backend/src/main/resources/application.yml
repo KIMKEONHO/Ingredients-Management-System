@@ -5,6 +5,8 @@ server:
     max-swallow-size: -1
 
 spring:
+  session:
+    store-type: none  # Spring Session 비활성화
   security:
     oauth2:
       client:

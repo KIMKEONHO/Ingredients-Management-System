@@ -26,7 +26,7 @@ export default function MyComplaintsPage() {
       // ComplaintService를 사용하여 내 민원 목록을 가져오는 요청
       const response = await ComplaintService.getMyComplaints();
       
-      // 직접 배열로 받아오는 데이터 처리
+      // 배열로 받아오는 데이터 처리
       console.log("API 응답:", response);
       if (response && Array.isArray(response)) {
         console.log("민원 데이터:", response);

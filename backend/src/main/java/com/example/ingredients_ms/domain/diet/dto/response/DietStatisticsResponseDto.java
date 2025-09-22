@@ -7,8 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MonthStatisticsResponseDto {
-    private int month;
+public class DietStatisticsResponseDto {
     private double averageKcal;
     private Double diffFromLast;
     private Double diffRate;
