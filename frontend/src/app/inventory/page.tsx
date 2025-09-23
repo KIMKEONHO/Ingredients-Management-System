@@ -36,6 +36,9 @@ interface InventoryItem {
 }
 
 import { UserGuard } from '@/lib/auth/authGuard';
+import { COLOR_PRESETS } from '@/lib/constants/colors';
+import PageHeader from '../components/ui/PageHeader';
+import SectionCard from '../components/ui/SectionCard';
 
 export default function InventoryPage() {
   return (
@@ -53,6 +56,9 @@ function InventoryContent() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [ingredientsMap, setIngredientsMap] = useState<Map<number, Ingredient>>(new Map());
   const [categories, setCategories] = useState<Category[]>([]);
+  const [searchQuery, setSearchQuery] = useState(''); // 식재료 검색 쿼리
+  const [showIngredientDropdown, setShowIngredientDropdown] = useState(false); // 식재료 드롭다운 표시 여부
+  const [selectedIngredient, setSelectedIngredient] = useState<{id: number, name: string, categoryName: string} | null>(null); // 선택된 식재료
 
   useEffect(() => {
     const fetchAndSetInventory = async () => {
@@ -201,7 +207,6 @@ function InventoryContent() {
     fetchCategories();
   }, []);
 
-  const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('전체')
   const [statusFilter, setStatusFilter] = useState('전체')
   const [storageFilter, setStorageFilter] = useState('전체')
@@ -307,6 +312,9 @@ function InventoryContent() {
         }
       });
       setIngredientsMap(newIngredientsMap);
+      setSearchQuery('');
+      setSelectedIngredient(null);
+      setShowIngredientDropdown(false);
       setIsAddItemModalOpen(true);
     } catch (error) {
       console.error('Failed to fetch ingredients for modal:', error);
@@ -356,341 +364,454 @@ function InventoryContent() {
   const closeDetailModal = () => {
     setSelectedItem(null);
     setIsDetailModalOpen(false);
+  }
+
+  // 식재료 검색 필터링 함수
+  const getFilteredIngredients = () => {
+    if (!searchQuery.trim()) {
+      return Array.from(ingredientsMap.values())
+        .filter(ingredient => ingredient.id && ingredient.name && ingredient.categoryName)
+        .slice(0, 10); // 검색어가 없으면 상위 10개만 표시
+    }
+    
+    return Array.from(ingredientsMap.values())
+      .filter(ingredient => 
+        ingredient.id && 
+        ingredient.name && 
+        ingredient.categoryName &&
+        (ingredient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         ingredient.categoryName.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+      .slice(0, 10); // 최대 10개까지만 표시
+  };
+
+  // 식재료 선택 핸들러
+  const handleIngredientSelect = (ingredient: Ingredient) => {
+    if (ingredient.id && ingredient.name && ingredient.categoryName) {
+      setSelectedIngredient({
+        id: ingredient.id,
+        name: ingredient.name,
+        categoryName: ingredient.categoryName
+      });
+      setSearchQuery(ingredient.name);
+      setShowIngredientDropdown(false);
+    }
+  };
+
+  // 검색어 변경 핸들러
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setShowIngredientDropdown(true);
+    if (!value) {
+      setSelectedIngredient(null);
+    }
+  };
+
+  // 수량을 g/kg으로 변환하는 함수 (단위는 항상 g으로 표시)
+  const formatQuantity = (quantity: number, unit: string) => {
+    // 단위가 g이 아닌 경우 g으로 변환 (예: 개, ml 등)
+    let quantityInG = quantity;
+    if (unit !== 'g') {
+      // 단위 변환 로직 (필요시 확장 가능)
+      // 현재는 단위만 g으로 표시
+      quantityInG = quantity;
+    }
+    
+    if (quantityInG >= 1000) {
+      const kg = quantityInG / 1000;
+      return kg % 1 === 0 ? `${kg}kg` : `${kg.toFixed(1)}kg`;
+    }
+    return `${quantityInG}g`;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 상단 헤더 */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex flex-col lg:flex-row gap-4 items-center">
-                         <div className="flex items-center gap-4">
-               <select className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                 <option>전체</option>
-                 <option>식재료</option>
-                 <option>레시피</option>
-                 <option>도구</option>
-               </select>
-             </div>
-            
-            <div className="flex-1 relative max-w-md">
-              <input
-                type="text"
-                placeholder="검색어를 입력해주세요"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+    <UserGuard>
+      <div className={`min-h-screen ${COLOR_PRESETS.STATISTICS_PAGE.background} p-6`}>
+        <div className="max-w-7xl mx-auto">
+          {/* Header Card */}
+          <PageHeader 
+            title="식품 재고 관리"
+            description="보관 중인 식재료를 효율적으로 관리하고 추적해보세요"
+            variant="statistics"
+          />
+
+          <div className="flex gap-6 mt-6">
+            {/* 필터 사이드바 */}
+            <div className="w-80 flex-shrink-0">
+              <div className="sticky top-6">
+                <SectionCard title="필터" variant="statistics">
+                  <div className="space-y-6">
+                    {/* 카테고리 필터 */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">카테고리</h4>
+                      <div className="space-y-2">
+                        {[ { name: '전체' }, ...categories].map((category) => (
+                          <label key={category.name} className="flex items-center">
+                            <input
+                              type="radio"
+                              name="category"
+                              value={category.name}
+                              checked={categoryFilter === category.name}
+                              onChange={(e) => setCategoryFilter(e.target.value)}
+                              className="mr-2 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">{category.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                  {/* 보관방법 필터 */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">보관방법</h4>
+                    <div className="space-y-2">
+                      {['전체', '냉장', '실온', '냉동'].map((storage) => (
+                        <label key={storage} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="storage"
+                            value={storage}
+                            checked={storageFilter === storage}
+                            onChange={(e) => setStorageFilter(e.target.value)}
+                            className="mr-2 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{storage}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 상태 필터 */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">상태</h4>
+                    <div className="space-y-2">
+                      {['전체', '보관중', '유통기한 임박', '기간만료', '사용완료'].map((status) => (
+                        <label key={status} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="status"
+                            value={status}
+                            checked={statusFilter === status}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="mr-2 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{status}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                    {/* 필터 초기화 버튼 */}
+                    <div className="pt-4 border-t border-gray-200">
+                      <button
+                        onClick={resetFilters}
+                        className="w-full px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                      >
+                        필터 초기화
+                      </button>
+                    </div>
+                  </div>
+                </SectionCard>
+              </div>
+            </div>
+
+            {/* 메인 콘텐츠 영역 */}
+            <div className="flex-1">
+              {/* Main Card Container */}
+              <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8">
+                {/* 요약 통계 섹션 */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900">요약 통계</h3>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="식품 재고 검색..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-80 px-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <SectionCard variant="statistics">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-100">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-xs text-gray-600">전체 식재료</p>
+                          <p className="text-lg font-bold text-gray-900">{totalItems}개</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-100">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-xs text-gray-600">보관 중</p>
+                          <p className="text-lg font-bold text-gray-900">{storedItems}개</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-100">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-orange-100 rounded-lg">
+                          <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.5 19.5a2.5 2.5 0 01-2.5-2.5v-15a2.5 2.5 0 012.5-2.5h15a2.5 2.5 0 012.5 2.5v15a2.5 2.5 0 01-2.5 2.5h-15z" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-xs text-gray-600">곧 만료</p>
+                          <p className="text-lg font-bold text-gray-900">{expiringItems}개</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-100">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-red-100 rounded-lg">
+                          <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-xs text-gray-600">기간만료</p>
+                          <p className="text-lg font-bold text-gray-900">{expiredItems}개</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </SectionCard>
+
+                {/* 식재료 관리 섹션 */}
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900">식품 재고 관리</h3>
+                </div>
+                <SectionCard variant="statistics">
+                  {/* 식재료 추가 버튼 */}
+                  <div className="flex justify-end mb-6">
+                    <button
+                      onClick={addNewItem}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                    >
+                      + 식품 재고 추가
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col lg:flex-row gap-8">
+                    {/* 메인 콘텐츠 영역 */}
+                    <div className="flex-1 w-full">
+                      {/* 모바일 필터 버튼 */}
+                      <div className="lg:hidden mb-4">
+                        <button
+                          onClick={openFilterModal}
+                          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                          </svg>
+                          <span className="text-gray-700">필터</span>
+                          {(categoryFilter !== '전체' || statusFilter !== '전체' || storageFilter !== '전체') && (
+                            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* 식재료 목록 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredItems.map((item) => (
+                  <div key={item.id} className="bg-white rounded-xl shadow-sm border border-blue-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onClick={() => openDetailModal(item)}>
+                    {/* 이미지 영역 */}
+                    <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+                      <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-blue-800">
+                          {item.name.charAt(0)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 내용 영역 */}
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
+                      
+                      {/* 메타데이터 */}
+                      <div className="text-sm text-gray-500 mb-3">
+                        <div className="flex items-center justify-between">
+                          <span>{item.category}</span>
+                          <div className="flex items-center gap-2">
+                            {item.storageLocations.length > 1 ? (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                {item.storageLocations.length}개 위치
+                              </span>
+                            ) : (
+                              /* 중복되지 않은 식재료의 경우 보관장소와 재고 상태를 카테고리 오른쪽에 표시 */
+                              <>
+                                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                                  {item.storageLocations[0].storageMethod}
+                                </span>
+                                <span className={`text-xs rounded-full px-2 py-1 ${
+                                  item.storageLocations[0].status === '보관중' 
+                                    ? 'bg-green-100 text-green-800'
+                                    : item.storageLocations[0].status === '유통기한 임박'
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : item.storageLocations[0].status === '기간만료'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {item.storageLocations[0].status}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-1">
+                          <span className="text-red-600 font-medium">{formatQuantity(item.totalQuantity, item.unit)}</span>
+                          <span className="text-xs text-gray-400 ml-2">(총 수량)</span>
+                        </div>
+                      </div>
+
+                      {/* 중복되지 않은 식재료의 경우 추가 정보 표시 */}
+                      {item.storageLocations.length === 1 ? (
+                        <div className="mb-3 space-y-2">
+                          {/* 구매일자 */}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">구매일자:</span>
+                            <span className="font-medium text-gray-900">
+                              {item.storageLocations[0].addedDate !== 'N/A' 
+                                ? new Date(item.storageLocations[0].addedDate).toLocaleDateString('ko-KR')
+                                : 'N/A'
+                              }
+                            </span>
+                          </div>
+                          
+                          {/* 만료일자 */}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">만료일자:</span>
+                            <span className={`font-medium ${
+                              item.storageLocations[0].isExpired 
+                                ? 'text-red-600' 
+                                : item.storageLocations[0].expiryDate !== 'N/A' && 
+                                  new Date(item.storageLocations[0].expiryDate) <= new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+                                ? 'text-orange-600'
+                                : 'text-gray-900'
+                            }`}>
+                              {item.storageLocations[0].expiryDate !== 'N/A' 
+                                ? new Date(item.storageLocations[0].expiryDate).toLocaleDateString('ko-KR')
+                                : 'N/A'
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        /* 중복된 식재료의 경우 전체 상태만 표시 */
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">전체 상태:</span>
+                            <span className={`text-xs rounded-full px-3 py-1 ${
+                              item.overallStatus === '보관중' 
+                                ? 'bg-green-100 text-green-800'
+                                : item.overallStatus === '유통기한 임박'
+                                ? 'bg-orange-100 text-orange-800'
+                                : item.overallStatus === '기간만료'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {item.overallStatus}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 하단 액션 버튼들 */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400">
+                          클릭하여 상세보기
+                        </span>
+
+                        <div className="flex items-center space-x-2">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(item);
+                            }} 
+                            className="text-blue-600 hover:text-blue-900 text-sm"
+                            title="수정"
+                          >
+                            수정
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+                      {/* 결과가 없을 때 */}
+                      {filteredItems.length === 0 && (
+                        <div className="text-center py-12">
+                          <div className="text-gray-400 mb-4">
+                            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                          </div>
+                          <p className="text-gray-500">검색 결과가 없습니다.</p>
+                          <p className="text-sm text-gray-400">다른 검색어나 필터를 시도해보세요.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </SectionCard>
               </div>
             </div>
           </div>
-
-          
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-8">
-        {/* 페이지 제목 */}
-        <div className="mb-6">
-                      <nav className="text-sm text-gray-500 mb-2">
-              홈 &gt; 식품 재고 관리
-            </nav>
-                     <h1 className="text-2xl font-bold text-gray-900">
-             식품 재고 관리
-           </h1>
-        </div>
-
-                 <div className="flex flex-col lg:flex-row gap-8">
-           {/* 왼쪽 사이드바 - 필터 (데스크톱) */}
-           <div className="hidden lg:block lg:w-64 flex-shrink-0">
-             <div className="bg-white rounded-lg shadow-sm border p-6">
-               <div className="flex items-center justify-between mb-4">
-                 <h3 className="text-lg font-semibold text-gray-900">필터</h3>
-                 <button
-                   onClick={resetFilters}
-                   className="text-sm text-green-600 hover:text-green-700"
-                 >
-                   초기화
-                 </button>
-               </div>
-
-               {/* 카테고리 필터 */}
-               <div className="mb-6">
-                 <h4 className="font-medium text-gray-900 mb-3">카테고리</h4>
-                 <div className="space-y-2">
-                   {[ { name: '전체' }, ...categories].map((category) => (
-                     <label key={category.name} className="flex items-center">
-                       <input
-                         type="radio"
-                         name="category"
-                         value={category.name}
-                         checked={categoryFilter === category.name}
-                         onChange={(e) => setCategoryFilter(e.target.value)}
-                         className="mr-2 text-green-600 focus:ring-green-500"
-                       />
-                       <span className="text-sm text-gray-700">{category.name}</span>
-                     </label>
-                   ))}
-                 </div>
-               </div>
-
-               {/* 보관방법 필터 */}
-               <div className="mb-6">
-                 <h4 className="font-medium text-gray-900 mb-3">보관방법</h4>
-                 <div className="space-y-2">
-                   {['전체', '냉장', '실온', '냉동'].map((storage) => (
-                     <label key={storage} className="flex items-center">
-                       <input
-                         type="radio"
-                         name="storage"
-                         value={storage}
-                         checked={storageFilter === storage}
-                         onChange={(e) => setStorageFilter(e.target.value)}
-                         className="mr-2 text-green-600 focus:ring-green-500"
-                     />
-                       <span className="text-sm text-gray-700">{storage}</span>
-                     </label>
-                   ))}
-                 </div>
-               </div>
-
-               {/* 상태 필터 */}
-               <div className="mb-6">
-                 <h4 className="font-medium text-gray-900 mb-3">상태</h4>
-                 <div className="space-y-2">
-                   {['전체', '보관중', '유통기한 임박', '기간만료', '사용완료'].map((status) => (
-                     <label key={status} className="flex items-center">
-                       <input
-                         type="radio"
-                         name="status"
-                         value={status}
-                         checked={statusFilter === status}
-                         onChange={(e) => setStatusFilter(e.target.value)}
-                         className="mr-2 text-green-600 focus:ring-green-500"
-                       />
-                       <span className="text-sm text-gray-700">{status}</span>
-                     </label>
-                   ))}
-                 </div>
-               </div>
-             </div>
-           </div>
-
-                     {/* 메인 콘텐츠 영역 */}
-           <div className="flex-1">
-             {/* 모바일 필터 버튼 */}
-             <div className="lg:hidden mb-4">
-               <button
-                 onClick={openFilterModal}
-                 className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500"
-               >
-                 <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                 </svg>
-                 <span className="text-gray-700">필터</span>
-                 {(categoryFilter !== '전체' || statusFilter !== '전체' || storageFilter !== '전체') && (
-                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                   )}
-               </button>
-             </div>
-            {/* 요약 카드 */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-lg shadow-sm border p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+      {/* 필터 모달 (모바일) */}
+      {isFilterModalOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-30 pointer-events-auto"></div>
+          <div className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-auto">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-hidden border border-blue-100">
+              <div className="flex items-center justify-between p-6 border-b">
+                <h3 className="text-lg font-semibold text-gray-900">필터</h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={resetFilters}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    초기화
+                  </button>
+                  <button
+                    onClick={closeFilterModal}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-gray-600">전체 식재료</p>
-                    <p className="text-lg font-bold text-gray-900">{totalItems}개</p>
-                  </div>
+                  </button>
                 </div>
               </div>
-
-              <div className="bg-white rounded-lg shadow-sm border p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-gray-600">보관 중</p>
-                    <p className="text-lg font-bold text-gray-900">{storedItems}개</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.5 19.5a2.5 2.5 0 01-2.5-2.5v-15a2.5 2.5 0 012.5-2.5h15a2.5 2.5 0 012.5 2.5v15a2.5 2.5 0 01-2.5 2.5h-15z" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-gray-600">곧 만료</p>
-                    <p className="text-lg font-bold text-gray-900">{expiringItems}개</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-gray-600">기간만료</p>
-                    <p className="text-lg font-bold text-gray-900">{expiredItems}개</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 식재료 추가 버튼 */}
-            <div className="flex justify-end mb-6">
-              <button
-                onClick={addNewItem}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
-              >
-                + 식재료 추가
-              </button>
-            </div>
-
-            {/* 식재료 목록 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
-                <div key={item.id} className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onClick={() => openDetailModal(item)}>
-                  {/* 이미지 영역 */}
-                  <div className="h-48 bg-gray-200 flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-green-800">
-                        {item.name.charAt(0)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 내용 영역 */}
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
-                    
-                    {/* 메타데이터 */}
-                    <div className="text-sm text-gray-500 mb-3">
-                      <div className="flex items-center justify-between">
-                        <span>{item.category}</span>
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                          {item.storageLocations.length}개 위치
-                        </span>
-                      </div>
-                      <div className="mt-1">
-                        <span className="text-red-600 font-medium">{item.totalQuantity} {item.unit}</span>
-                        <span className="text-xs text-gray-400 ml-2">(총 수량)</span>
-                      </div>
-                    </div>
-
-                    {/* 상태 */}
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs rounded-full px-3 py-1 border-0 ${
-                        item.overallStatus === '보관중' 
-                          ? 'bg-green-100 text-green-800'
-                          : item.overallStatus === '유통기한 임박'
-                          ? 'bg-orange-100 text-orange-800'
-                          : item.overallStatus === '기간만료'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {item.overallStatus}
-                      </span>
-
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(item);
-                          }} 
-                          className="text-blue-600 hover:text-blue-900 p-1"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 유통기한 정보 */}
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>
-                          {item.earliestExpiryDate !== 'N/A' && item.latestExpiryDate !== 'N/A' && item.earliestExpiryDate !== item.latestExpiryDate
-                            ? `유통기한: ${item.earliestExpiryDate} ~ ${item.latestExpiryDate}`
-                            : `유통기한: ${item.earliestExpiryDate !== 'N/A' ? item.earliestExpiryDate : item.latestExpiryDate}`
-                          }
-                        </span>
-                        {item.hasExpiredItems && (
-                          <span className="text-red-600 font-medium">일부 만료</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        클릭하여 상세 보기
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* 결과가 없을 때 */}
-            {filteredItems.length === 0 && (
-              <div className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                  </svg>
-                </div>
-                <p className="text-gray-500">검색 결과가 없습니다.</p>
-                <p className="text-sm text-gray-400">다른 검색어나 필터를 시도해보세요.</p>
-              </div>
-            )}
-                     </div>
-         </div>
-       </div>
-
-          {/* 필터 모달 (모바일) */}
-          {isFilterModalOpen && (
-            <div className="fixed inset-0 z-40 lg:hidden">
-              <div className="fixed inset-0 bg-black bg-opacity-30 pointer-events-auto"></div>
-              <div className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-auto">
-                <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm max-h-[90vh] overflow-hidden border border-gray-200">
-               <div className="flex items-center justify-between p-6 border-b">
-                 <h3 className="text-lg font-semibold text-gray-900">필터</h3>
-                 <div className="flex items-center gap-2">
-                   <button
-                     onClick={resetFilters}
-                     className="text-sm text-green-600 hover:text-green-700"
-                   >
-                     초기화
-                   </button>
-                   <button
-                     onClick={closeFilterModal}
-                     className="text-gray-400 hover:text-gray-600"
-                   >
-                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                     </svg>
-                   </button>
-                 </div>
-               </div>
-               
-               <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                  {/* 카테고리 필터 */}
                  <div className="mb-6">
                    <h4 className="font-medium text-gray-900 mb-3">카테고리</h4>
@@ -703,7 +824,7 @@ function InventoryContent() {
                            value={category.name}
                            checked={categoryFilter === category.name}
                            onChange={(e) => setCategoryFilter(e.target.value)}
-                           className="mr-2 text-green-600 focus:ring-green-500"
+                           className="mr-2 text-blue-600 focus:ring-blue-500"
                          />
                          <span className="text-sm text-gray-700">{category.name}</span>
                        </label>
@@ -723,7 +844,7 @@ function InventoryContent() {
                            value={storage}
                            checked={storageFilter === storage}
                            onChange={(e) => setStorageFilter(e.target.value)}
-                           className="mr-2 text-green-600 focus:ring-green-500"
+                           className="mr-2 text-blue-600 focus:ring-blue-500"
                          />
                          <span className="text-sm text-gray-700">{storage}</span>
                        </label>
@@ -743,7 +864,7 @@ function InventoryContent() {
                            value={status}
                            checked={statusFilter === status}
                            onChange={(e) => setStatusFilter(e.target.value)}
-                           className="mr-2 text-green-600 focus:ring-green-500"
+                           className="mr-2 text-blue-600 focus:ring-blue-500"
                          />
                          <span className="text-sm text-gray-700">{status}</span>
                        </label>
@@ -755,7 +876,7 @@ function InventoryContent() {
                  <div className="pt-4 border-t">
                    <button
                      onClick={closeFilterModal}
-                     className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                     className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                    >
                      필터 적용
                    </button>
@@ -771,11 +892,16 @@ function InventoryContent() {
         <div className="fixed inset-0 z-40">
           <div className="fixed inset-0 bg-black bg-opacity-10"></div>
           <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden border border-gray-200">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden border border-blue-100">
               <div className="flex items-center justify-between p-6 border-b">
                 <h3 className="text-lg font-semibold text-gray-900">새 식재료 추가</h3>
                 <button
-                  onClick={() => setIsAddItemModalOpen(false)}
+                  onClick={() => {
+                    setIsAddItemModalOpen(false);
+                    setSearchQuery('');
+                    setSelectedIngredient(null);
+                    setShowIngredientDropdown(false);
+                  }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -787,16 +913,12 @@ function InventoryContent() {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
 
-                const ingredientName = formData.get('name') as string;
-                const selectedIngredient = Array.from(ingredientsMap.values()).find(
-                  (ing) => ing.name === ingredientName
-                );
-
                 if (!selectedIngredient || !selectedIngredient.id) {
                   alert('유효한 식재료를 선택해주세요.');
                   return;
                 }
                 const ingredientId = selectedIngredient.id;
+                const ingredientName = selectedIngredient.name;
 
                 const storageMethodMap: { [key: string]: "REFRIGERATED" | "FROZEN" | "ROOM" } = {
                   '냉장': 'REFRIGERATED',
@@ -807,7 +929,7 @@ function InventoryContent() {
                 const place = storageMethodMap[storageMethodValue];
 
                 const quantity = parseInt(formData.get('quantity') as string, 10);
-                const unit = formData.get('unit') as string;
+                const unit = 'g'; // 단위를 g로 고정
                 const boughtDate = formData.get('boughtDate') as string;
                 const expirationDate = formData.get('expirationDate') as string;
 
@@ -888,6 +1010,9 @@ function InventoryContent() {
                   });
                   
                   setIsAddItemModalOpen(false);
+                  setSearchQuery('');
+                  setSelectedIngredient(null);
+                  setShowIngredientDropdown(false);
                 } catch (error) {
                   console.error('식재료 추가 실패:', error);
                   alert('식재료 추가에 실패했습니다. 다시 시도해주세요.');
@@ -896,31 +1021,50 @@ function InventoryContent() {
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                   <div className="space-y-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700">식재료명</label>
-                      <input type="text" name="name" id="name" list="ingredient-suggestions" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-black" />
-                      <datalist id="ingredient-suggestions">
-                        {Array.from(ingredientsMap.values()).map((ingredient) => (
-                          <option key={ingredient.id} value={ingredient.name} />
-                        ))}
-                      </datalist>
+                      <label htmlFor="ingredient-search" className="block text-sm font-medium text-gray-700">식재료명</label>
+                      <div className="relative mt-1">
+                        <input 
+                          type="text" 
+                          name="ingredient-search" 
+                          id="ingredient-search" 
+                          value={searchQuery}
+                          onChange={handleSearchChange}
+                          onFocus={() => setShowIngredientDropdown(true)}
+                          onBlur={() => setTimeout(() => setShowIngredientDropdown(false), 200)}
+                          placeholder="식재료명을 검색하세요..."
+                          autoComplete="off"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          spellCheck="false"
+                          required 
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black" 
+                        />
+                        {showIngredientDropdown && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {getFilteredIngredients().length > 0 ? (
+                              getFilteredIngredients().map((ingredient) => (
+                                <div
+                                  key={ingredient.id}
+                                  onClick={() => handleIngredientSelect(ingredient)}
+                                  className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                >
+                                  <div className="font-medium text-gray-900">{ingredient.name}</div>
+                                  <div className="text-sm text-gray-500">{ingredient.categoryName}</div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="px-3 py-2 text-gray-500 text-sm">
+                                {searchQuery ? '검색 결과가 없습니다' : '식재료를 검색해주세요'}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     <div>
-                      <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">수량</label>
-                      <div className="flex gap-2 mt-1">
-                        <input type="text" name="quantity" id="quantity" required className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
-                        <select name="unit" id="unit" required className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black">
-                          <option value="개">개</option>
-                          <option value="g">g</option>
-                          <option value="ml">ml</option>
-                          <option value="팩">팩</option>
-                          <option value="봉">봉</option>
-                          <option value="줄">줄</option>
-                          <option value="컵">컵</option>
-                          <option value="리터">리터</option>
-                          <option value="kg">kg</option>
-                        </select>
-                      </div>
+                      <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">수량 (단위: g)</label>
+                      <input type="text" name="quantity" id="quantity" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" placeholder="수량을 입력하세요" />
                     </div>
                     <div>
                       <label htmlFor="storageMethod" className="block text-sm font-medium text-gray-700">보관방법</label>
@@ -945,7 +1089,7 @@ function InventoryContent() {
                 </div>
                 <div className="flex justify-end gap-4 p-6 border-t">
                   <button type="button" onClick={() => setIsAddItemModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">취소</button>
-                  <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">저장</button>
+                  <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">저장</button>
                 </div>
               </form>
             </div>
@@ -958,7 +1102,7 @@ function InventoryContent() {
         <div className="fixed inset-0 z-40">
           <div className="fixed inset-0 bg-black bg-opacity-10"></div>
           <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden border border-gray-200">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden border border-blue-100">
               <div className="flex items-center justify-between p-6 border-b">
                 <h3 className="text-lg font-semibold text-gray-900">식재료 수정</h3>
                 <button
@@ -975,14 +1119,14 @@ function InventoryContent() {
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700">식재료명</label>
-                      <input type="text" name="name" id="name" disabled value={editingItem.name} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black" />
+                      <input type="text" name="name" id="name" disabled value={editingItem?.name || ''} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black" />
                     </div>
 
                     <div>
                       <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">총 수량</label>
                       <div className="flex gap-2 mt-1">
-                        <input type="number" name="quantity" id="quantity" disabled value={editingItem.totalQuantity} className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black" />
-                        <select name="unit" id="unit" disabled value={editingItem.unit} className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black">
+                        <input type="number" name="quantity" id="quantity" disabled value={editingItem?.totalQuantity || 0} className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black" />
+                        <select name="unit" id="unit" disabled value={editingItem?.unit || ''} className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black">
                           <option value="개">개</option>
                           <option value="g">g</option>
                           <option value="ml">ml</option>
@@ -1000,11 +1144,11 @@ function InventoryContent() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700">보관 위치</label>
                       <div className="mt-1 space-y-2">
-                        {editingItem.storageLocations.map((location) => (
+                        {editingItem?.storageLocations.map((location) => (
                           <div key={location.id} className="bg-gray-50 rounded-lg p-3">
                             <div className="flex justify-between items-center">
                               <span className="text-sm font-medium">{location.storageMethod}</span>
-                              <span className="text-sm text-gray-600">{location.quantity} {location.unit}</span>
+                              <span className="text-sm text-gray-600">{formatQuantity(location.quantity, location.unit)}</span>
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
                               유통기한: {location.expiryDate}
@@ -1019,7 +1163,7 @@ function InventoryContent() {
                 </div>
                 <div className="flex justify-end gap-4 p-6 border-t">
                   <button type="button" onClick={closeEditModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">취소</button>
-                  <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">저장</button>
+                  <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">저장</button>
                 </div>
               </form>
             </div>
@@ -1032,9 +1176,9 @@ function InventoryContent() {
         <div className="fixed inset-0 z-40">
           <div className="fixed inset-0 bg-black bg-opacity-50"></div>
           <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-blue-100">
               <div className="flex items-center justify-between p-6 border-b">
-                <h3 className="text-lg font-semibold text-gray-900">{selectedItem.name} 상세 정보</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{selectedItem?.name} 상세 정보</h3>
                 <button
                   onClick={closeDetailModal}
                   className="text-gray-400 hover:text-gray-600"
@@ -1050,46 +1194,46 @@ function InventoryContent() {
                   {/* 기본 정보 */}
                   <div className="mb-6">
                     <div className="flex items-center gap-4 mb-4">
-                      <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                        <span className="text-xl font-bold text-green-800">
-                          {selectedItem.name.charAt(0)}
+                      <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span className="text-xl font-bold text-blue-800">
+                          {selectedItem?.name.charAt(0)}
                         </span>
                       </div>
                       <div>
-                        <h4 className="text-xl font-semibold text-gray-900">{selectedItem.name}</h4>
-                        <p className="text-sm text-gray-500">{selectedItem.category}</p>
+                        <h4 className="text-xl font-semibold text-gray-900">{selectedItem?.name}</h4>
+                        <p className="text-sm text-gray-500">{selectedItem?.category}</p>
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="bg-gray-50 rounded-lg p-4">
                         <p className="text-sm text-gray-500">총 수량</p>
-                        <p className="text-lg font-semibold text-gray-900">{selectedItem.totalQuantity} {selectedItem.unit}</p>
+                        <p className="text-lg font-semibold text-gray-900">{formatQuantity(selectedItem?.totalQuantity || 0, selectedItem?.unit || 'g')}</p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
                         <p className="text-sm text-gray-500">보관 위치</p>
-                        <p className="text-lg font-semibold text-gray-900">{selectedItem.storageLocations.length}개</p>
+                        <p className="text-lg font-semibold text-gray-900">{selectedItem?.storageLocations.length}개</p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
                         <p className="text-sm text-gray-500">전체 상태</p>
                         <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          selectedItem.overallStatus === '보관중' 
+                          selectedItem?.overallStatus === '보관중' 
                             ? 'bg-green-100 text-green-800'
-                            : selectedItem.overallStatus === '유통기한 임박'
+                            : selectedItem?.overallStatus === '유통기한 임박'
                             ? 'bg-orange-100 text-orange-800'
-                            : selectedItem.overallStatus === '기간만료'
+                            : selectedItem?.overallStatus === '기간만료'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {selectedItem.overallStatus}
+                          {selectedItem?.overallStatus}
                         </span>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
                         <p className="text-sm text-gray-500">유통기한 범위</p>
                         <p className="text-sm font-medium text-gray-900">
-                          {selectedItem.earliestExpiryDate !== 'N/A' && selectedItem.latestExpiryDate !== 'N/A' && selectedItem.earliestExpiryDate !== selectedItem.latestExpiryDate
-                            ? `${selectedItem.earliestExpiryDate} ~ ${selectedItem.latestExpiryDate}`
-                            : selectedItem.earliestExpiryDate !== 'N/A' ? selectedItem.earliestExpiryDate : selectedItem.latestExpiryDate
+                          {selectedItem?.earliestExpiryDate !== 'N/A' && selectedItem?.latestExpiryDate !== 'N/A' && selectedItem?.earliestExpiryDate !== selectedItem?.latestExpiryDate
+                            ? `${selectedItem?.earliestExpiryDate} ~ ${selectedItem?.latestExpiryDate}`
+                            : selectedItem?.earliestExpiryDate !== 'N/A' ? selectedItem?.earliestExpiryDate : selectedItem?.latestExpiryDate
                           }
                         </p>
                       </div>
@@ -1100,7 +1244,7 @@ function InventoryContent() {
                   <div>
                     <h5 className="text-lg font-semibold text-gray-900 mb-4">보관 위치별 상세 정보</h5>
                     <div className="space-y-4">
-                      {selectedItem.storageLocations.map((location) => (
+                      {selectedItem?.storageLocations.map((location) => (
                         <div key={location.id} className="border border-gray-200 rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
@@ -1124,7 +1268,7 @@ function InventoryContent() {
                               >
                                 -
                               </button>
-                              <span className="text-sm font-medium">{location.quantity} {location.unit}</span>
+                              <span className="text-sm font-medium">{formatQuantity(location.quantity, location.unit)}</span>
                               <button 
                                 onClick={() => handleQuantityChange(location.id, 1)} 
                                 className="text-sm px-2 py-1 border rounded hover:bg-gray-50"
@@ -1134,7 +1278,7 @@ function InventoryContent() {
                               {location.quantity !== location.originalQuantity && (
                                 <button 
                                   onClick={() => handleSaveQuantity(location)} 
-                                  className="text-sm px-2 py-1 border rounded bg-green-500 text-white hover:bg-green-600"
+                                  className="text-sm px-2 py-1 border rounded bg-blue-500 text-white hover:bg-blue-600"
                                 >
                                   저장
                                 </button>
@@ -1145,7 +1289,7 @@ function InventoryContent() {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                               <p className="text-gray-500">수량</p>
-                              <p className="font-medium">{location.quantity} {location.unit}</p>
+                              <p className="font-medium">{formatQuantity(location.quantity, location.unit)}</p>
                             </div>
                             <div>
                               <p className="text-gray-500">유통기한</p>
@@ -1172,6 +1316,6 @@ function InventoryContent() {
           </div>
         </div>
       )}
-     </div>
-   )
- }
+    </UserGuard>
+  )
+}
