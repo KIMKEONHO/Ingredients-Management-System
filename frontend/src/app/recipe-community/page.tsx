@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { UserGuard } from '@/lib/auth/authGuard';
 import { COLOR_PRESETS } from '@/lib/constants/colors';
 import PageHeader from '../components/ui/PageHeader';
@@ -28,12 +29,12 @@ interface CommunityPost {
 }
 
 export default function RecipeCommunityPage() {
+  const router = useRouter();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('all');
-  const [isWritingPost, setIsWritingPost] = useState(false);
 
   // 더미 데이터
   const dummyPosts: CommunityPost[] = [
@@ -181,10 +182,10 @@ export default function RecipeCommunityPage() {
                         ))}
                       </select>
                       <button
-                        onClick={() => setIsWritingPost(true)}
+                        onClick={() => router.push('/recipes/write')}
                         className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                       >
-                        글쓰기
+                        레시피 작성
                       </button>
                     </div>
                   </div>
@@ -352,72 +353,6 @@ export default function RecipeCommunityPage() {
               </div>
             )}
 
-            {/* Write Post Modal */}
-            {isWritingPost && (
-              <div className="fixed inset-0 z-50">
-                <div className="absolute inset-0 bg-black/40" onClick={() => setIsWritingPost(false)} />
-                <div className="absolute inset-0 flex items-center justify-center p-4">
-                  <div className="w-full max-w-2xl bg-white rounded-lg shadow-xl p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold text-gray-900">새 게시글 작성</h2>
-                      <button 
-                        onClick={() => setIsWritingPost(false)}
-                        className="text-gray-500 hover:text-gray-700 text-2xl"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
-                        <input
-                          type="text"
-                          placeholder="게시글 제목을 입력하세요"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">내용</label>
-                        <textarea
-                          rows={6}
-                          placeholder="레시피나 요리 경험을 공유해주세요"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">태그</label>
-                        <input
-                          type="text"
-                          placeholder="태그를 쉼표로 구분하여 입력하세요 (예: 파스타, 이탈리안, 간단요리)"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3 mt-6">
-                      <button
-                        onClick={() => setIsWritingPost(false)}
-                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        취소
-                      </button>
-                      <button
-                        onClick={() => {
-                          alert('게시글이 성공적으로 작성되었습니다!');
-                          setIsWritingPost(false);
-                        }}
-                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        게시하기
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
