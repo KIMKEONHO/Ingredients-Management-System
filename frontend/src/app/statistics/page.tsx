@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { COLOR_PRESETS } from '@/lib/constants/colors';
 import PageHeader from '../components/ui/PageHeader';
 import SectionCard from '../components/ui/SectionCard';
@@ -334,12 +334,20 @@ export default function StatisticsPage() {
   useEffect(() => {
     const loadWeekGraphData = async () => {
       try {
+        // 인증 토큰이 준비될 때까지 대기
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         console.log('[DEBUG] 주간 그래프 데이터 로드 시작');
         const weekGraphData = await DietService.getWeekGraphStatistics();
         setWeekGraphStats(weekGraphData);
         console.log('[DEBUG] 주간 그래프 데이터 로드 성공:', weekGraphData);
       } catch (error) {
         console.error('주간 그래프 데이터 로드 실패:', error);
+        // 인증 오류인 경우 재시도하지 않음
+        if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+          console.log('[DEBUG] 인증 오류로 인한 주간 그래프 데이터 로드 실패, 재시도하지 않음');
+          return;
+        }
       }
     };
 
@@ -352,8 +360,8 @@ export default function StatisticsPage() {
       try {
         setIsLoading(true);
         
-        // API 요청 전에 약간의 지연을 두어 인증 토큰이 준비되도록 함
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // 인증 토큰이 준비될 때까지 대기
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         console.log('[DEBUG] 식단 통계 로드 시작, 선택된 기간:', selectedPeriod);
         
@@ -387,6 +395,13 @@ export default function StatisticsPage() {
         setHasLoaded(true); // 로드 완료 표시
       } catch (error) {
         console.error('식단 통계 로드 실패:', error);
+        
+        // 인증 오류인 경우 재시도하지 않음
+        if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+          console.log('[DEBUG] 인증 오류로 인한 식단 통계 로드 실패, 재시도하지 않음');
+          setIsLoading(false);
+          return;
+        }
         
         // 재시도 횟수가 2회 미만일 때만 재시도
         if (retryCount < 2) {
@@ -446,6 +461,10 @@ export default function StatisticsPage() {
     const loadConsumedData = async () => {
       try {
         setIsLoading(true);
+        
+        // 인증 토큰이 준비될 때까지 대기
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         console.log('[DEBUG] 사용량 데이터 로드 시작, 기간:', selectedPeriod);
 
         const data = await ConsumedService.getConsumedLogByPeriod(selectedPeriod);
@@ -454,6 +473,11 @@ export default function StatisticsPage() {
         setConsumedData(data);
       } catch (error) {
         console.error('사용량 데이터 로드 실패:', error);
+        // 인증 오류인 경우 재시도하지 않음
+        if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+          console.log('[DEBUG] 인증 오류로 인한 사용량 데이터 로드 실패, 재시도하지 않음');
+          return;
+        }
         setConsumedData([]);
       } finally {
         setIsLoading(false);
@@ -467,12 +491,20 @@ export default function StatisticsPage() {
   useEffect(() => {
     const loadMonthlyData = async () => {
       try {
+        // 인증 토큰이 준비될 때까지 대기
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         console.log('[DEBUG] 월별 사용량 데이터 로드 시작');
         const data = await ConsumedService.getMonthlyConsumedLog();
         console.log('[DEBUG] 월별 사용량 데이터 로드 성공:', data);
         setMonthlyData(data);
       } catch (error) {
         console.error('월별 사용량 데이터 로드 실패:', error);
+        // 인증 오류인 경우 재시도하지 않음
+        if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+          console.log('[DEBUG] 인증 오류로 인한 월별 사용량 데이터 로드 실패, 재시도하지 않음');
+          return;
+        }
         setMonthlyData([]);
       }
     };
@@ -480,11 +512,164 @@ export default function StatisticsPage() {
     loadMonthlyData();
   }, []);
 
-  const summaryStats = [
+  // 총 사용량 계산 함수
+  const getTotalUsage = () => {
+    if (!consumedData || consumedData.length === 0) return '0g';
+    const total = consumedData.reduce((sum, item) => sum + (item.totalConsumedQuantity || 0), 0);
+    return `${total.toLocaleString()}g`;
+  };
+
+  // 제일 많이 사용된 식재료 이름들 반환 (동일한 사용량인 경우 모두 포함)
+  const getTopIngredientName = () => {
+    if (!consumedData || consumedData.length === 0) return '데이터 없음';
+    
+    // 식재료별 사용량 집계
+    const ingredientMap = new Map<string, { 
+      name: string; 
+      category: string; 
+      totalQuantity: number; 
+      usageCount: number;
+    }>();
+
+    consumedData.forEach((item) => {
+      const ingredientName = item.ingredientName || '알 수 없는 식재료';
+      const categoryName = item.categoryName || '기타';
+      const quantity = item.totalConsumedQuantity || 0;
+
+      if (!ingredientName || ingredientName.trim() === '' || ingredientName === '알 수 없는 식재료') {
+        return;
+      }
+
+      if (ingredientMap.has(ingredientName)) {
+        const existing = ingredientMap.get(ingredientName)!;
+        existing.totalQuantity += quantity;
+        existing.usageCount += 1;
+      } else {
+        ingredientMap.set(ingredientName, {
+          name: ingredientName,
+          category: categoryName,
+          totalQuantity: quantity,
+          usageCount: 1
+        });
+      }
+    });
+
+    // 사용량 기준으로 정렬
+    const sortedIngredients = Array.from(ingredientMap.values())
+      .sort((a, b) => b.totalQuantity - a.totalQuantity);
+
+    if (sortedIngredients.length === 0) return '데이터 없음';
+    
+    // 1위 사용량과 동일한 모든 식재료 찾기
+    const topQuantity = sortedIngredients[0].totalQuantity;
+    const topIngredients = sortedIngredients.filter(ingredient => ingredient.totalQuantity === topQuantity);
+    
+    // 최대 3개까지만 표시
+    const displayIngredients = topIngredients.slice(0, 3);
+    
+    if (displayIngredients.length === 1) {
+      return displayIngredients[0].name;
+    } else {
+      return `${displayIngredients.length}가지`;
+    }
+  };
+
+  // 제일 많이 사용된 식재료들의 통계 데이터 반환 (공동 1위 포함)
+  const getTopIngredientData = () => {
+    if (!consumedData || consumedData.length === 0) return null;
+    
+    // 식재료별 사용량 집계
+    const ingredientMap = new Map<string, { 
+      name: string; 
+      category: string; 
+      totalQuantity: number; 
+      usageCount: number;
+    }>();
+
+    consumedData.forEach((item) => {
+      const ingredientName = item.ingredientName || '알 수 없는 식재료';
+      const categoryName = item.categoryName || '기타';
+      const quantity = item.totalConsumedQuantity || 0;
+
+      if (!ingredientName || ingredientName.trim() === '' || ingredientName === '알 수 없는 식재료') {
+        return;
+      }
+
+      if (ingredientMap.has(ingredientName)) {
+        const existing = ingredientMap.get(ingredientName)!;
+        existing.totalQuantity += quantity;
+        existing.usageCount += 1;
+      } else {
+        ingredientMap.set(ingredientName, {
+          name: ingredientName,
+          category: categoryName,
+          totalQuantity: quantity,
+          usageCount: 1
+        });
+      }
+    });
+
+    // 사용량 기준으로 정렬
+    const sortedIngredients = Array.from(ingredientMap.values())
+      .sort((a, b) => b.totalQuantity - a.totalQuantity);
+
+    if (sortedIngredients.length === 0) return null;
+    
+    // 1위 사용량과 동일한 모든 식재료 찾기
+    const topQuantity = sortedIngredients[0].totalQuantity;
+    const topIngredients = sortedIngredients.filter(ingredient => ingredient.totalQuantity === topQuantity);
+    
+    // 공동 1위들의 통계 합계 계산
+    const totalUsageCount = topIngredients.reduce((sum, ingredient) => sum + ingredient.usageCount, 0);
+    const totalQuantity = topIngredients[0].totalQuantity; // 모든 공동 1위는 동일한 사용량
+    
+    return {
+      totalUsageCount,
+      totalQuantity,
+      topIngredients
+    };
+  };
+
+  // 일평균 사용량 계산
+  const getDailyAverageUsage = () => {
+    if (!consumedData || consumedData.length === 0) return '0g';
+    
+    // 선택된 기간에 따른 일수 계산
+    let days = 1;
+    switch (selectedPeriod) {
+      case '이번 주':
+        days = 7;
+        break;
+      case '이번 달':
+        days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        break;
+      case '지난 3개월':
+        days = 90;
+        break;
+      case '올해':
+        const currentYear = new Date().getFullYear();
+        days = new Date(currentYear, 11, 31).getTime() - new Date(currentYear, 0, 1).getTime();
+        days = Math.ceil(days / (1000 * 60 * 60 * 24)) + 1; // 올해 1월 1일부터 오늘까지의 일수
+        break;
+    }
+    
+    const total = consumedData.reduce((sum, item) => sum + (item.totalConsumedQuantity || 0), 0);
+    const dailyAverage = Math.round(total / days);
+    return `${dailyAverage.toLocaleString()}g`;
+  };
+
+  const summaryStats: Array<{
+    title: string;
+    value: string;
+    trend: string;
+    trendColor: string;
+    icon: React.ReactNode;
+    customContent?: React.ReactNode;
+  }> = [
     {
-      title: '총 사용 식재료',
-      value: '147개',
-      trend: '+12% 증가',
+      title: '식품 재고 총 사용량',
+      value: getTotalUsage(),
+      trend: selectedPeriod + ' 기준',
       trendColor: 'text-green-600',
       icon: (
         <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
@@ -494,13 +679,13 @@ export default function StatisticsPage() {
       )
     },
     {
-      title: '이번 달 총 비용',
-      value: '₩456,000',
-      trend: '+8% 감소',
+      title: '제일 많이 사용된 식재료',
+      value: getTopIngredientName(),
+      trend: '사용량 기준 1위',
       trendColor: 'text-blue-600',
       icon: (
-        <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
+        <svg className="w-8 h-8 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
         </svg>
       )
     },
@@ -516,26 +701,178 @@ export default function StatisticsPage() {
       )
     },
     {
-      title: '일평균 사용량',
-      value: '18개',
-      trend: '+2% 증가',
+      title: '일평균 식품 재고 사용량',
+      value: getDailyAverageUsage(),
+      trend: selectedPeriod + ' 평균',
       trendColor: 'text-blue-600',
       icon: (
-        <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+        <svg className="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm6 7a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1zm-3 3a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1zm-3-3a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1z" clipRule="evenodd"/>
         </svg>
       )
     }
   ];
 
-  const topIngredients = [
-    { name: '양파', category: '채소류', usage: '45회', totalCost: '67,500원', avgPrice: '1,500원', icon: '🧅' },
-    { name: '닭고기', category: '육류', usage: '32회', totalCost: '128,000원', avgPrice: '4,000원', icon: '🍗' },
-    { name: '우유', category: '유제품', usage: '28회', totalCost: '84,000원', avgPrice: '3,000원', icon: '🥛' },
-    { name: '쌀', category: '곡물류', usage: '25회', totalCost: '75,000원', avgPrice: '3,000원', icon: '🍚' },
-    { name: '토마토', category: '채소류', usage: '22회', totalCost: '66,000원', avgPrice: '3,000원', icon: '🍅' },
-    { name: '계란', category: '유제품', usage: '38회', totalCost: '76,000원', avgPrice: '2,000원', icon: '🥚' }
-  ];
+  // 식재료 아이콘 매핑 함수
+  const getIngredientIcon = (ingredientName: string): string => {
+    const iconMap: { [key: string]: string } = {
+      '양파': '🧅', '닭고기': '🍗', '우유': '🥛', '쌀': '🍚', '토마토': '🍅', '계란': '🥚',
+      '돼지고기': '🥩', '소고기': '🥩', '생선': '🐟', '새우': '🦐', '치즈': '🧀', '버터': '🧈',
+      '당근': '🥕', '감자': '🥔', '고구마': '🍠', '배추': '🥬', '시금치': '🥬', '상추': '🥬',
+      '오이': '🥒', '파': '🧄', '마늘': '🧄', '고추': '🌶️', '피망': '🫑', '브로콜리': '🥦',
+      '양배추': '🥬', '무': '🥕', '배': '🍐', '사과': '🍎', '바나나': '🍌', '오렌지': '🍊',
+      '레몬': '🍋', '딸기': '🍓', '포도': '🍇', '복숭아': '🍑', '수박': '🍉', '참외': '🍈',
+      '키위': '🥝', '파인애플': '🍍', '망고': '🥭', '아보카도': '🥑', '빵': '🍞', '라면': '🍜',
+      '국수': '🍜', '파스타': '🍝', '밥': '🍚', '떡': '🍡', '과자': '🍪', '사탕': '🍬',
+      '초콜릿': '🍫', '아이스크림': '🍦', '케이크': '🍰', '쿠키': '🍪', '도넛': '🍩', '와플': '🧇',
+      '팬케이크': '🥞', '토스트': '🍞', '샌드위치': '🥪', '햄버거': '🍔', '피자': '🍕', '타코': '🌮',
+      '부리토': '🌯', '샐러드': '🥗', '스시': '🍣', '김밥': '🍙', '초밥': '🍣', '라멘': '🍜',
+      '우동': '🍜', '된장국': '🍲', '김치찌개': '🍲', '부대찌개': '🍲', '순두부찌개': '🍲',
+      '된장찌개': '🍲', '미역국': '🍲', '시래기국': '🍲', '콩나물국': '🍲', '계란국': '🍲',
+      '닭볶음탕': '🍲', '갈비탕': '🍲', '설렁탕': '🍲', '삼계탕': '🍲', '보신탕': '🍲',
+      '감자탕': '🍲', '추어탕': '🍲', '해물탕': '🍲', '매운탕': '🍲', '알탕': '🍲', '곰탕': '🍲',
+      '육개장': '🍲', '청국장': '🍲', '비빔밥': '🍚', '김치볶음밥': '🍚', '볶음밥': '🍚',
+      '주먹밥': '🍙', '떡볶이': '🍢', '순대': '🍢', '튀김': '🍤', '만두': '🥟', '교자': '🥟',
+      '칼국수': '🍜', '냉면': '🍜', '비빔냉면': '🍜', '물냉면': '🍜', '밀면': '🍜', '막국수': '🍜',
+      '콩국수': '🍜', '잔치국수': '🍜', '비빔국수': '🍜', '냉국수': '🍜', '메밀국수': '🍜',
+      '소바': '🍜', '짬뽕': '🍜', '짜장면': '🍜', '탕수육': '🍖', '깐풍기': '🍖', '라조기': '🍖',
+      '고추잡채': '🍖', '동파육': '🍖', '꿔바로우': '🍖', '마파두부': '🍲', '궁보계정': '🍖',
+      '팔보채': '🍖', '양장피': '🍖', '해물찜': '🍲', '깐쇼새우': '🍤', '새우볶음': '🍤',
+      '게살볶음': '🦀', '홍게찜': '🦀', '대게찜': '🦀', '킹크랩': '🦀', '랍스터': '🦞',
+      '전복': '🐚', '소라': '🐚', '홍합': '🐚', '굴': '🐚', '바지락': '🐚', '조개': '🐚',
+      '문어': '🐙', '오징어': '🦑', '낙지': '🐙', '쭈꾸미': '🦑', '해삼': '🦑', '멍게': '🦑',
+      '성게': '🦑', '미역': '🌿', '다시마': '🌿', '김': '🌿', '파래': '🌿', '청각': '🌿',
+      '톳': '🌿', '모자반': '🌿'
+    };
+
+    // 정확한 매칭 시도
+    if (iconMap[ingredientName]) {
+      return iconMap[ingredientName];
+    }
+
+    // 부분 매칭 시도
+    for (const [key, icon] of Object.entries(iconMap)) {
+      if (ingredientName.includes(key) || key.includes(ingredientName)) {
+        return icon;
+      }
+    }
+
+    // 기본 아이콘들
+    const defaultIcons = ['🥕', '🥬', '🍖', '🐟', '🥛', '🍚', '🥔', '🌶️', '🧄', '🍅'];
+    return defaultIcons[ingredientName.length % defaultIcons.length];
+  };
+
+  // 식재료별 사용량 계산 함수 (ingredientName 기준)
+  const calculateTopIngredients = (data: ConsumedLogResponseDto[]) => {
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    // 식재료별 사용량 집계
+    const ingredientMap = new Map<string, { 
+      name: string; 
+      category: string; 
+      totalQuantity: number; 
+      usageCount: number;
+    }>();
+
+    data.forEach((item) => {
+      const ingredientName = item.ingredientName || '알 수 없는 식재료';
+      const categoryName = item.categoryName || '기타';
+      const quantity = item.totalConsumedQuantity || 0;
+
+      // 유효하지 않은 식재료명은 건너뛰기
+      if (!ingredientName || ingredientName.trim() === '' || ingredientName === '알 수 없는 식재료') {
+        return;
+      }
+
+      if (ingredientMap.has(ingredientName)) {
+        const existing = ingredientMap.get(ingredientName)!;
+        existing.totalQuantity += quantity;
+        existing.usageCount += 1;
+      } else {
+        ingredientMap.set(ingredientName, {
+          name: ingredientName,
+          category: categoryName,
+          totalQuantity: quantity,
+          usageCount: 1
+        });
+      }
+    });
+
+    // 사용량 기준으로 정렬하고 상위 6개 선택
+    const sortedIngredients = Array.from(ingredientMap.values())
+      .sort((a, b) => b.totalQuantity - a.totalQuantity)
+      .slice(0, 6);
+
+    // 공동 순위 처리
+    const rankedIngredients = sortedIngredients.map((ingredient, index) => {
+      // 현재 순위 계산 (같은 사용량의 식재료들은 같은 순위)
+      let currentRank = index + 1;
+      
+      // 이전 순위의 식재료들과 사용량이 같은지 확인
+      for (let i = index - 1; i >= 0; i--) {
+        if (sortedIngredients[i].totalQuantity === ingredient.totalQuantity) {
+          currentRank = i + 1; // 같은 순위로 설정
+        } else {
+          break;
+        }
+      }
+
+      // 순위 텍스트 생성 (공동 순위 처리)
+      let rankText: string;
+      if (currentRank === 1) {
+        rankText = '🥇 1위';
+      } else if (currentRank === 2) {
+        rankText = '🥈 2위';
+      } else if (currentRank === 3) {
+        rankText = '🥉 3위';
+      } else {
+        rankText = `${currentRank}위`;
+      }
+
+      // 공동 순위인 경우 표시 추가
+      const isTied = sortedIngredients.filter((_, i) => 
+        sortedIngredients[i].totalQuantity === ingredient.totalQuantity
+      ).length > 1;
+      
+      if (isTied) {
+        rankText += ' (공동)';
+      }
+
+      return {
+        name: ingredient.name,
+        category: ingredient.category,
+        usage: `${ingredient.usageCount}회`,
+        totalQuantity: `${ingredient.totalQuantity.toLocaleString()}g`,
+        avgQuantity: `${Math.round(ingredient.totalQuantity / ingredient.usageCount).toLocaleString()}g`,
+        icon: getIngredientIcon(ingredient.name),
+        rank: currentRank,
+        rankText: rankText,
+        isTied: isTied
+      };
+    });
+
+    return rankedIngredients;
+  };
+
+  // 현재 선택된 기간의 식재료 데이터 계산
+  const topIngredients = useMemo(() => {
+    // 테스트용 더미 데이터 (실제 데이터가 없을 때)
+    if (!consumedData || consumedData.length === 0) {
+      const dummyData: ConsumedLogResponseDto[] = [
+        { ingredientName: '양파', categoryName: '채소류', totalConsumedQuantity: 500 },
+        { ingredientName: '닭고기', categoryName: '육류', totalConsumedQuantity: 800 },
+        { ingredientName: '우유', categoryName: '유제품', totalConsumedQuantity: 300 },
+        { ingredientName: '쌀', categoryName: '곡물류', totalConsumedQuantity: 1000 },
+        { ingredientName: '토마토', categoryName: '채소류', totalConsumedQuantity: 400 },
+        { ingredientName: '계란', categoryName: '유제품', totalConsumedQuantity: 600 }
+      ];
+      return calculateTopIngredients(dummyData);
+    }
+    
+    return calculateTopIngredients(consumedData);
+  }, [consumedData]);
 
   // 카테고리별 비율 계산 (중복 카테고리 합치기)
   const calculateCategoryRatios = (data: ConsumedLogResponseDto[]) => {
@@ -735,7 +1072,73 @@ export default function StatisticsPage() {
                       </span>
                     </div>
                     <h3 className="text-gray-600 text-sm mb-2">{stat.title}</h3>
+                    
+                    {/* 2번째 탭(제일 많이 사용된 식재료)만 특별한 레이아웃 적용 */}
+                    {index === 1 ? (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-lg font-bold text-gray-900">{stat.value}</p>
+                          {(() => {
+                            const topData = getTopIngredientData();
+                            if (!topData) return null;
+                            
+                            return (
+                              <div className="flex gap-2">
+                                <div className="bg-blue-50 rounded-lg px-2 py-1 text-center">
+                                  <div className="text-sm font-bold text-blue-600">{topData.totalUsageCount}회</div>
+                                </div>
+                                <div className="bg-orange-50 rounded-lg px-2 py-1 text-center">
+                                  <div className="text-sm font-bold text-orange-600">{topData.totalQuantity.toLocaleString()}g</div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        
+                        {/* 공동 1위가 2개 이상일 때만 더보기 버튼 표시 */}
+                        {(() => {
+                          const topData = getTopIngredientData();
+                          if (!topData || topData.topIngredients.length <= 1) return null;
+                          
+                          return (
+                            <div className="relative">
+                              <details className="group">
+                                <summary className="cursor-pointer text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 list-none">
+                                  <span>더보기</span>
+                                  <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </summary>
+                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 p-4 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto w-96">
+                                  <div className="text-xs text-gray-600 mb-3 font-medium">공동 1위 식재료 상세정보</div>
+                                  <div className="space-y-3">
+                                    {topData.topIngredients.map((ingredient, idx) => (
+                                      <div key={idx} className="flex items-center justify-between text-sm p-3 hover:bg-gray-50 rounded-lg">
+                                        <div className="flex items-center gap-3 flex-1">
+                                          <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
+                                            {idx + 1}
+                                          </span>
+                                          <div className="flex flex-col">
+                                            <span className="font-medium text-gray-900">{ingredient.name}</span>
+                                            <span className="text-xs text-gray-500">{ingredient.category}</span>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs">
+                                          <span className="text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">{ingredient.usageCount}회</span>
+                                          <span className="text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded">{ingredient.totalQuantity.toLocaleString()}g</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </details>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    ) : (
                     <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1084,40 +1487,121 @@ export default function StatisticsPage() {
             </SectionCard>
 
             {/* Top Ingredients Card */}
-            <SectionCard title="자주 사용하는 식재료" variant="statistics">
+            <SectionCard title={`${selectedPeriod} 자주 사용하는 식재료`} variant="statistics">
               <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">TOP 6</h3>
-                  <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                    전체 보기
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {topIngredients.map((ingredient, index) => (
-                    <div key={index} className="border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white hover:border-blue-300">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-2xl">{ingredient.icon}</span>
-                        <div>
-                          <h4 className="font-medium text-gray-900">{ingredient.name}</h4>
-                          <span className="text-sm text-gray-500">{ingredient.category}</span>
-                        </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {selectedPeriod} 식재료 사용량 순위
+                      {topIngredients.length === 0 && ' (데이터 없음)'}
+                    </h3>
+                    <div className="text-sm text-gray-500 mt-1">
+                      총 사용량 기준 (ingredientName별) • 상위 {topIngredients.length}개
+                    </div>
+                  </div>
+                  {topIngredients.length > 0 && (
+                    <div className="text-right">
+                      <div className="text-xs text-gray-500">1위 식재료</div>
+                      <div className="text-sm font-bold text-yellow-600">
+                        {topIngredients[0]?.name} ({topIngredients[0]?.totalQuantity})
                       </div>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">사용 횟수:</span>
-                          <span className="font-medium">{ingredient.usage}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {isLoading ? (
+                  <div className="h-64 flex items-center justify-center">
+                    <div className="text-gray-500">로딩 중...</div>
+                  </div>
+                ) : topIngredients.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {topIngredients.map((ingredient, index) => (
+                      <div key={index} className={`border rounded-lg p-4 hover:shadow-md transition-all duration-300 bg-white hover:border-opacity-80 ${
+                        ingredient.isTied ? 'border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-md ring-2 ring-purple-200 ring-opacity-30' :
+                        ingredient.rank === 1 ? 'border-yellow-300 bg-gradient-to-br from-yellow-50 to-orange-50 shadow-lg' :
+                        ingredient.rank === 2 ? 'border-gray-300 bg-gradient-to-br from-gray-50 to-slate-50 shadow-md' :
+                        ingredient.rank === 3 ? 'border-orange-300 bg-gradient-to-br from-orange-50 to-red-50 shadow-md' :
+                        'border-blue-200 hover:border-blue-300'
+                      }`}>
+                        {/* 순위 헤더 */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{ingredient.icon}</span>
+                            <div className="flex flex-col items-center">
+                              <div className={`flex items-center justify-center w-10 h-10 text-lg font-bold rounded-full ${
+                                ingredient.rank === 1 ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-300' :
+                                ingredient.rank === 2 ? 'bg-gray-100 text-gray-800 border-2 border-gray-300' :
+                                ingredient.rank === 3 ? 'bg-orange-100 text-orange-800 border-2 border-orange-300' :
+                                'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                              } ${ingredient.isTied ? 'ring-2 ring-purple-300 ring-opacity-50' : ''}`}>
+                                {ingredient.rank}
+                              </div>
+                              <div className={`text-xs font-medium mt-1 ${ingredient.isTied ? 'text-purple-600' : ''}`}>
+                                {ingredient.rankText}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-gray-500">총 사용량</div>
+                            <div className="text-lg font-bold text-green-600">{ingredient.totalQuantity}</div>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">총 비용:</span>
-                          <span className="font-medium">{ingredient.totalCost}</span>
+
+                        {/* 식재료 정보 */}
+                        <div className="mb-3">
+                          <h4 className="font-semibold text-gray-900 text-lg truncate mb-1">{ingredient.name}</h4>
+                          <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{ingredient.category}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">평균 가격:</span>
-                          <span className="font-medium">{ingredient.avgPrice}</span>
+
+                        {/* 사용량 정보 */}
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="text-center p-2 bg-blue-50 rounded-lg">
+                            <div className="text-gray-600 text-xs">사용 횟수</div>
+                            <div className="font-bold text-blue-600">{ingredient.usage}</div>
+                          </div>
+                          <div className="text-center p-2 bg-orange-50 rounded-lg">
+                            <div className="text-gray-600 text-xs">평균 사용량</div>
+                            <div className="font-bold text-orange-600">{ingredient.avgQuantity}</div>
+                          </div>
+                        </div>
+                        
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="h-64 flex flex-col items-center justify-center text-gray-500">
+                    <div className="text-4xl mb-4">📊</div>
+                    <div className="text-lg font-medium mb-2">데이터가 없습니다</div>
+                    <div className="text-sm text-center">
+                      {selectedPeriod} 동안 사용된 식재료 데이터가 없습니다.<br/>
+                      다른 기간을 선택해보세요.
+                    </div>
+                  </div>
+                )}
+
+                
+                {/* 기간별 안내 메시지 */}
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <div className="text-blue-600 text-lg">💡</div>
+                    <div className="text-sm text-blue-800">
+                      <div className="font-medium mb-1">식재료 사용량 순위 분석</div>
+                      <div className="space-y-1">
+                        <div>
+                          {selectedPeriod === '이번 주' && '이번 주 동안 가장 많이 사용한 식재료를 총 사용량 기준으로 순위를 매겨 보여줍니다.'}
+                          {selectedPeriod === '이번 달' && '이번 달 동안 가장 많이 사용한 식재료를 총 사용량 기준으로 순위를 매겨 보여줍니다.'}
+                          {selectedPeriod === '지난 3개월' && '지난 3개월 동안 가장 많이 사용한 식재료를 총 사용량 기준으로 순위를 매겨 보여줍니다.'}
+                          {selectedPeriod === '올해' && '올해 가장 많이 사용한 식재료를 총 사용량 기준으로 순위를 매겨 보여줍니다.'}
+                        </div>
+                        <div className="text-xs text-blue-600 mt-2">
+                          • 동일한 식재료명(ingredientName)의 사용량을 합산하여 순위를 결정합니다
+                          • 1위는 🥇, 2위는 🥈, 3위는 🥉로 표시됩니다
+                          • 총 사용량이 같은 식재료들은 공동 순위로 표시됩니다 (보라색 테두리)
+                          • 공동 순위인 경우 다음 순위는 건너뛰어 계산됩니다
                         </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             </SectionCard>

@@ -38,4 +38,6 @@ public interface ConsumedLogRepository extends JpaRepository <ConsumedLog, Long>
             @Param("userId") Long userId,
             @Param("year") int year);
 
+    List<ConsumedLog> findByUser_IdAndConsumedDateBetween(Long userId, LocalDateTime startDate, LocalDateTime endDate);
+
 }

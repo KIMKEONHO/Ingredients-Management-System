@@ -3,10 +3,13 @@ package com.example.ingredients_ms.domain.consumedlog.Service;
 
 import com.example.ingredients_ms.domain.consumedlog.dto.response.ConsumedLogResponseDto;
 import com.example.ingredients_ms.domain.consumedlog.dto.response.MonthlyConsumedLogResponseDto;
+import com.example.ingredients_ms.domain.consumedlog.entity.ConsumedLog;
+
 import com.example.ingredients_ms.domain.consumedlog.repository.ConsumedLogRepository;
 import com.example.ingredients_ms.domain.ingredientscategory.repository.IngredientsCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
@@ -23,7 +26,7 @@ public class ConsumedLogService {
     private final ConsumedLogRepository consumedLogRepository;
     private final IngredientsCategoryRepository ingredientsCategoryRepository;
 
-
+    @Transactional
     public List<ConsumedLogResponseDto> getThisMonthConsumedLogStat(Long userId) {
         LocalDateTime now = LocalDateTime.now();
         YearMonth currentMonth = YearMonth.from(now);
@@ -32,32 +35,17 @@ public class ConsumedLogService {
         LocalDateTime startDate = currentMonth.atDay(1).atStartOfDay();
         LocalDateTime endDate = currentMonth.atEndOfMonth().atTime(23, 59, 59);
 
-        // 카테고리별 사용량 조회
-        List<Object[]> consumedData = consumedLogRepository.findConsumedQuantityByCategoryAndDateRange(
-                userId, startDate, endDate);
 
-        
-        // 결과 DTO 리스트 생성
-        List<ConsumedLogResponseDto> result = new ArrayList<>();
-        
-        for (Object[] data : consumedData) {
-            Long categoryId = (Long) data[0];
-            String categoryName = (String) data[1];
-            Long totalConsumedQuantity = (Long) data[2];
-            
-            ConsumedLogResponseDto dto = ConsumedLogResponseDto.builder()
-                    .categoryId(categoryId)
-                    .categoryName(categoryName)
-                    .totalConsumedQuantity(totalConsumedQuantity.intValue())
-                    .build();
-            
-            result.add(dto);
-        }
+        List<ConsumedLogResponseDto> result = consumedLogRepository
+                .findByUser_IdAndConsumedDateBetween(userId,startDate,endDate)
+                .stream().map(ConsumedLogResponseDto::fromEntity).collect(Collectors.toList());
+
+
         
         return result;
     }
 
-
+    @Transactional
     public List<MonthlyConsumedLogResponseDto> getMonthlyConsumedLogByCategory(Long userId) {
         int currentYear = LocalDateTime.now().getYear();
         
@@ -86,7 +74,7 @@ public class ConsumedLogService {
         return result;
     }
 
-
+    @Transactional
     public List<ConsumedLogResponseDto> get3MonthConsumedLogStat(Long userId) {
         LocalDateTime now = LocalDateTime.now();
         YearMonth currentMonth = YearMonth.from(now);
@@ -106,55 +94,30 @@ public class ConsumedLogService {
         LocalDateTime threeMonthsAgoEnd = threeMonthsAgo.atEndOfMonth().atTime(23, 59, 59);
 
 
+        List<ConsumedLogResponseDto> result = consumedLogRepository
+                .findByUser_IdAndConsumedDateBetween(userId,threeMonthsAgoStart,prevMonthEnd)
+                .stream().map(ConsumedLogResponseDto::fromEntity).collect(Collectors.toList());
         // 카테고리별 사용량 조회
-        List<Object[]> consumedData = consumedLogRepository.findConsumedQuantityByCategoryAndDateRange(
-                userId, threeMonthsAgoStart, prevMonthEnd);
-
-
-        // 결과 DTO 리스트 생성
-        List<ConsumedLogResponseDto> result = new ArrayList<>();
-
-        for (Object[] data : consumedData) {
-            Long categoryId = (Long) data[0];
-            String categoryName = (String) data[1];
-            Long totalConsumedQuantity = (Long) data[2];
-
-            ConsumedLogResponseDto dto = ConsumedLogResponseDto.builder()
-                    .categoryId(categoryId)
-                    .categoryName(categoryName)
-                    .totalConsumedQuantity(totalConsumedQuantity.intValue())
-                    .build();
-
-            result.add(dto);
-        }
 
         return result;
     }
-
+    @Transactional
     public List<ConsumedLogResponseDto> getThisYearConsumedLogStat(Long userId) {
-        int currentYear = LocalDateTime.now().getYear();
+        // 1. 이번 연도의 시작일과 종료일 계산
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfYear = now.with(TemporalAdjusters.firstDayOfYear()).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime endOfYear = now.with(TemporalAdjusters.lastDayOfYear()).withHour(23).withMinute(59).withSecond(59).withNano(999999999);
 
-        List<Object[]> consumedData = consumedLogRepository.findMonthlyConsumedQuantityByCategory(userId, currentYear);
-
-        List<ConsumedLogResponseDto> result = new ArrayList<>();
-
-        for (Object[] data : consumedData) {
-            Long categoryId = (Long) data[1];
-            String categoryName = (String) data[2];
-            Long totalConsumedQuantity = (Long) data[3];
-
-            ConsumedLogResponseDto dto = ConsumedLogResponseDto.builder()
-                    .categoryId(categoryId)
-                    .categoryName(categoryName)
-                    .totalConsumedQuantity(totalConsumedQuantity.intValue())
-                    .build();
-
-            result.add(dto);
-        }
+        // 2. JPA 메서드를 사용하여 이번 연도 데이터 조회
+        List<ConsumedLogResponseDto> result = consumedLogRepository.findByUser_IdAndConsumedDateBetween(userId, startOfYear, endOfYear)
+                .stream()
+                .map(ConsumedLogResponseDto::fromEntity)
+                .collect(Collectors.toList());
 
         return result;
     }
 
+    @Transactional
     public List<ConsumedLogResponseDto> getThisWeekConsumedLogStat(Long userId) {
         LocalDateTime now = LocalDateTime.now();
 
@@ -166,28 +129,13 @@ public class ConsumedLogService {
         LocalDateTime endOfWeek = now.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
                 .withHour(23).withMinute(59).withSecond(59).withNano(999999999);
 
-        List<Object[]> consumedData = consumedLogRepository.findConsumedQuantityByCategoryAndDateRange(userId, startOfWeek, endOfWeek);
-
-
-        List<ConsumedLogResponseDto> result = new ArrayList<>();
-
-        for (Object[] data : consumedData) {
-            Long categoryId = (Long) data[0];
-            String categoryName = (String) data[1];
-            Long totalConsumedQuantity = (Long) data[2];
-
-            ConsumedLogResponseDto dto = ConsumedLogResponseDto.builder()
-                    .categoryId(categoryId)
-                    .categoryName(categoryName)
-                    .totalConsumedQuantity(totalConsumedQuantity.intValue())
-                    .build();
-
-            result.add(dto);
-        }
+        List<ConsumedLogResponseDto> result = consumedLogRepository
+                .findByUser_IdAndConsumedDateBetween(userId,startOfWeek,endOfWeek)
+                .stream().map(ConsumedLogResponseDto::fromEntity).collect(Collectors.toList());
 
         return result;
     }
-
+    @Transactional
     public List<ConsumedLogResponseDto> getAllLogs(Long userId) {
 
 

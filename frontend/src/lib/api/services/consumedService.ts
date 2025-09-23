@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from '../endpoints';
 export interface ConsumedLogResponseDto {
   categoryId?: number;
   categoryName?: string;
+  ingredientName?: string;
   totalConsumedQuantity?: number;
 }
 
