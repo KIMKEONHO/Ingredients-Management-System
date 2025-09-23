@@ -6,12 +6,14 @@ import com.example.ingredients_ms.domain.recipestep.entity.RecipeStep;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "recipe")
+@SuperBuilder
 public class Recipe extends BaseEntity {
     @Column(name = "title", nullable = false)
     private String title;
