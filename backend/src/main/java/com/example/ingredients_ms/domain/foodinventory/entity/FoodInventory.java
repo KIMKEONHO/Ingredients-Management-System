@@ -1,5 +1,6 @@
 package com.example.ingredients_ms.domain.foodinventory.entity;
 
+import com.example.ingredients_ms.domain.consumedlog.entity.ConsumedLog;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.global.entity.BaseEntity;
@@ -8,8 +9,8 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -21,13 +22,10 @@ import java.util.Set;
 public class FoodInventory extends BaseEntity {
 
     @Column(name = "quantity", length = 255, nullable = false)
-    private Integer quantity;
+    private Integer quantity; // 현재 수량 (단위: g)
 
     @Column(name = "original_quantity", nullable = false)
-    private Integer originalQuantity; // 처음 구매한 개수
-
-    @Column(name = "unit", length = 255, nullable = false)
-    private String unit;
+    private Integer originalQuantity; // 처음 구매한 개수 (단위: g)
 
     @Column(name="bought_date", nullable = false)
     private LocalDateTime boughtDate;
@@ -51,6 +49,9 @@ public class FoodInventory extends BaseEntity {
     @Column(name = "status", nullable = false)
     @Builder.Default
     private FoodStatus status = FoodStatus.NORMAL;
+
+    @OneToMany(mappedBy = "inventory", cascade = CascadeType.ALL)
+    private List<ConsumedLog> logs = new ArrayList<>();
 
     public void updateStatus(FoodStatus status) {
         this.status = status;

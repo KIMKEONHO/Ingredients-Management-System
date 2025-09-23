@@ -95,6 +95,8 @@ public class FoodInventoryController {
         return new RsData<>("200", "식품 재고 수량이 성공적으로 수정되었습니다.", responseDto);
     }
 
+
+
     @Operation(summary = "식품 재고 상태 수정", description = "기존 식품 재고의 상태만 수정합니다.")
     @PatchMapping("/{foodInventoryId}/status")
     public RsData<FoodInventoryResponseDto> updateFoodInventoryStatus(@PathVariable Long foodInventoryId, @RequestBody UpdateFoodInventoryStatusRequestDto requestDto) {

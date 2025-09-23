@@ -88,6 +88,15 @@ export const API_ENDPOINTS = {
       BY_ID: '/api/v1/feedback/:feedbackId', // 특정 피드백 수정/삭제
     },
 
+    // 식품 재고 사용량 관련
+    CONSUMED: {
+      THIS_WEEK: '/api/v1/consumedlog/thisweek', // 이번 주 식품 재고 사용량 조회
+      THIS_MONTH: '/api/v1/consumedlog/thismonth', // 이번 달 식품 재고 사용량 조회
+      LAST_3_MONTHS: '/api/v1/consumedlog/last3months', // 지난 3개월 식품 재고 사용량 조회
+      THIS_YEAR: '/api/v1/consumedlog/thisyear', // 올해 식품 재고 사용량 조회
+      MONTHLY: '/api/v1/consumedlog/monthly', // 올해 월별 식품 재고 사용량 조회
+    },
+
   } as const;
   
   // API URL 생성 헬퍼 함수

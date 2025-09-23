@@ -6,9 +6,11 @@ import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInv
 import com.example.ingredients_ms.domain.foodinventory.dto.request.UpdateFoodInventoryRequestDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.ExpiringSoonResponseDto;
 import com.example.ingredients_ms.domain.foodinventory.dto.response.FoodInventoryResponseDto;
+import com.example.ingredients_ms.domain.consumedlog.entity.ConsumedLog;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodStatus;
 import com.example.ingredients_ms.domain.foodinventory.entity.Place;
+import com.example.ingredients_ms.domain.consumedlog.repository.ConsumedLogRepository;
 import com.example.ingredients_ms.domain.foodinventory.repository.FoodInventoryRepository;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.ingredients.repository.IngredientsRepository;
@@ -32,6 +34,7 @@ public class FoodInventoryService {
     private final FoodInventoryRepository foodInventoryRepository;
     private final UserRepository userRepository;
     private final IngredientsRepository ingredientsRepository;
+    private final ConsumedLogRepository consumedLogRepository;
 
     // 새로운 재료를 냉장고에 등록합니다. 환영 파티라도 열어야 할까요?
     @Transactional
@@ -46,7 +49,6 @@ public class FoodInventoryService {
         //저장할 재고 객체 생성
         FoodInventory foodInventory = FoodInventory.builder()
                 .quantity(requestDto.getQuantity())
-                .unit(requestDto.getUnit())
                 .boughtDate(requestDto.getBoughtDate())
                 .expirationDate(requestDto.getExpirationDate())
                 .place(requestDto.getPlace())
@@ -111,7 +113,6 @@ public class FoodInventoryService {
 
         // 저장할 객체에 값 할당
         foodInventory.setQuantity(requestDto.getQuantity());
-        foodInventory.setUnit(requestDto.getUnit());
         foodInventory.setBoughtDate(requestDto.getBoughtDate());
         foodInventory.setExpirationDate(requestDto.getExpirationDate());
         foodInventory.setPlace(requestDto.getPlace());
@@ -127,7 +128,15 @@ public class FoodInventoryService {
         FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndId(userId, foodInventoryId)
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
 
+        ConsumedLog log = ConsumedLog.builder()
+                .consumedQuantity(foodInventory.getQuantity() - requestDto.getQuantity())
+                .inventory(foodInventory)
+                .user(userRepository.findById(userId).orElseThrow())
+                .build();
+
         foodInventory.setQuantity(requestDto.getQuantity());
+
+        consumedLogRepository.save(log);
 
         FoodInventory updatedFoodInventory = foodInventoryRepository.save(foodInventory);
         return FoodInventoryResponseDto.fromEntity(updatedFoodInventory);
@@ -165,7 +174,6 @@ public class FoodInventoryService {
                         .ingredientsName(i.getIngredient().getName())
                         .quantity(i.getQuantity())
                         .place(i.getPlace())
-                        .unit(i.getUnit())
                         .expirationDate(i.getExpirationDate())
                         .boughtDate(i.getBoughtDate())
                         .build())

@@ -15,10 +15,8 @@ import java.util.Set;
 public class FoodInventoryResponseDto {
     // 재고 ID, 우리 시스템의 주민등록번호 같은 것
     private Long foodInventoryId;
-    // 남은 수량, 0이 되면 슬퍼요.
+    // 남은 수량, 0이 되면 슬퍼요. (단위: g)
     private Integer quantity;
-    // 단위, '개'인지 'g'인지 헷갈리면 안돼요.
-    private String unit;
     // 구매일, 이 날을 기억하며...☆
     private LocalDateTime boughtDate;
     // 유통기한, 임박했다면 서두르세요!
@@ -39,7 +37,6 @@ public class FoodInventoryResponseDto {
         return FoodInventoryResponseDto.builder()
                 .foodInventoryId(foodInventory.getId())
                 .quantity(foodInventory.getQuantity())
-                .unit(foodInventory.getUnit())
                 .boughtDate(foodInventory.getBoughtDate())
                 .expirationDate(foodInventory.getExpirationDate())
                 .place(foodInventory.getPlace())

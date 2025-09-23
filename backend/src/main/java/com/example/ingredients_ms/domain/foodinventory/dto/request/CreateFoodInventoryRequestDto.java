@@ -11,10 +11,8 @@ import java.util.Set;
 @Setter
 // 새로운 식재료를 우리집 냉장고에 초대하기 위한 DTO
 public class CreateFoodInventoryRequestDto {
-    // 몇 개 샀는지 알려주세요. 넉넉하면 좋죠.
+    // 몇 개 샀는지 알려주세요. 넉넉하면 좋죠. (단위: g)
     private Integer quantity;
-    // 단위는 필수! '개', 'g', 'ml' 등등... '조금'은 안돼요.
-    private String unit;
     // 언제 우리 집에 왔나요? 첫 만남은 소중하니까.
     private LocalDateTime boughtDate;
     // 이별 예정일... 유통기한은 꼭 지켜주세요.
