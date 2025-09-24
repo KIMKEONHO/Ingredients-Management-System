@@ -23,11 +23,12 @@ public class RecipeIngredientService {
         for(CreateRecipeIngredientsRequestDto ingredientDto : requestDto) {
 
             Ingredients ingredients = ingredientsService.findById(ingredientDto.getIngredientId());
+            String notes = ingredientDto.getNotes();
 
             RecipeIngredient recipeIngredient = RecipeIngredient.builder()
                     .recipe(recipe)
                     .ingredient(ingredients)
-                    .notes(ingredientDto.getNotes().isEmpty() ? null : ingredientDto.getNotes())
+                    .notes(notes == null || notes.isEmpty() ? null : ingredientDto.getNotes())
                     .unit(ingredientDto.getUnit())
                     .quantity(ingredientDto.getQuantity())
                 .build();
