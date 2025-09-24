@@ -9,6 +9,7 @@ import SectionCard from '../../components/ui/SectionCard';
 import ImageUpload from '../../components/ui/ImageUpload';
 import IngredientInput from '../../components/ui/IngredientInput';
 import { Ingredient } from '@/lib/api/services/ingredientService';
+import { recipeService, CreateRecipeRequestDto } from '@/lib/api/services/recipeService';
 
 // 타입 정의
 interface RecipeIngredient {
@@ -57,6 +58,62 @@ export default function RecipeWritePage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // 폼 유효성 검사
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // 기본 정보 검증
+    if (!formData.title.trim()) {
+      newErrors.title = '레시피 제목을 입력해주세요.';
+    }
+
+    if (!formData.cookingTime || formData.cookingTime <= 0) {
+      newErrors.cookingTime = '조리 시간을 입력해주세요.';
+    }
+
+    if (!formData.servings || formData.servings <= 0) {
+      newErrors.servings = '인분을 입력해주세요.';
+    }
+
+    // 재료 검증
+    if (formData.ingredients.length === 0) {
+      newErrors.ingredients = '최소 1개 이상의 재료를 추가해주세요.';
+    } else {
+      formData.ingredients.forEach((ingredient, index) => {
+        if (!ingredient.name.trim()) {
+          newErrors[`ingredient_${index}_name`] = '재료명을 입력해주세요.';
+        }
+        if (!ingredient.quantity || ingredient.quantity <= 0) {
+          newErrors[`ingredient_${index}_quantity`] = '재료의 양을 입력해주세요.';
+        }
+        if (!ingredient.unit.trim()) {
+          newErrors[`ingredient_${index}_unit`] = '재료의 단위를 선택해주세요.';
+        }
+        if (!ingredient.ingredientId) {
+          newErrors[`ingredient_${index}_ingredientId`] = '재료를 검색하여 선택해주세요.';
+        }
+      });
+    }
+
+    // 조리 단계 검증
+    if (formData.steps.length === 0) {
+      newErrors.steps = '최소 1개 이상의 조리 단계를 추가해주세요.';
+    } else {
+      formData.steps.forEach((step, index) => {
+        if (!step.description.trim()) {
+          newErrors[`step_${index}_description`] = '조리 설명을 입력해주세요.';
+        }
+        if (!step.cookingTime || step.cookingTime < 0) {
+          newErrors[`step_${index}_cookingTime`] = '소요 시간을 입력해주세요.';
+        }
+      });
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // 재료 추가
   const addIngredient = () => {
@@ -145,21 +202,51 @@ export default function RecipeWritePage() {
   // 폼 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 유효성 검사
+    if (!validateForm()) {
+      alert('입력 정보를 확인해주세요.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // 여기에 API 호출 로직 추가
-      console.log('레시피 데이터:', formData);
+      // 백엔드 DTO 형식으로 데이터 변환
+      const requestData: CreateRecipeRequestDto = {
+        title: formData.title,
+        description: formData.description,
+        cookingTime: formData.cookingTime,
+        difficultyLevel: formData.difficultyLevel,
+        serving: formData.servings,
+        recipeType: formData.recipeType,
+        imageUrl: formData.imageUrl || undefined,
+        isPublic: formData.isPublic,
+        ingredientsRequestDto: formData.ingredients.map(ingredient => ({
+          ingredientId: ingredient.ingredientId!,
+          quantity: ingredient.quantity,
+          unit: ingredient.unit,
+          notes: ingredient.notes || undefined
+        })),
+        stepRequestDto: formData.steps.map(step => ({
+          stepNumber: step.stepNumber,
+          cookingTime: step.cookingTime || 0,
+          imageUrl: step.imageUrl || undefined,
+          description: step.description
+        }))
+      };
+
+      console.log('레시피 데이터:', requestData);
       
-      // 임시로 성공 처리
-      setTimeout(() => {
-        alert('레시피가 성공적으로 작성되었습니다!');
-        router.push('/recipe-community');
-        setIsSubmitting(false);
-      }, 1000);
+      // API 호출
+      await recipeService.createRecipe(requestData);
+      
+      alert('레시피가 성공적으로 작성되었습니다!');
+      router.push('/recipe-community');
     } catch (error) {
       console.error('레시피 작성 실패:', error);
       alert('레시피 작성에 실패했습니다. 다시 시도해주세요.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -192,8 +279,13 @@ export default function RecipeWritePage() {
                       value={formData.title}
                       onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="예: 집에서 만드는 완벽한 파스타"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                        errors.title ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.title && (
+                      <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+                    )}
                   </div>
 
                   <div className="md:col-span-2">
@@ -219,8 +311,13 @@ export default function RecipeWritePage() {
                       min="1"
                       value={formData.cookingTime}
                       onChange={(e) => setFormData(prev => ({ ...prev, cookingTime: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                        errors.cookingTime ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.cookingTime && (
+                      <p className="mt-1 text-sm text-red-600">{errors.cookingTime}</p>
+                    )}
                   </div>
 
                   <div>
@@ -251,8 +348,13 @@ export default function RecipeWritePage() {
                       min="1"
                       value={formData.servings}
                       onChange={(e) => setFormData(prev => ({ ...prev, servings: parseInt(e.target.value) || 1 }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                        errors.servings ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.servings && (
+                      <p className="mt-1 text-sm text-red-600">{errors.servings}</p>
+                    )}
                   </div>
 
                   <div>
@@ -299,6 +401,9 @@ export default function RecipeWritePage() {
 
               {/* 재료 정보 */}
               <SectionCard title="필요한 재료" variant="statistics">
+                {errors.ingredients && (
+                  <p className="mb-4 text-sm text-red-600">{errors.ingredients}</p>
+                )}
                 <div className="space-y-4">
                   {formData.ingredients.map((ingredient, index) => (
                     <div key={ingredient.id} className="flex gap-4 items-end p-4 bg-gray-50 rounded-lg">
@@ -314,7 +419,10 @@ export default function RecipeWritePage() {
                               handleIngredientNameChange(ingredient.id, selectedIngredient.name || '', selectedIngredient)
                             }
                             placeholder="예: 토마토"
-                            className="flex-1"
+                            className={`flex-1 ${
+                              errors[`ingredient_${index}_name`] || errors[`ingredient_${index}_ingredientId`] 
+                                ? 'border-red-500' : ''
+                            }`}
                           />
                           {ingredient.ingredientId && (
                             <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
@@ -322,6 +430,11 @@ export default function RecipeWritePage() {
                             </span>
                           )}
                         </div>
+                        {(errors[`ingredient_${index}_name`] || errors[`ingredient_${index}_ingredientId`]) && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors[`ingredient_${index}_name`] || errors[`ingredient_${index}_ingredientId`]}
+                          </p>
+                        )}
                       </div>
                       <div className="w-24">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -333,8 +446,13 @@ export default function RecipeWritePage() {
                           min="0"
                           value={ingredient.quantity}
                           onChange={(e) => updateIngredient(ingredient.id, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                            errors[`ingredient_${index}_quantity`] ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         />
+                        {errors[`ingredient_${index}_quantity`] && (
+                          <p className="mt-1 text-sm text-red-600">{errors[`ingredient_${index}_quantity`]}</p>
+                        )}
                       </div>
                       <div className="w-20">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -343,7 +461,9 @@ export default function RecipeWritePage() {
                         <select
                           value={ingredient.unit}
                           onChange={(e) => updateIngredient(ingredient.id, 'unit', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                            errors[`ingredient_${index}_unit`] ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         >
                           <option value="g">g</option>
                           <option value="kg">kg</option>
@@ -355,6 +475,9 @@ export default function RecipeWritePage() {
                           <option value="컵">컵</option>
                           <option value="조금">조금</option>
                         </select>
+                        {errors[`ingredient_${index}_unit`] && (
+                          <p className="mt-1 text-sm text-red-600">{errors[`ingredient_${index}_unit`]}</p>
+                        )}
                       </div>
                       <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -390,6 +513,9 @@ export default function RecipeWritePage() {
 
               {/* 조리 단계 */}
               <SectionCard title="조리 순서" variant="statistics">
+                {errors.steps && (
+                  <p className="mb-4 text-sm text-red-600">{errors.steps}</p>
+                )}
                 <div className="space-y-4">
                   {formData.steps.map((step, index) => (
                     <div key={step.id} className="p-4 bg-gray-50 rounded-lg">
@@ -417,8 +543,13 @@ export default function RecipeWritePage() {
                             value={step.description}
                             onChange={(e) => updateStep(step.id, 'description', e.target.value)}
                             placeholder="이 단계에서 해야 할 일을 자세히 설명해주세요"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                              errors[`step_${index}_description`] ? 'border-red-500' : 'border-gray-300'
+                            }`}
                           />
+                          {errors[`step_${index}_description`] && (
+                            <p className="mt-1 text-sm text-red-600">{errors[`step_${index}_description`]}</p>
+                          )}
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -431,8 +562,13 @@ export default function RecipeWritePage() {
                               min="0"
                               value={step.cookingTime || ''}
                               onChange={(e) => updateStep(step.id, 'cookingTime', parseInt(e.target.value) || 0)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                                errors[`step_${index}_cookingTime`] ? 'border-red-500' : 'border-gray-300'
+                              }`}
                             />
+                            {errors[`step_${index}_cookingTime`] && (
+                              <p className="mt-1 text-sm text-red-600">{errors[`step_${index}_cookingTime`]}</p>
+                            )}
                           </div>
                           
                           <div>
