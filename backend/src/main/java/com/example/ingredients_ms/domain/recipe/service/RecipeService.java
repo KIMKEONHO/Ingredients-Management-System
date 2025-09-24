@@ -4,6 +4,8 @@ import com.example.ingredients_ms.domain.recipe.dto.request.CreateRecipeRequestD
 import com.example.ingredients_ms.domain.recipe.entity.Recipe;
 import com.example.ingredients_ms.domain.recipe.entity.RecipeType;
 import com.example.ingredients_ms.domain.recipe.repository.RecipeRepository;
+import com.example.ingredients_ms.domain.recipeingredient.service.RecipeIngredientService;
+import com.example.ingredients_ms.domain.recipestep.service.RecipeStepService;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.service.UserService;
 import com.example.ingredients_ms.global.exeption.BusinessLogicException;
@@ -21,9 +23,20 @@ public class RecipeService {
 
     private final RecipeRepository recipeRepository;
     private final UserService userService;
+    private final RecipeIngredientService recipeIngredientService;
+    private final RecipeStepService recipeStepService;
 
+    /**
+     * 레시피 게시글(레시피, 레시피 재료, 레시피 단계) 생성 로직
+     *
+     * @param userId    레시피 작성자 ID
+     * @param requestDto 레시피 생성 요청 데이터
+     * @return RsData 결과 응답 객체
+     * @throws BusinessLogicException USER_NOT_FOUND 예외 (사용자가 존재하지 않는 경우)
+     * @since 2025.09.24
+     */
     @Transactional
-    public RsData<?> createService(Long userId, CreateRecipeRequestDto requestDto){
+    public RsData<?> createRecipePost(Long userId, CreateRecipeRequestDto requestDto){
 
         // 유저 찾기
         Optional<User> opUser = userService.findUserById(userId);
@@ -49,6 +62,12 @@ public class RecipeService {
 
         // 저장
         recipeRepository.save(recipe);
+
+        // 레시피 재료 저장
+        recipeIngredientService.createRecipeIngredient(requestDto.getIngredientsRequestDto(), recipe);
+
+        // 레시피 단계 저장
+        recipeStepService.createRecipeStep(requestDto.getStepRequestDto(), recipe);
 
         return new RsData<>("200","레시피가 생성되었습니다.");
     }
