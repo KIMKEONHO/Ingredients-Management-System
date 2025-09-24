@@ -1,5 +1,8 @@
 package com.example.ingredients_ms.domain.recipe.service;
 
+import com.example.ingredients_ms.domain.image.dto.ImageUploadResponseDto;
+import com.example.ingredients_ms.domain.image.service.ImageFolderType;
+import com.example.ingredients_ms.domain.image.service.ImageService;
 import com.example.ingredients_ms.domain.recipe.dto.request.CreateRecipeRequestDto;
 import com.example.ingredients_ms.domain.recipe.entity.Recipe;
 import com.example.ingredients_ms.domain.recipe.entity.RecipeType;
@@ -14,7 +17,9 @@ import com.example.ingredients_ms.global.rsdata.RsData;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,6 +30,7 @@ public class RecipeService {
     private final UserService userService;
     private final RecipeIngredientService recipeIngredientService;
     private final RecipeStepService recipeStepService;
+    private final ImageService imageService;
 
     /**
      * 레시피 게시글(레시피, 레시피 재료, 레시피 단계) 생성 로직
@@ -36,7 +42,7 @@ public class RecipeService {
      * @since 2025.09.24
      */
     @Transactional
-    public RsData<?> createRecipePost(Long userId, CreateRecipeRequestDto requestDto){
+    public RsData<?> createRecipePost(Long userId, CreateRecipeRequestDto requestDto, MultipartFile recipeImage, List<MultipartFile> stepImages){
 
         // 유저 찾기
         Optional<User> opUser = userService.findUserById(userId);
@@ -46,6 +52,13 @@ public class RecipeService {
         }
 
         User user = opUser.get();
+        String recipeImageUrl = null;
+
+        // 레시피 메인 이미지 업로드
+        if (recipeImage != null && !recipeImage.isEmpty()) {
+            RsData<ImageUploadResponseDto> uploadResult = imageService.uploadImage(recipeImage, ImageFolderType.RECIPE_MAIN);
+            recipeImageUrl = uploadResult.getData().getImageUrl();
+        }
 
         // 레시피 정보 저장
         Recipe recipe = Recipe.builder()
@@ -56,7 +69,7 @@ public class RecipeService {
                 .servings(requestDto.getServing())
                 .difficultyLevel(requestDto.getDifficultyLevel())
                 .recipeType(RecipeType.fromValue(requestDto.getRecipeType()))
-                .imageUrl(requestDto.getImageUrl())
+                .imageUrl(recipeImageUrl)
                 .author(user)
                 .build();
 
@@ -67,7 +80,7 @@ public class RecipeService {
         recipeIngredientService.createRecipeIngredient(requestDto.getIngredientsRequestDto(), recipe);
 
         // 레시피 단계 저장
-        recipeStepService.createRecipeStep(requestDto.getStepRequestDto(), recipe);
+        recipeStepService.createRecipeStep(requestDto.getStepRequestDto(), recipe, stepImages);
 
         return new RsData<>("200","레시피가 생성되었습니다.");
     }
