@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 
 interface ImageUploadProps {
   value?: string;
-  onChange: (imageUrl: string) => void;
+  onChange: (imageUrl: string, file?: File) => void;
   placeholder?: string;
   className?: string;
 }
@@ -34,12 +34,11 @@ export default function ImageUpload({
     setIsUploading(true);
 
     try {
-      // 실제 환경에서는 여기서 파일을 서버에 업로드하고 URL을 받아옵니다
-      // 현재는 로컬에서 미리보기용으로만 처리
+      // 미리보기용으로 FileReader 사용
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        onChange(result);
+        onChange(result, file); // 이미지 URL과 File 객체 모두 전달
         setIsUploading(false);
       };
       reader.readAsDataURL(file);
@@ -87,7 +86,7 @@ export default function ImageUpload({
   // 이미지 제거
   const handleRemove = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onChange('');
+    onChange(''); // File 객체는 undefined로 전달
   }, [onChange]);
 
   return (
