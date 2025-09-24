@@ -1229,12 +1229,27 @@ function InventoryContent() {
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1">
-                        <label htmlFor="boughtDate" className="block text-sm font-medium text-gray-700">구매기한</label>
-                        <input type="date" name="boughtDate" id="boughtDate" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                        <label htmlFor="boughtDate" className="block text-sm font-medium text-gray-700">구매일자</label>
+                        <input 
+                          type="date" 
+                          name="boughtDate" 
+                          id="boughtDate" 
+                          required 
+                          max={new Date().toISOString().split('T')[0]}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" 
+                        />
+                        <p className="text-xs text-gray-500 mt-1">오늘 이전의 날짜만 선택 가능합니다</p>
                       </div>
                       <div className="flex-1">
                         <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-700">유통기한</label>
-                        <input type="date" name="expirationDate" id="expirationDate" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" />
+                        <input 
+                          type="date" 
+                          name="expirationDate" 
+                          id="expirationDate" 
+                          min={new Date().toISOString().split('T')[0]}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" 
+                        />
+                        <p className="text-xs text-gray-500 mt-1">오늘 이후의 날짜만 선택 가능합니다</p>
                       </div>
                     </div>
                     
