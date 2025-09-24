@@ -59,6 +59,10 @@ function InventoryContent() {
   const [searchQuery, setSearchQuery] = useState(''); // 식재료 검색 쿼리
   const [showIngredientDropdown, setShowIngredientDropdown] = useState(false); // 식재료 드롭다운 표시 여부
   const [selectedIngredient, setSelectedIngredient] = useState<{id: number, name: string, categoryName: string} | null>(null); // 선택된 식재료
+  
+  // 체크박스 상태 관리
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set()); // 선택된 재고 항목 ID들
+  const [isBulkActionMode, setIsBulkActionMode] = useState(false); // 일괄 작업 모드 여부
 
   useEffect(() => {
     const fetchAndSetInventory = async () => {
@@ -302,6 +306,78 @@ function InventoryContent() {
     }
   }
 
+  // 체크박스 관련 핸들러 함수들
+  const handleSelectItem = (itemId: string) => {
+    setSelectedItems(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(itemId)) {
+        newSelected.delete(itemId);
+      } else {
+        newSelected.add(itemId);
+      }
+      return newSelected;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.size === filteredItems.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(filteredItems.map(item => item.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) {
+      alert('삭제할 항목을 선택해주세요.');
+      return;
+    }
+
+    if (!confirm(`선택된 ${selectedItems.size}개의 재고 항목을 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      // 선택된 항목들의 모든 storage location ID를 수집
+      const locationIdsToDelete: number[] = [];
+      filteredItems.forEach(item => {
+        if (selectedItems.has(item.id)) {
+          item.storageLocations.forEach(location => {
+            locationIdsToDelete.push(location.id);
+          });
+        }
+      });
+
+      // 모든 선택된 location들을 병렬로 삭제
+      await Promise.all(
+        locationIdsToDelete.map(locationId => 
+          inventoryService.deleteInventoryItem(locationId)
+        )
+      );
+
+      // 로컬 상태에서 삭제된 항목들 제거
+      setInventoryItems(prev => 
+        prev.filter(item => !selectedItems.has(item.id))
+      );
+
+      // 선택 상태 초기화
+      setSelectedItems(new Set());
+      setIsBulkActionMode(false);
+
+      alert(`${selectedItems.size}개의 재고 항목이 삭제되었습니다.`);
+    } catch (error) {
+      console.error('일괄 삭제 실패:', error);
+      alert('일괄 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleBulkActionMode = () => {
+    setIsBulkActionMode(!isBulkActionMode);
+    if (isBulkActionMode) {
+      setSelectedItems(new Set());
+    }
+  };
+
   const addNewItem = async () => {
     try {
       const ingredientsData = await ingredientService.getAllIngredients();
@@ -540,7 +616,7 @@ function InventoryContent() {
                     </div>
                   </div>
                 </div>
-                <SectionCard variant="statistics">
+                <SectionCard title="" variant="statistics">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-100">
                       <div className="flex items-center">
@@ -604,9 +680,29 @@ function InventoryContent() {
                 <div className="mb-6">
                   <h3 className="text-xl font-semibold text-gray-900">식품 재고 관리</h3>
                 </div>
-                <SectionCard variant="statistics">
-                  {/* 식재료 추가 버튼 */}
-                  <div className="flex justify-end mb-6">
+                <SectionCard title="" variant="statistics">
+                  {/* 식재료 추가 버튼 및 일괄 작업 버튼 */}
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={handleBulkActionMode}
+                        className={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors ${
+                          isBulkActionMode 
+                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {isBulkActionMode ? '일괄 작업 종료' : '일괄 작업'}
+                      </button>
+                      {isBulkActionMode && selectedItems.size > 0 && (
+                        <button
+                          onClick={handleBulkDelete}
+                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                        >
+                          선택 삭제 ({selectedItems.size})
+                        </button>
+                      )}
+                    </div>
                     <button
                       onClick={addNewItem}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
@@ -636,10 +732,60 @@ function InventoryContent() {
 
                       {/* 식재료 목록 */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* 일괄 작업 모드일 때 전체 선택 체크박스 */}
+                        {isBulkActionMode && filteredItems.length > 0 && (
+                          <div className="col-span-full mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-center justify-between">
+                              <label className="flex items-center space-x-3 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
+                                  onChange={handleSelectAll}
+                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className="text-sm font-medium text-gray-700">
+                                  전체 선택 ({selectedItems.size}/{filteredItems.length})
+                                </span>
+                              </label>
+                              <span className="text-sm text-blue-600">
+                                {selectedItems.size}개 선택됨
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        
                 {filteredItems.map((item) => (
-                  <div key={item.id} className="bg-white rounded-xl shadow-sm border border-blue-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onClick={() => openDetailModal(item)}>
+                  <div key={item.id} className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow ${
+                    isBulkActionMode 
+                      ? 'cursor-default' 
+                      : 'cursor-pointer'
+                  } ${
+                    selectedItems.has(item.id) 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-blue-100'
+                  }`} onClick={() => {
+                    if (isBulkActionMode) {
+                      handleSelectItem(item.id);
+                    } else {
+                      openDetailModal(item);
+                    }
+                  }}>
                     {/* 이미지 영역 */}
-                    <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+                    <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center relative">
+                      {/* 일괄 작업 모드일 때 체크박스 표시 */}
+                      {isBulkActionMode && (
+                        <div className="absolute top-3 left-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.has(item.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleSelectItem(item.id);
+                            }}
+                            className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                        </div>
+                      )}
                       <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center">
                         <span className="text-2xl font-bold text-blue-800">
                           {item.name.charAt(0)}
@@ -741,22 +887,29 @@ function InventoryContent() {
 
                       {/* 하단 액션 버튼들 */}
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400">
-                          클릭하여 상세보기
-                        </span>
-
-                        <div className="flex items-center space-x-2">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(item);
-                            }} 
-                            className="text-blue-600 hover:text-blue-900 text-sm"
-                            title="수정"
-                          >
-                            수정
-                          </button>
-                        </div>
+                        {isBulkActionMode ? (
+                          <span className="text-xs text-blue-600 font-medium">
+                            {selectedItems.has(item.id) ? '선택됨' : '선택하려면 클릭'}
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-xs text-gray-400">
+                              클릭하여 상세보기
+                            </span>
+                            <div className="flex items-center space-x-2">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditModal(item);
+                                }} 
+                                className="text-blue-600 hover:text-blue-900 text-sm"
+                                title="수정"
+                              >
+                                수정
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                     </div>
@@ -1261,28 +1414,151 @@ function InventoryContent() {
                                 {location.status}
                               </span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <button 
-                                onClick={() => handleQuantityChange(location.id, -1)} 
-                                className="text-sm px-2 py-1 border rounded hover:bg-gray-50"
-                              >
-                                -
-                              </button>
+                            <div className="flex items-center space-x-3">
                               <span className="text-sm font-medium">{formatQuantity(location.quantity, location.unit)}</span>
+                              <div className="flex items-center space-x-2">
+                                <input 
+                                  type="number" 
+                                  id={`consumption-${location.id}`}
+                                  placeholder="섭취량(g)" 
+                                  className="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  min="0"
+                                  step="1"
+                                  onChange={() => {
+                                    // 입력값이 변경될 때 저장 버튼 표시/숨김을 위해 상태 업데이트
+                                    const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
+                                    const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
+                                    if (input && saveButton) {
+                                      if (input.value && parseInt(input.value) > 0) {
+                                        saveButton.style.display = 'block';
+                                      } else {
+                                        saveButton.style.display = 'none';
+                                      }
+                                    }
+                                  }}
+                                />
+                                <div className="flex space-x-1">
+                                  <button 
+                                    type="button"
+                                    onClick={() => {
+                                      const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
+                                      const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
+                                      if (input) {
+                                        const currentValue = parseInt(input.value) || 0;
+                                        input.value = (currentValue + 1000).toString();
+                                        if (saveButton) {
+                                          saveButton.style.display = 'block';
+                                        }
+                                      }
+                                    }}
+                                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                  >
+                                    1kg
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    onClick={() => {
+                                      const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
+                                      const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
+                                      if (input) {
+                                        const currentValue = parseInt(input.value) || 0;
+                                        input.value = (currentValue + 100).toString();
+                                        if (saveButton) {
+                                          saveButton.style.display = 'block';
+                                        }
+                                      }
+                                    }}
+                                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                  >
+                                    100g
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    onClick={() => {
+                                      const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
+                                      const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
+                                      if (input) {
+                                        const currentValue = parseInt(input.value) || 0;
+                                        input.value = (currentValue + 10).toString();
+                                        if (saveButton) {
+                                          saveButton.style.display = 'block';
+                                        }
+                                      }
+                                    }}
+                                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                  >
+                                    10g
+                                  </button>
+                                </div>
+                              </div>
                               <button 
-                                onClick={() => handleQuantityChange(location.id, 1)} 
-                                className="text-sm px-2 py-1 border rounded hover:bg-gray-50"
+                                id={`save-${location.id}`}
+                                onClick={async () => {
+                                  const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
+                                  if (input && input.value) {
+                                    const consumptionAmount = parseInt(input.value);
+                                    if (consumptionAmount > 0) {
+                                      try {
+                                        // 현재 수량에서 섭취량을 뺀 값으로 업데이트
+                                        const newQuantity = Math.max(0, location.quantity - consumptionAmount);
+                                        
+                                        // API 요청으로 수량 업데이트
+                                        await inventoryService.updateFoodInventoryQuantity(location.id, { quantity: newQuantity });
+                                        
+                                        // 로컬 상태 업데이트
+                                        setInventoryItems(prev => 
+                                          prev.map(item => ({
+                                            ...item,
+                                            storageLocations: item.storageLocations.map(loc => 
+                                              loc.id === location.id 
+                                                ? { ...loc, quantity: newQuantity, originalQuantity: newQuantity }
+                                                : loc
+                                            ),
+                                            totalQuantity: item.storageLocations.reduce((sum, loc) => 
+                                              loc.id === location.id ? sum + newQuantity : sum + loc.quantity, 0
+                                            )
+                                          }))
+                                        );
+
+                                        // 모달창의 selectedItem 상태도 업데이트하여 즉시 반영
+                                        if (selectedItem) {
+                                          setSelectedItem(prev => {
+                                            if (!prev) return prev;
+                                            const updatedStorageLocations = prev.storageLocations.map(loc => 
+                                              loc.id === location.id 
+                                                ? { ...loc, quantity: newQuantity, originalQuantity: newQuantity }
+                                                : loc
+                                            );
+                                            const updatedTotalQuantity = updatedStorageLocations.reduce((sum, loc) => sum + loc.quantity, 0);
+                                            
+                                            return {
+                                              ...prev,
+                                              storageLocations: updatedStorageLocations,
+                                              totalQuantity: updatedTotalQuantity
+                                            };
+                                          });
+                                        }
+                                        
+                                        // 입력란 초기화 및 저장 버튼 숨김
+                                        input.value = '';
+                                        const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
+                                        if (saveButton) {
+                                          saveButton.style.display = 'none';
+                                        }
+                                        
+                                        alert('섭취량이 저장되었습니다.');
+                                      } catch (error) {
+                                        console.error('Failed to update quantity:', error);
+                                        alert('수량 저장에 실패했습니다.');
+                                      }
+                                    }
+                                  }
+                                }}
+                                className="text-sm px-2 py-1 border rounded bg-blue-500 text-white hover:bg-blue-600"
+                                style={{ display: 'none' }}
                               >
-                                +
+                                저장
                               </button>
-                              {location.quantity !== location.originalQuantity && (
-                                <button 
-                                  onClick={() => handleSaveQuantity(location)} 
-                                  className="text-sm px-2 py-1 border rounded bg-blue-500 text-white hover:bg-blue-600"
-                                >
-                                  저장
-                                </button>
-                              )}
                             </div>
                           </div>
                           
