@@ -21,7 +21,7 @@ public class RecipeController {
             @RequestBody CreateRecipeRequestDto requestDto
             ){
 
-        return recipeService.createService(securityUser.getId(), requestDto);
+        return recipeService.createRecipePost(securityUser.getId(), requestDto);
     }
 
 //    @GetMapping("/all")
