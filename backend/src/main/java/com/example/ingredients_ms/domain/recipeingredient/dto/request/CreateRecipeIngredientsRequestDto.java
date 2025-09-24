@@ -8,4 +8,8 @@ import lombok.Getter;
 public class CreateRecipeIngredientsRequestDto {
 
     private Long ingredientId;
+    private Double quantity;
+    private String unit;
+    private String notes;
+
 }
