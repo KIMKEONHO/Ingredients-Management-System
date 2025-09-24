@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import AdminSidebar from '../components/sidebar'
 import AdminGuard from '@/lib/auth/adminGuard'
-import { ingredientService, Ingredient, CreateIngredientRequest, UpdateIngredientRequest } from '@/lib/api/services/ingredientService'
+import { ingredientService, Ingredient, CreateIngredientRequest, UpdateIngredientRequest, BulkUpdateCategoryRequest } from '@/lib/api/services/ingredientService'
 import { categoryService, Category } from '@/lib/api/services/categoryService'
 
 interface NewIngredient {
@@ -29,9 +29,12 @@ function AdminIngredientsPage() {
   const [sortBy, setSortBy] = useState('이름순')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isCategoryChangeModalOpen, setIsCategoryChangeModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null)
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0)
+  const [bulkUpdateProgress, setBulkUpdateProgress] = useState<{ completed: number; total: number } | null>(null)
   const [newIngredient, setNewIngredient] = useState<NewIngredient>({
     name: '',
     categoryId: 0
@@ -166,10 +169,9 @@ function AdminIngredientsPage() {
           showNotification('error', '일괄 삭제에 실패했습니다.')
         }
       }
-    } else {
-      // 다른 일괄 작업들 (카테고리 변경, 내보내기 등)
-      console.log(`${action} for ingredients:`, Array.from(selectedIngredients))
-      showNotification('info', `${action} 처리: ${selectedIngredients.size}개의 식재료`)
+    } else if (action === '카테고리 변경') {
+      // 카테고리 변경 모달 열기
+      setIsCategoryChangeModalOpen(true)
     }
   }
 
@@ -208,6 +210,84 @@ function AdminIngredientsPage() {
       name: '',
       categoryId: 0
     })
+  }
+
+  // 카테고리 변경 모달 관련 함수들
+  const openCategoryChangeModal = () => {
+    setIsCategoryChangeModalOpen(true)
+    setSelectedCategoryId(0)
+  }
+
+  const closeCategoryChangeModal = () => {
+    setIsCategoryChangeModalOpen(false)
+    setSelectedCategoryId(0)
+    setBulkUpdateProgress(null)
+  }
+
+  const handleCategoryChangeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (selectedCategoryId === 0) {
+      showNotification('error', '카테고리를 선택해주세요.')
+      return
+    }
+
+    if (selectedIngredients.size === 0) {
+      showNotification('error', '선택된 식재료가 없습니다.')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      setBulkUpdateProgress({ completed: 0, total: selectedIngredients.size })
+      
+      const bulkData: BulkUpdateCategoryRequest = {
+        ingredientIds: Array.from(selectedIngredients),
+        categoryId: selectedCategoryId
+      }
+      
+      // 진행률 콜백 함수
+      const onProgress = (completed: number, total: number) => {
+        setBulkUpdateProgress({ completed, total })
+      }
+      
+      await ingredientService.bulkUpdateCategory(bulkData, onProgress)
+      
+      // 성공 시 로컬 상태 업데이트
+      const selectedCategory = categories.find(cat => cat.id === selectedCategoryId)
+      if (selectedCategory) {
+        setIngredients(prev => prev.map(ingredient => 
+          selectedIngredients.has(ingredient.id || 0) 
+            ? { ...ingredient, categoryName: selectedCategory.name }
+            : ingredient
+        ))
+      }
+      
+      // 선택 상태 초기화
+      setSelectedIngredients(new Set())
+      closeCategoryChangeModal()
+      setBulkUpdateProgress(null)
+      
+      showNotification('success', `${selectedIngredients.size}개의 식재료 카테고리가 변경되었습니다.`)
+    } catch (error) {
+      console.error('카테고리 변경 실패:', error)
+      setBulkUpdateProgress(null)
+      
+      // 구체적인 오류 메시지 표시
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          showNotification('error', '요청 시간이 초과되었습니다. 다시 시도해주세요.')
+        } else if (error.message.includes('Network Error')) {
+          showNotification('error', '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.')
+        } else {
+          showNotification('error', `카테고리 변경에 실패했습니다: ${error.message}`)
+        }
+      } else {
+        showNotification('error', '카테고리 변경에 실패했습니다.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -455,12 +535,6 @@ function AdminIngredientsPage() {
                       className="px-3 py-1 text-sm text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-md"
                     >
                       카테고리 변경
-                    </button>
-                    <button
-                      onClick={() => handleBulkAction('내보내기')}
-                      className="px-3 py-1 text-sm text-green-700 bg-green-100 hover:bg-green-200 rounded-md"
-                    >
-                      내보내기
                     </button>
                   </div>
                 </div>
@@ -813,6 +887,135 @@ function AdminIngredientsPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* 카테고리 변경 모달 */}
+        {isCategoryChangeModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">카테고리 변경</h3>
+                  <button
+                    onClick={closeCategoryChangeModal}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+                <form onSubmit={handleCategoryChangeSubmit} className="px-6 py-4">
+                <div className="space-y-4">
+                  {/* 선택된 식재료 정보 */}
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-sm text-blue-800 mb-3">
+                      <span className="font-medium">{selectedIngredients.size}개</span>의 식재료가 선택되었습니다.
+                    </p>
+                    
+                    {/* 선택된 식재료 목록 */}
+                    <div className="max-h-48 overflow-y-auto">
+                      <div className="space-y-2">
+                        {Array.from(selectedIngredients).map(ingredientId => {
+                          const ingredient = ingredients.find(ing => ing.id === ingredientId);
+                          return (
+                            <div key={ingredientId} className="flex items-center justify-between bg-white rounded-md p-2 border border-blue-200">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{ingredient?.name || '알 수 없음'}</p>
+                                  <p className="text-xs text-gray-500">현재 카테고리: {ingredient?.categoryName || 'N/A'}</p>
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                ID: {ingredientId}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 카테고리 선택 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      변경할 카테고리 <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={selectedCategoryId}
+                      onChange={(e) => setSelectedCategoryId(Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      required
+                      disabled={isSubmitting}
+                    >
+                      <option value={0}>카테고리를 선택하세요</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>{category.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 진행률 표시 */}
+                  {bulkUpdateProgress && (
+                    <div className="bg-green-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-green-800">
+                          카테고리 변경 진행 중...
+                        </span>
+                        <span className="text-sm text-green-600">
+                          {bulkUpdateProgress.completed}/{bulkUpdateProgress.total}
+                        </span>
+                      </div>
+                      <div className="w-full bg-green-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${(bulkUpdateProgress.completed / bulkUpdateProgress.total) * 100}%` 
+                          }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-green-600 mt-1">
+                        {Math.round((bulkUpdateProgress.completed / bulkUpdateProgress.total) * 100)}% 완료
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={closeCategoryChangeModal}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || selectedCategoryId === 0}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        변경 중...
+                      </>
+                    ) : (
+                      '카테고리 변경'
+                    )}
+                  </button>
+                </div>
+                </form>
+              </div>
             </div>
           </div>
         )}
