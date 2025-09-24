@@ -26,6 +26,7 @@ interface RecipeStep {
   stepNumber: number;
   description: string;
   imageUrl?: string;
+  imageFile?: File; // 단계별 이미지 파일
   cookingTime?: number;
 }
 
@@ -36,6 +37,7 @@ interface RecipeFormData {
   difficultyLevel: number;
   servings: number;
   imageUrl: string;
+  recipeImageFile?: File; // 메인 이미지 파일
   recipeType: string;
   isPublic: boolean;
   ingredients: RecipeIngredient[];
@@ -238,8 +240,16 @@ export default function RecipeWritePage() {
 
       console.log('레시피 데이터:', requestData);
       
+      // 이미지 파일들 수집
+      const recipeImage = formData.recipeImageFile;
+      const stepImages = formData.steps
+        .map(step => step.imageFile)
+        .filter((file): file is File => file !== undefined);
+      
+      console.log('이미지 파일들:', { recipeImage, stepImages });
+      
       // API 호출
-      await recipeService.createRecipe(requestData);
+      await recipeService.createRecipe(requestData, recipeImage, stepImages);
       
       alert('레시피가 성공적으로 작성되었습니다!');
       router.push('/recipe-community');
@@ -380,7 +390,11 @@ export default function RecipeWritePage() {
                     </label>
                     <ImageUpload
                       value={formData.imageUrl}
-                      onChange={(imageUrl) => setFormData(prev => ({ ...prev, imageUrl }))}
+                      onChange={(imageUrl, file) => setFormData(prev => ({ 
+                        ...prev, 
+                        imageUrl, 
+                        recipeImageFile: file 
+                      }))}
                       placeholder="레시피 대표 이미지를 업로드하세요"
                     />
                   </div>
@@ -577,7 +591,10 @@ export default function RecipeWritePage() {
                             </label>
                             <ImageUpload
                               value={step.imageUrl || ''}
-                              onChange={(imageUrl) => updateStep(step.id, 'imageUrl', imageUrl)}
+                              onChange={(imageUrl, file) => {
+                                updateStep(step.id, 'imageUrl', imageUrl);
+                                updateStep(step.id, 'imageFile', file);
+                              }}
                               placeholder="단계별 이미지를 업로드하세요"
                               className="h-32"
                             />
