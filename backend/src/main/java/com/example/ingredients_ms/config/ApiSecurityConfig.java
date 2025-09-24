@@ -30,14 +30,13 @@ public class ApiSecurityConfig {
                 .securityMatcher("/api/**")
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
 
+                        // 식품 재고 사용량 로그 통계 api
                         .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/thismonth").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/thisweek").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/monthly").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/thisyear").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/last3months").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/consumedlog/all").hasAnyRole("USER","ADMIN")
-
-
 
                         // 재고 관리 api
                         .requestMatchers(HttpMethod.PUT, "/api/*/inventory/").hasAnyRole("USER","ADMIN")
@@ -111,7 +110,6 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/year").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/*/diet/statistics/week/graph").hasAnyRole("USER","ADMIN")
 
-
                         // 민원 관리 api
                         .requestMatchers(HttpMethod.POST, "/api/*/complaints/").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/*/complaints/*").hasAnyRole("USER","ADMIN")
@@ -131,6 +129,8 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/api/*/images/upload").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.DELETE,"/api/*/images/*").hasAnyRole("USER","ADMIN")
 
+                        // 레시피 관련 api
+                        .requestMatchers(HttpMethod.POST, "/api/*/recipe/").hasAnyRole("USER","ADMIN")
                 )
                 .csrf(csrf->csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
