@@ -1,6 +1,29 @@
 import { apiClient } from '../client';
 import { API_ENDPOINTS, createApiUrl } from '../endpoints';
 
+// 404 오류인지 확인하는 헬퍼 함수
+const isNotFoundError = (error: unknown): boolean => {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = error.response as { status?: number };
+    return response.status === 404;
+  }
+  return false;
+};
+
+// AxiosError인지 확인하는 헬퍼 함수
+const isAxiosError = (error: unknown): boolean => {
+  return Boolean(error && typeof error === 'object' && 'isAxiosError' in error);
+};
+
+// HTTP 상태 코드를 가져오는 헬퍼 함수
+const getHttpStatus = (error: unknown): number | null => {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = error.response as { status?: number };
+    return response.status || null;
+  }
+  return null;
+};
+
 // 피드백 생성 요청 DTO
 export interface CreateComplaintFeedbackRequestDto {
   title?: string;
@@ -54,17 +77,48 @@ export const getFeedback = async (complaintId: number): Promise<ComplaintFeedbac
       response: response
     });
     
-    return response.data || null;
+    // 응답 데이터가 있는지 확인
+    if (response && response.data) {
+      return response.data;
+    }
+    
+    // 피드백이 없는 경우 null 반환 (오류가 아님)
+    console.log('피드백이 존재하지 않습니다:', { complaintId });
+    return null;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-    const errorResponse = error && typeof error === 'object' && 'response' in error ? error.response : null;
-    const errorData = errorResponse && typeof errorResponse === 'object' && 'data' in errorResponse ? errorResponse.data : null;
-    const errorStatus = errorResponse && typeof errorResponse === 'object' && 'status' in errorResponse ? errorResponse.status : null;
+    const errorStatus = getHttpStatus(error);
+    const isAxiosErr = isAxiosError(error);
     
-    console.error('피드백 조회 중 오류가 발생했습니다:', {
+    console.log('피드백 조회 오류 상세:', {
       complaintId,
-      error: errorData || errorMessage,
-      status: errorStatus
+      isAxiosError: isAxiosErr,
+      errorStatus,
+      errorMessage
+    });
+    
+    // 404 오류인 경우 피드백이 없는 것으로 처리 (정상적인 상황)
+    if (isNotFoundError(error)) {
+      console.log('피드백이 존재하지 않습니다 (404) - 정상적인 상황:', { complaintId });
+      return null;
+    }
+    
+    // 404가 아닌 HTTP 오류인 경우
+    if (isAxiosErr && errorStatus && errorStatus >= 400 && errorStatus !== 404) {
+      console.error('피드백 조회 중 HTTP 오류:', {
+        complaintId,
+        status: errorStatus,
+        message: errorMessage
+      });
+      throw new Error(`피드백을 조회할 수 없습니다. (HTTP ${errorStatus})`);
+    }
+    
+    // 네트워크 오류나 기타 오류
+    console.error('피드백 조회 중 예상치 못한 오류:', {
+      complaintId,
+      error: errorMessage,
+      isAxiosError: isAxiosErr,
+      errorStatus
     });
     throw new Error('피드백을 조회할 수 없습니다.');
   }
