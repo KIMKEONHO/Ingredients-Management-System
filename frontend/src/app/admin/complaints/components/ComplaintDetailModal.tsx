@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Complaint, Feedback } from '@/lib/backend/apiV1/complaintTypes';
 import { createFeedback, getFeedback, updateFeedback } from '@/lib/api/services/feedbackService';
 
@@ -11,7 +11,21 @@ interface ComplaintDetailModalProps {
   onFeedbackUpdate?: (complaintId: string, feedback: Feedback) => void;
 }
 
+// 피드백 상태 초기화 헬퍼 함수
+const initializeFeedbackState = () => ({
+  existingFeedback: null,
+  feedbackId: null,
+  feedbackData: { assignee: '', content: '' }
+});
 
+// 404 오류인지 확인하는 헬퍼 함수
+const isNotFoundError = (error: unknown): boolean => {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = error.response as { status?: number };
+    return response.status === 404;
+  }
+  return false;
+};
 
 export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFeedbackUpdate }: ComplaintDetailModalProps) {
   const [feedbackData, setFeedbackData] = useState({
@@ -30,23 +44,31 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
     }
   }, [isOpen, complaint]);
 
-  // 피드백 데이터 로드 함수
-  const loadFeedbackData = async () => {
+  // 피드백 상태 초기화 함수
+  const resetFeedbackState = useCallback(() => {
+    const initialState = initializeFeedbackState();
+    setExistingFeedback(initialState.existingFeedback);
+    setFeedbackId(initialState.feedbackId);
+    setFeedbackData(initialState.feedbackData);
+  }, []);
+
+  // 피드백 데이터 로드 함수 (개선된 버전)
+  const loadFeedbackData = useCallback(async () => {
     if (!complaint) return;
 
     setIsLoadingFeedback(true);
     try {
-      // 민원 ID에서 숫자 부분 추출
       const idNumber = parseInt(complaint.id.split('-')[1]);
       
-      // 기존 피드백 데이터 가져오기
+      console.log('피드백 데이터 로드 시작:', { complaintId: complaint.id, idNumber });
+      
       const feedbackResponse = await getFeedback(idNumber);
       
-      if (feedbackResponse) {
-        // ComplaintFeedbackResponseDto를 Feedback 타입으로 변환
+      if (feedbackResponse?.content) {
+        // 피드백이 있는 경우
         const feedback: Feedback = {
           assignee: feedbackResponse.responderNickname || '',
-          content: feedbackResponse.content || '',
+          content: feedbackResponse.content,
           createdAt: feedbackResponse.createAt || '',
           updatedAt: feedbackResponse.modifiedAt || feedbackResponse.createAt || ''
         };
@@ -58,28 +80,29 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
           content: feedback.content
         });
       } else {
-        // 피드백이 없는 경우 초기화
-        setExistingFeedback(null);
-        setFeedbackId(null);
-        setFeedbackData({
-          assignee: '',
-          content: ''
-        });
+        // 피드백이 없는 경우
+        resetFeedbackState();
       }
     } catch (error) {
       console.error('피드백 데이터 로드 오류:', error);
-      // 에러가 발생해도 기본값으로 초기화
-      setExistingFeedback(null);
-      setFeedbackData({
-        assignee: '',
-        content: ''
-      });
+      
+      // 404 오류는 정상적인 상황으로 처리
+      if (isNotFoundError(error)) {
+        console.log('피드백이 존재하지 않습니다 (404) - 정상적인 상황');
+        resetFeedbackState();
+        return;
+      }
+      
+      // 실제 오류인 경우에만 사용자에게 알림
+      alert('피드백 정보를 불러오는 중 오류가 발생했습니다.');
+      resetFeedbackState();
     } finally {
       setIsLoadingFeedback(false);
     }
-  };
+  }, [complaint, resetFeedbackState]);
 
-  const handleSave = async () => {
+  // 피드백 저장/수정 함수 (개선된 버전)
+  const handleSave = useCallback(async () => {
     if (!complaint || !feedbackData.assignee.trim() || !feedbackData.content.trim()) {
       alert('담당자명과 피드백 내용을 모두 입력해주세요.');
       return;
@@ -88,11 +111,11 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
     setIsLoading(true);
     try {
       const idNumber = parseInt(complaint.id.split('-')[1]);
+      const isUpdate = existingFeedback && feedbackId;
       
-      // 기존 피드백이 있으면 수정, 없으면 생성
-      if (existingFeedback && feedbackId) {
+      if (isUpdate) {
         // 피드백 수정
-        await updateFeedback(feedbackId, {
+        await updateFeedback(feedbackId!, {
           title: `피드백 - ${complaint.title}`,
           content: feedbackData.content
         });
@@ -118,14 +141,65 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
         onFeedbackUpdate(complaint.id, newFeedback);
       }
 
-      alert(existingFeedback ? '피드백이 성공적으로 수정되었습니다.' : '피드백이 성공적으로 저장되었습니다.');
+      alert(isUpdate ? '피드백이 성공적으로 수정되었습니다.' : '피드백이 성공적으로 저장되었습니다.');
     } catch (error) {
       console.error('피드백 저장 오류:', error);
       alert('피드백 저장에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [complaint, feedbackData, existingFeedback, feedbackId, onFeedbackUpdate]);
+
+  // 피드백 내용 렌더링 함수
+  const renderFeedbackContent = useCallback(() => {
+    if (isLoadingFeedback) {
+      return (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500 text-sm">피드백 정보를 불러오는 중...</p>
+        </div>
+      );
+    }
+
+    if (existingFeedback?.content) {
+      return (
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-sm font-medium text-gray-700">관리자:</span>
+              <span className="ml-2 text-sm font-medium text-gray-900">{existingFeedback.assignee}</span>
+            </div>
+            <span className="text-sm text-gray-500">
+              {existingFeedback.createdAt ? new Date(existingFeedback.createdAt).toLocaleString('ko-KR') : '날짜 없음'}
+            </span>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-700">피드백 내용:</span>
+            <div className="mt-1 text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
+              {existingFeedback.content}
+            </div>
+          </div>
+          {existingFeedback.updatedAt && existingFeedback.updatedAt !== existingFeedback.createdAt && (
+            <div className="text-xs text-gray-400">
+              마지막 수정: {new Date(existingFeedback.updatedAt).toLocaleString('ko-KR')}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-center py-8">
+        <div className="text-gray-400 mb-2">
+          <svg className="w-12 h-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <p className="text-gray-500 text-sm">아직 피드백이 작성되지 않았습니다.</p>
+        <p className="text-gray-400 text-xs mt-1">관리자가 피드백을 작성해주세요.</p>
+      </div>
+    );
+  }, [isLoadingFeedback, existingFeedback]);
 
   if (!isOpen || !complaint) return null;
 
@@ -190,45 +264,7 @@ export default function ComplaintDetailModal({ isOpen, onClose, complaint, onFee
             {/* 기존 피드백 섹션 */}
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">기존 피드백</h3>
-              {isLoadingFeedback ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-500 text-sm">피드백 정보를 불러오는 중...</p>
-                </div>
-              ) : existingFeedback && existingFeedback.content ? (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">관리자:</span>
-                      <span className="ml-2 text-sm font-medium text-gray-900">{existingFeedback.assignee}</span>
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {existingFeedback.createdAt ? new Date(existingFeedback.createdAt).toLocaleString('ko-KR') : '날짜 없음'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">피드백 내용:</span>
-                    <div className="mt-1 text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
-                      {existingFeedback.content}
-                    </div>
-                  </div>
-                  {existingFeedback.updatedAt && existingFeedback.updatedAt !== existingFeedback.createdAt && (
-                    <div className="text-xs text-gray-400">
-                      마지막 수정: {new Date(existingFeedback.updatedAt).toLocaleString('ko-KR')}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-gray-400 mb-2">
-                    <svg className="w-12 h-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-500 text-sm">아직 피드백이 작성되지 않았습니다.</p>
-                  <p className="text-gray-400 text-xs mt-1">관리자가 피드백을 작성해주세요.</p>
-                </div>
-              )}
+              {renderFeedbackContent()}
             </div>
 
             {/* 피드백 작성 섹션 */}
