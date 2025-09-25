@@ -5,6 +5,7 @@ import com.example.ingredients_ms.domain.ingredientscategory.entity.IngredientsC
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface IngredientsRepository extends JpaRepository<Ingredients, Long> {
 
@@ -16,5 +17,7 @@ public interface IngredientsRepository extends JpaRepository<Ingredients, Long> 
     boolean existsByName(String name);
 
     Ingredients findById(long id);
+
+    Optional<Ingredients> findByName(String name);
 
 }

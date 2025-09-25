@@ -75,10 +75,14 @@ public class IngredientsService {
         // 식재료 존재여부 확인
         Ingredients ingredient = ingredientsRepository.findById(ingredientId)
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.INGREDIENT_NOT_FOUND));
-        // 식재료명 중복 검사
-        if (ingredientsRepository.existsByName(requestDto.getName())) {
-            throw new BusinessLogicException(ExceptionCode.DUPLICATE_INGREDIENT);
-        }
+        // (2) 식재료명 중복 검사 (개선된 로직)
+        // 자기 자신을 제외하고, 다른 식재료가 해당 이름을 사용하는지 확인
+        ingredientsRepository.findByName(requestDto.getName())
+                .ifPresent(existingIngredient -> {
+                    if (!existingIngredient.getId().equals(ingredientId)) {
+                        throw new BusinessLogicException(ExceptionCode.DUPLICATE_INGREDIENT);
+                    }
+                });
         // 카테고리 존재여부 확인
         IngredientsCategory category = ingredientsCategoryRepository.findById(requestDto.getCategoryId())
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.CATEGORY_NOT_FOUND));

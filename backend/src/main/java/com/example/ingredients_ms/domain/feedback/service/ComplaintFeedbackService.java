@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,17 +29,17 @@ public class ComplaintFeedbackService {
 
 
     @Transactional
-    // 피드백 단건 조회
     public ComplaintFeedbackResponseDto getFeedback(Long complaintId) {
+        // findByComplaintId를 한 번만 호출하여 Optional<Entity>를 얻습니다.
+        Optional<ComplaintFeedback> feedback = complaintFeedbackRepository.findByComplaintId(complaintId);
 
-        // 예외처리
-        if(!complaintFeedbackRepository.existsByComplaintId(complaintId)){
-            throw new BusinessLogicException(ExceptionCode.FEEDBACK_NOT_FOUND);
+        // Optional이 비어 있으면 null을 반환합니다.
+        if (feedback.isEmpty()) {
+            return null;
         }
 
-        return ComplaintFeedbackResponseDto.fromEntity(
-                complaintFeedbackRepository.findByComplaintId(complaintId)
-                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FEEDBACK_NOT_FOUND)));
+        // 데이터가 존재하면 DTO로 변환하여 반환합니다.
+        return ComplaintFeedbackResponseDto.fromEntity(feedback.get());
     }
 
     @Transactional
