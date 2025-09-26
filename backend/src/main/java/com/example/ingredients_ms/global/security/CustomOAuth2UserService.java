@@ -12,7 +12,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -35,7 +34,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 //        Map<String, String> attributesProperties = (Map<String, String>) attributes.get("properties");
 //        String nickname = attributesProperties.get("nickname");
 //        // 프로필 이미지 필요시
-////        String profileImgUrl = attributesProperties.get("profile_image");
+//        String profileImgUrl = attributesProperties.get("profile_image");
 //        String email = providerTypeCode + "__" + oauthId;
 
         // 소셜 유저 정보 공통 인터페이스에 구분되어 구현된 전용 객체 할당
@@ -44,6 +43,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         String oauthId = userInfo.getId();
         String email = userInfo.getEmail();
+        String profileUrl = userInfo.getProfileImageUrl();
+
         if (email == null) {
             // 이메일 없는 Provider(Kakao) 대응
             email = providerTypeCode + "__" + oauthId;
@@ -55,7 +56,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         User user;
 //        user = validUser.orElseGet(() -> userService.modifyOrJoins(email, nickname, providerTypeCode, oauthId));
         String finalEmail = email;
-        user = validUser.orElseGet(() -> userService.modifyOrJoins(finalEmail, userInfo.getNickname(), providerTypeCode, oauthId));
+        user = validUser.orElseGet(() -> userService.modifyOrJoins(finalEmail, userInfo.getNickname(), providerTypeCode, oauthId, profileUrl));
 
         return new SecurityUser(
                 user.getId(),
