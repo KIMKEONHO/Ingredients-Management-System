@@ -51,6 +51,9 @@ public class User extends BaseEntity {
     @Column(name = "sso_provider", length = 50)
     private String ssoProvider;
 
+    @Column(name = "profile", length = 512)
+    private String profileUrl;
+
     @JsonIgnore
     @Column(name = "refresh_token", length = 512)
     private String refreshToken;
