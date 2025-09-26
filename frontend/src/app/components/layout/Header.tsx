@@ -144,10 +144,6 @@ export default function Header() {
               </div>
             )}
           </div>
-          <Link href="/cart" className="relative text-xl">
-            <span role="img" aria-label="cart">🛒</span>
-            <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">3</span>
-          </Link>
           {isLogin ? (
             <div className="flex items-center gap-3">
               {/* 사용자 프로필 영역 */}

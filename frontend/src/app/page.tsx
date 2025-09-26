@@ -102,16 +102,16 @@ export default function Home() {
 
               {/* 레시피 추천 */}
               <Link 
-                href="/callender" 
-                className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-blue-100 transition hover:shadow-md hover:ring-blue-200"
-                onClick={(e) => handleFeatureClick(e, '/callender')}
+                href="/recipe-recommendation" 
+                className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-orange-100 transition hover:shadow-md hover:ring-orange-200"
+                onClick={(e) => handleFeatureClick(e, '/recipe-recommendation')}
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M12 2.25a9.75 9.75 0 1 0 9.75 9.75A9.761 9.761 0 0 0 12 2.25Zm.75 4.5a.75.75 0 0 0-1.5 0v6a.75.75 0 0 0 .44.68l4.5 2.25a.75.75 0 1 0 .66-1.34L12.75 12.3V6.75Z"/></svg>
                 </div>
                 <h3 className="mt-6 text-xl font-semibold text-black">레시피 추천</h3>
-                <p className="mt-2 text-blue-700">보유 재고를 활용한 다양한 레시피를 추천하고 요리법을 제공합니다.</p>
-                <div className="mt-4 flex items-center text-sm text-blue-600 group-hover:text-blue-700">
+                <p className="mt-2 text-orange-700">보유 재고를 활용한 다양한 레시피를 추천하고 요리법을 제공합니다.</p>
+                <div className="mt-4 flex items-center text-sm text-orange-600 group-hover:text-orange-700">
                   <span>{!isLogin && !isLoginMemberPending ? '로그인 후 사용하기' : '바로 사용하기'}</span>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1">
                     <path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/>
@@ -119,24 +119,6 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* 장바구니 */}
-              <Link 
-                href="/cart" 
-                className="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-purple-100 transition hover:shadow-md hover:ring-purple-200"
-                onClick={(e) => handleFeatureClick(e, '/cart')}
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M2.25 3.75A.75.75 0 0 1 3 3h2.31a1.5 1.5 0 0 1 1.46 1.14l.3 1.21h12.6a.75.75 0 0 1 .73.92l-1.5 6a1.5 1.5 0 0 1-1.45 1.13H8.31l.18.72a.75.75 0 0 0 .73.56h9.03a.75.75 0 0 1 0 1.5H9.22a2.25 2.25 0 0 1-2.18-1.69L4.54 5.86l-.3-1.2H3a.75.75 0 0 1-.75-.9Z"/><path d="M6.75 21a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm10.5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
-                </div>
-                <h3 className="mt-6 text-xl font-semibold text-black">장바구니</h3>
-                <p className="mt-2 text-purple-700">필요한 식재료를 담아 발주서를 쉽고 빠르게 생성합니다.</p>
-                <div className="mt-4 flex items-center text-sm text-purple-600 group-hover:text-purple-700">
-                  <span>{!isLogin && !isLoginMemberPending ? '로그인 후 사용하기' : '바로 사용하기'}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1">
-                    <path d="M3.75 12a.75.75 0 0 1 .75-.75h12.69l-3.72-3.72a.75.75 0 1 1 1.06-1.06l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06l3.72-3.72H4.5A.75.75 0 0 1 3.75 12Z"/>
-                  </svg>
-                </div>
-              </Link>
 
               {/* 민원/문의 */}
               <Link 
