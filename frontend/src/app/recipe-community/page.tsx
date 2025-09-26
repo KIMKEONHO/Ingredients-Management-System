@@ -12,7 +12,6 @@ export default function RecipeCommunityPage() {
   const router = useRouter();
   const [recipes, setRecipes] = useState<AllRecipeResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedRecipe, setSelectedRecipe] = useState<AllRecipeResponseDto | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -150,7 +149,7 @@ export default function RecipeCommunityPage() {
                     <div
                       key={index}
                       className="bg-white rounded-xl shadow-sm border border-blue-100 p-6 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => setSelectedRecipe(recipe)}
+                      onClick={() => router.push(`/recipes/${index}`)}
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -207,83 +206,6 @@ export default function RecipeCommunityPage() {
               )}
             </SectionCard>
 
-            {/* Recipe Detail Modal */}
-            {selectedRecipe && (
-              <div className="fixed inset-0 z-50">
-                <div className="absolute inset-0 bg-black/40" onClick={() => setSelectedRecipe(null)} />
-                <div className="absolute inset-0 flex items-center justify-center p-4">
-                  <div className="w-full max-w-4xl bg-white rounded-lg shadow-xl p-6 max-h-[90vh] overflow-y-auto">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-medium overflow-hidden">
-                          {selectedRecipe.userProfile ? (
-                            <img 
-                              src={selectedRecipe.userProfile} 
-                              alt={selectedRecipe.userNickName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            selectedRecipe.userNickName.charAt(0).toUpperCase()
-                          )}
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-900">{selectedRecipe.title}</h2>
-                          <p className="text-gray-500">
-                            {selectedRecipe.userNickName} • {formatDate(selectedRecipe.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => setSelectedRecipe(null)}
-                        className="text-gray-500 hover:text-gray-700 text-2xl"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    
-                    <div className="mb-6">
-                      <p className="text-gray-700 leading-relaxed">{selectedRecipe.description}</p>
-                    </div>
-
-                    <div className="flex items-center gap-4 mb-6">
-                      <span className={`px-4 py-2 rounded-full text-sm font-medium ${getDifficultyColor(selectedRecipe.difficultyLevel)}`}>
-                        {getDifficultyText(selectedRecipe.difficultyLevel)}
-                      </span>
-                      <span className="text-sm text-gray-500">⏱️ {selectedRecipe.cookingTime}분</span>
-                    </div>
-
-                    {selectedRecipe.recipeIngredientResponseDto && selectedRecipe.recipeIngredientResponseDto.length > 0 && (
-                      <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-6 mb-6 border border-green-200">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-4">🍽️ 필요한 재료</h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {selectedRecipe.recipeIngredientResponseDto.map((ingredient, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                              <span className="font-medium text-gray-700">{ingredient.ingredientName}</span>
-                              <span className="text-gray-600">{ingredient.quantity}{ingredient.unit}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-6 border-t">
-                      <div className="flex items-center gap-4">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                          👍 좋아요
-                        </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                          💬 댓글
-                        </button>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        작성일: {formatDate(selectedRecipe.createdAt)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
           </div>
         </div>
