@@ -58,8 +58,12 @@ export default function Header() {
     <header className="bg-white p-4 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center gap-8">
-          <Link href="/" className="text-2xl font-bold text-green-700">
-            FreshTracker
+          <Link href="/" className="flex items-center">
+            <img 
+              src="https://dev-bucket-lolgun0629-1.s3.ap-northeast-2.amazonaws.com/img1/default/IMS_Logo.png" 
+              alt="IMS Logo" 
+              className="h-8 w-auto hover:opacity-80 transition-opacity"
+            />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-gray-600">
             <Link 
