@@ -1,9 +1,13 @@
 package com.example.ingredients_ms.global.security.oauth;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.Map;
 
 public class KakaoOAuth2UserInfo extends OAuth2UserInfo{
 
+    @Value("${custom.default.profile-url}")
+    private String defaultProfileUrl;
 
     public KakaoOAuth2UserInfo(Map<String, Object> attributes) {
         super(attributes);
@@ -43,7 +47,7 @@ public class KakaoOAuth2UserInfo extends OAuth2UserInfo{
             }
         }
 
-        return null;
+        return defaultProfileUrl;
     }
 
 }
