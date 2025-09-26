@@ -90,15 +90,6 @@ export const COLOR_PRESETS = {
     border: COLORS.BORDERS.SECTION,
   },
 
-  // 장바구니 페이지 스타일
-  CART_PAGE: {
-    background: COLORS.BACKGROUNDS.MAIN,
-    header: 'bg-white',
-    card: 'bg-white',
-    border: 'border-blue-100',
-    accent: 'text-blue-600',
-    button: 'bg-blue-600 hover:bg-blue-700',
-  },
 
   // 로그인 페이지 스타일
   LOGIN_PAGE: {

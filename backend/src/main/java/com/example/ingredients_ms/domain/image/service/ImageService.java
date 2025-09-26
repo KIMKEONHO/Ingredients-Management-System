@@ -32,11 +32,12 @@ public class ImageService {
     private String imgDirName;
     
     /**
-     * 이미지를 S3에 업로드합니다.
+     * 이미지를 S3에 업로드합니다. (폴더 타입별)
      * @param file 업로드할 이미지 파일
+     * @param folderType 이미지 폴더 타입
      * @return 업로드된 이미지 정보
      */
-    public RsData<ImageUploadResponseDto> uploadImage(MultipartFile file) {
+    public RsData<ImageUploadResponseDto> uploadImage(MultipartFile file, ImageFolderType folderType) {
         try {
             // 파일 유효성 검증
             validateImageFile(file);
@@ -45,7 +46,9 @@ public class ImageService {
             String originalFilename = file.getOriginalFilename();
             String extension = getFileExtension(originalFilename);
             String uniqueFileName = UUID.randomUUID().toString() + "." + extension;
-            String s3Key = imgDirName + "/" + uniqueFileName;
+            
+            // 폴더별 경로 생성
+            String s3Key = imgDirName + "/" + folderType.getFolderPath() + "/" + uniqueFileName;
             
             // S3에 업로드
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -74,6 +77,13 @@ public class ImageService {
         } catch (IOException e) {
             throw new ImageException(ExceptionCode.IMAGE_UPLOAD_FAILED, "이미지 업로드 중 오류가 발생했습니다: " + e.getMessage());
         }
+    }
+    
+    /**
+     * 기존 uploadImage 메서드 (하위 호환성을 위해 유지)
+     */
+    public RsData<ImageUploadResponseDto> uploadImage(MultipartFile file) {
+        return uploadImage(file, ImageFolderType.GENERAL);
     }
     
     /**

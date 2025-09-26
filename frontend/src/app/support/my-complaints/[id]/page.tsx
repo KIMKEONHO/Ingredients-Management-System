@@ -279,7 +279,7 @@ export default function ComplaintDetailPage() {
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <span className="font-medium text-green-800">처리 완료</span>
                   </div>
-                  <p className="text-green-700 text-sm">
+                  <p className="text-blue-700 text-sm">
                     민원이 성공적으로 처리되었습니다.
                   </p>
                 </div>

@@ -36,9 +36,6 @@ export default function Footer() {
                     <a href="/stats" className="hover:text-indigo-600">식재료 소비 통계</a>
                   </li>
                   <li>
-                    <a href="/cart" className="hover:text-indigo-600">장바구니</a>
-                  </li>
-                  <li>
                     <a href="/complaints" className="hover:text-indigo-600">민원 센터</a>
                   </li>
                   <li>

@@ -23,6 +23,7 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,6 +45,9 @@ public class UserService {
     private final JwtProvider jwtProvider;
     private final EmailService emailService;
 
+    @Value("${custom.default.profile-url}")
+    private String defaultProfileUrl;
+
     @Transactional
     public CreateUserResponseDto createUser(CreateUserRequestDto createUserRequestDto) {
 
@@ -61,6 +65,7 @@ public class UserService {
                 .nickname(createUserRequestDto.getNickName())
                 .email(createUserRequestDto.getEmail())
                 .password(passwordEncoder.encode(createUserRequestDto.getPassword()))
+                .profileUrl(defaultProfileUrl) // 디폴트 이미지로 설정
                 .status(Status.ACTIVE)
                 .role(Role.USER)
                 .build();
@@ -156,6 +161,7 @@ public class UserService {
         ValidUserResponseDto validUserResponseDto = ValidUserResponseDto.builder()
                 .email(user.get().getEmail())
                 .name(user.get().getUserName())
+                .profile(user.get().getProfileUrl())
                 .build();
 
         return validUserResponseDto;
@@ -202,7 +208,7 @@ public class UserService {
     }
 
     @Transactional
-    public User modifyOrJoins(String email, String username, String provider, String socialId){
+    public User modifyOrJoins(String email, String username, String provider, String socialId, String profileUrl){
        Optional<User> opUser = userRepository.findByEmail(email);
        log.info("user email : {}", email);
 
@@ -212,10 +218,10 @@ public class UserService {
             return user;
         }
 
-        return createSocialUser(email, "",username,provider,socialId);
+        return createSocialUser(email, "",username,provider,socialId, profileUrl);
     }
 
-    public User createSocialUser(String email, String password, String username,String provider,String socialId){
+    public User createSocialUser(String email, String password, String username,String provider,String socialId, String profileUrl){
 
         User user = User.builder()
                 .email(email)
@@ -223,7 +229,9 @@ public class UserService {
                 .userName(username)
                 .phoneNum(" ")
                 .ssoProvider(provider)
+                .nickname(provider+"__"+socialId)
                 .role(Role.USER)
+                .profileUrl(profileUrl)
                 .socialId(socialId)
                 .createdAt(LocalDateTime.now())
                 .modifiedAt(LocalDateTime.now())
@@ -380,5 +388,9 @@ public class UserService {
 
         userRepository.save(user);
 
+    }
+
+    public Optional<User> findUserById(Long userId){
+        return userRepository.findById(userId);
     }
 }

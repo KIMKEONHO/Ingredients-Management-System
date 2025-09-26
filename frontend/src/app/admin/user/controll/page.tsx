@@ -616,7 +616,7 @@ function MemberManagementPage() {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleBulkAction('활성화')}
-                      className="px-3 py-1 text-sm text-green-700 bg-green-100 hover:bg-green-200 rounded-md"
+                      className="px-3 py-1 text-sm text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-md"
                     >
                       일괄 활성화
                     </button>

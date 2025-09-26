@@ -4,9 +4,15 @@ import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.recipe.entity.Recipe;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "recipe_ingredient")
+@SuperBuilder
+@NoArgsConstructor
+@Getter
 public class RecipeIngredient extends BaseEntity {
     @Column(name = "quantity", nullable = false)
     private Double quantity;

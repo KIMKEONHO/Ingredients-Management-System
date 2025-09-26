@@ -307,7 +307,7 @@ export default function SignupPage() {
                       type="button"
                       onClick={handleVerifyEmail}
                       disabled={isVerifyingEmail || !emailVerificationCode || emailVerified}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${emailVerified ? 'bg-green-600' : COLOR_PRESETS.LOGIN_PAGE.button} disabled:opacity-50 disabled:cursor-not-allowed`}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${emailVerified ? 'bg-blue-600' : COLOR_PRESETS.LOGIN_PAGE.button} disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {emailVerified ? "인증완료" : isVerifyingEmail ? "확인중..." : "확인"}
                     </button>

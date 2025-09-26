@@ -270,7 +270,11 @@ export default function LoginPage() {
       <div className={`w-full max-w-xl rounded-2xl ${COLOR_PRESETS.LOGIN_PAGE.card} p-6 shadow-xl ring-1 ring-black/5`}>
         <section className="w-full max-w-lg mx-auto">
         <div className="mb-6 text-center">
-          <div className={`mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full ${COLOR_PRESETS.LOGIN_PAGE.button} text-white font-bold`}>FM</div>
+          <img 
+            src="https://dev-bucket-lolgun0629-1.s3.ap-northeast-2.amazonaws.com/img1/default/IMS_Logo.png" 
+            alt="IMS Logo" 
+            className="mx-auto h-16 w-auto mb-4"
+          />
           <h1 className={`mt-4 text-3xl font-bold ${COLOR_PRESETS.LOGIN_PAGE.accent}`}>로그인</h1>
           <p className="mt-1 text-sm text-blue-700/70">계정에 로그인하세요</p>
         </div>

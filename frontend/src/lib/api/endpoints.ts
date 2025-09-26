@@ -97,6 +97,16 @@ export const API_ENDPOINTS = {
       MONTHLY: '/api/v1/consumedlog/monthly', // 올해 월별 식품 재고 사용량 조회
     },
 
+    // 레시피 관련
+    RECIPE: {
+      BASE: '/api/v1/recipe',
+      CREATE: '/api/v1/recipe/', // 레시피 생성
+      DETAIL: '/api/v1/recipe/:recipeId', // 레시피 상세 조회
+      UPDATE: '/api/v1/recipe/:recipeId', // 레시피 수정
+      DELETE: '/api/v1/recipe/:recipeId', // 레시피 삭제
+      ALL: '/api/v1/recipe/all', // 전체 레시피 조회
+    },
+
   } as const;
   
   // API URL 생성 헬퍼 함수

@@ -58,8 +58,12 @@ export default function Header() {
     <header className="bg-white p-4 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center gap-8">
-          <Link href="/" className="text-2xl font-bold text-green-700">
-            FreshTracker
+          <Link href="/" className="flex items-center">
+            <img 
+              src="https://dev-bucket-lolgun0629-1.s3.ap-northeast-2.amazonaws.com/img1/default/IMS_Logo.png" 
+              alt="IMS Logo" 
+              className="h-8 w-auto hover:opacity-80 transition-opacity"
+            />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-gray-600">
             <Link 
@@ -140,16 +144,12 @@ export default function Header() {
               </div>
             )}
           </div>
-          <Link href="/cart" className="relative text-xl">
-            <span role="img" aria-label="cart">🛒</span>
-            <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">3</span>
-          </Link>
           {isLogin ? (
             <div className="flex items-center gap-3">
               {/* 사용자 프로필 영역 */}
               <div className="flex items-center gap-2">
                 {/* 프로필 아바타 */}
-                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
                   {loginMember.nickname ? loginMember.nickname.charAt(0).toUpperCase() : 'U'}
                 </div>
                 {/* 닉네임 (마이페이지 링크) */}
@@ -197,7 +197,7 @@ export default function Header() {
           ) : (
             <>
               <Link href="/login" className="text-gray-600 hover:text-gray-900">로그인</Link>
-              <Link href="/signup" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">
+              <Link href="/signup" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
                 회원가입
               </Link>
             </>
