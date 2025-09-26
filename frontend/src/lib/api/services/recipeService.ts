@@ -31,6 +31,25 @@ export type CreateRecipeRequestDto = {
   stepRequestDto: CreateRecipeStepRequestDto[];
 };
 
+// 레시피 재료 응답 타입
+export type RecipeIngredientResponseDto = {
+  ingredientName: string;
+  unit: string;
+  quantity: number;
+};
+
+// 모든 레시피 응답 타입
+export type AllRecipeResponseDto = {
+  createdAt: string;
+  recipeIngredientResponseDto: RecipeIngredientResponseDto[];
+  userNickName: string;
+  description: string;
+  title: string;
+  difficultyLevel: number;
+  userProfile?: string;
+  cookingTime: number;
+};
+
 // 레시피 응답 타입
 export type Recipe = {
   id?: number;
@@ -52,7 +71,34 @@ export type RsDataRecipeResponseDto = {
   data?: Recipe;
 };
 
+export type RsDataAllRecipeResponseDto = {
+  resultCode?: string;
+  msg?: string;
+  data?: AllRecipeResponseDto[];
+};
+
 export const recipeService = {
+  // 모든 레시피 조회
+  getAllRecipes: async (): Promise<AllRecipeResponseDto[]> => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
+    const url = `${API_BASE_URL}/api/v1/recipe/all`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: RsDataAllRecipeResponseDto = await response.json();
+    return result?.data || [];
+  },
+
   createRecipe: async (
     recipeData: CreateRecipeRequestDto, 
     recipeImage?: File, 
