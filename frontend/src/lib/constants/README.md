@@ -66,7 +66,6 @@ import SectionCard from '@/app/components/ui/SectionCard';
 - `main` - 메인 페이지 스타일
 - `support` - 고객 지원 페이지 스타일  
 - `statistics` - 통계 페이지 스타일
-- `cart` - 장바구니 페이지 스타일
 - `login` - 로그인 페이지 스타일
 - `calendar` - 캘린더 페이지 스타일
 
@@ -137,8 +136,7 @@ export default function NewPage() {
 1. **메인 페이지** (`/`) - 파란색-보라색 그라데이션
 2. **통계 페이지** (`/statistics`) - 일관된 색상 시스템 적용
 3. **고객 지원 페이지** (`/support`) - 파란색-보라색 그라데이션
-4. **장바구니 페이지** (`/cart`) - 파란색 계열로 통일
-5. **로그인 페이지** (`/login`) - 녹색에서 파란색으로 변경
+4. **로그인 페이지** (`/login`) - 녹색에서 파란색으로 변경
 6. **캘린더 페이지** (`/callender`) - 인디고에서 파란색으로 변경
 
 ### 🔄 적용 방법
@@ -171,5 +169,5 @@ import { COLOR_PRESETS } from '@/lib/constants/colors';
 - 2024: 초기 색상 시스템 구축
 - 2024: PageHeader, SectionCard 컴포넌트 추가
 - 2024: 통계 페이지 리팩토링 완료
-- 2024: 장바구니, 로그인, 캘린더 페이지 색상 통일 완료
+- 2024: 로그인, 캘린더 페이지 색상 통일 완료
 - 2024: 모든 주요 페이지에 일관된 색상 시스템 적용

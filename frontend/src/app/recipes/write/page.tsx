@@ -157,7 +157,7 @@ export default function RecipeWritePage() {
   };
 
   // 재료 업데이트
-  const updateIngredient = (id: string, field: keyof RecipeIngredient, value: any) => {
+  const updateIngredient = (id: string, field: keyof RecipeIngredient, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       ingredients: prev.ingredients.map(ingredient =>
@@ -192,7 +192,7 @@ export default function RecipeWritePage() {
   };
 
   // 단계 업데이트
-  const updateStep = (id: string, field: keyof RecipeStep, value: any) => {
+  const updateStep = (id: string, field: keyof RecipeStep, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       steps: prev.steps.map(step =>
@@ -390,10 +390,9 @@ export default function RecipeWritePage() {
                     </label>
                     <ImageUpload
                       value={formData.imageUrl}
-                      onChange={(imageUrl, file) => setFormData(prev => ({ 
+                      onChange={(imageUrl) => setFormData(prev => ({ 
                         ...prev, 
-                        imageUrl, 
-                        recipeImageFile: file 
+                        imageUrl
                       }))}
                       placeholder="레시피 대표 이미지를 업로드하세요"
                     />
@@ -591,9 +590,8 @@ export default function RecipeWritePage() {
                             </label>
                             <ImageUpload
                               value={step.imageUrl || ''}
-                              onChange={(imageUrl, file) => {
+                              onChange={(imageUrl) => {
                                 updateStep(step.id, 'imageUrl', imageUrl);
-                                updateStep(step.id, 'imageFile', file);
                               }}
                               placeholder="단계별 이미지를 업로드하세요"
                               className="h-32"
