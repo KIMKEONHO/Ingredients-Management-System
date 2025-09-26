@@ -156,6 +156,7 @@ public class UserService {
         ValidUserResponseDto validUserResponseDto = ValidUserResponseDto.builder()
                 .email(user.get().getEmail())
                 .name(user.get().getUserName())
+                .profile(user.get().getProfileUrl())
                 .build();
 
         return validUserResponseDto;
@@ -202,7 +203,7 @@ public class UserService {
     }
 
     @Transactional
-    public User modifyOrJoins(String email, String username, String provider, String socialId){
+    public User modifyOrJoins(String email, String username, String provider, String socialId, String profileUrl){
        Optional<User> opUser = userRepository.findByEmail(email);
        log.info("user email : {}", email);
 
@@ -212,10 +213,10 @@ public class UserService {
             return user;
         }
 
-        return createSocialUser(email, "",username,provider,socialId);
+        return createSocialUser(email, "",username,provider,socialId, profileUrl);
     }
 
-    public User createSocialUser(String email, String password, String username,String provider,String socialId){
+    public User createSocialUser(String email, String password, String username,String provider,String socialId, String profileUrl){
 
         User user = User.builder()
                 .email(email)
@@ -223,7 +224,9 @@ public class UserService {
                 .userName(username)
                 .phoneNum(" ")
                 .ssoProvider(provider)
+                .nickname(provider+"__"+socialId)
                 .role(Role.USER)
+                .profileUrl(profileUrl)
                 .socialId(socialId)
                 .createdAt(LocalDateTime.now())
                 .modifiedAt(LocalDateTime.now())
