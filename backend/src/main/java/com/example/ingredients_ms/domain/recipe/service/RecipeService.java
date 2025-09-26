@@ -4,6 +4,7 @@ import com.example.ingredients_ms.domain.image.dto.ImageUploadResponseDto;
 import com.example.ingredients_ms.domain.image.service.ImageFolderType;
 import com.example.ingredients_ms.domain.image.service.ImageService;
 import com.example.ingredients_ms.domain.recipe.dto.request.CreateRecipeRequestDto;
+import com.example.ingredients_ms.domain.recipe.dto.response.AllRecipeResponseDto;
 import com.example.ingredients_ms.domain.recipe.entity.Recipe;
 import com.example.ingredients_ms.domain.recipe.entity.RecipeType;
 import com.example.ingredients_ms.domain.recipe.repository.RecipeRepository;
@@ -86,10 +87,26 @@ public class RecipeService {
     }
 
 
-//    public RsData<?> findAllRecipe(){
-//
-//
-//    }
+    @Transactional
+    public RsData<?> findAllRecipe(){
+
+        List<Recipe> recipes = recipeRepository.findAll();
+
+        List<AllRecipeResponseDto> response = recipes.stream().map(recipe ->
+                        AllRecipeResponseDto.builder()
+                        .createdAt(recipe.getCreatedAt())
+                                .recipeIngredientResponseDto(recipeIngredientService.findRecipeIngredientByRecipeId(recipe.getId()))
+                        .userNickName(recipe.getAuthor().getUserName())
+                        .description(recipe.getDescription())
+                        .title(recipe.getTitle())
+                        .difficultyLevel(recipe.getDifficultyLevel())
+                        .userProfile(recipe.getAuthor().getProfileUrl())
+                        .cookingTime(recipe.getCookingTime())
+                        .build())
+                .toList();
+
+        return new RsData<>("200","모든 레시피를 찾았습니다.", response);
+    }
 
 
 }
