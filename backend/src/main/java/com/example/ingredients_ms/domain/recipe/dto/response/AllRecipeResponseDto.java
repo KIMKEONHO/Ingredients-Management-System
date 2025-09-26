@@ -15,6 +15,8 @@ import java.util.List;
 @Builder
 public class AllRecipeResponseDto {
 
+    private Long recipeId;
+
     // 레시피 테이블에서 가져올 정보들
     private String title;
     private String userNickName;
