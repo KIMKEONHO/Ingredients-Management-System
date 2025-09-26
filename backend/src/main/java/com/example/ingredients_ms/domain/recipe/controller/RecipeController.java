@@ -7,10 +7,7 @@ import com.example.ingredients_ms.global.security.CurrentUser;
 import com.example.ingredients_ms.global.security.SecurityUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -32,9 +29,9 @@ public class RecipeController {
         return recipeService.createRecipePost(securityUser.getId(), requestDto, recipeImage, stepImages);
     }
 
-//    @GetMapping("/all")
-//    public RsData<?> findAllRecipe(){
-//
-//        return recipeService.findAllRecipe();
-//    }
+    @GetMapping("/all")
+    public RsData<?> findAllRecipe(){
+        return recipeService.findAllRecipe();
+    }
+
 }
