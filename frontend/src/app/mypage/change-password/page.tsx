@@ -295,7 +295,7 @@ export default function ChangePassword() {
         type="button"
         onClick={handleSendVerificationCode}
         disabled={isSendingCode || !email}
-        className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+        className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
       >
         {isSendingCode ? "발송 중..." : "인증코드 발송"}
       </button>
@@ -334,7 +334,7 @@ export default function ChangePassword() {
           type="button"
           onClick={handleVerifyCode}
           disabled={isVerifyingCode || !verifyCode}
-          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
           {isVerifyingCode ? "인증 중..." : "인증하기"}
         </button>
@@ -440,7 +440,7 @@ export default function ChangePassword() {
         <button
           type="submit"
           disabled={isLoading}
-          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
           {isLoading ? "변경 중..." : "비밀번호 변경"}
         </button>
@@ -475,7 +475,7 @@ export default function ChangePassword() {
         }>
           {message && (
             <div className={`p-3 rounded-md text-sm mb-4 ${
-              message.includes('성공') || message.includes('완료') || message.includes('발송') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              message.includes('성공') || message.includes('완료') || message.includes('발송') ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
             }`}>
               {message}
             </div>

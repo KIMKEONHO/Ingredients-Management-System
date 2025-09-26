@@ -221,7 +221,7 @@ export default function MyComplaintsPage() {
                 </Link>
                 <Link
                   href="/support/my-complaints"
-                  className="flex items-center gap-2 px-6 py-3 rounded-lg bg-green-600 text-white font-medium transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 text-white font-medium transition-colors"
                 >
                   <List size={20} />
                   내 민원 목록
@@ -312,7 +312,7 @@ export default function MyComplaintsPage() {
                             <CheckCircle className="h-5 w-5 text-green-600" />
                             <span className="font-medium text-green-800">처리 완료</span>
                           </div>
-                          <p className="text-green-700 text-sm">
+                          <p className="text-blue-700 text-sm">
                             민원이 성공적으로 처리되었습니다.
                           </p>
                         </div>

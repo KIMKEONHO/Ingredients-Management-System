@@ -38,7 +38,7 @@ export class ComplaintStatusUtils {
       case ComplaintStatus.IN_PROGRESS:
         return { text: 'text-blue-700', bg: 'bg-blue-100' };
       case ComplaintStatus.COMPLETED:
-        return { text: 'text-green-700', bg: 'bg-green-100' };
+        return { text: 'text-blue-700', bg: 'bg-blue-100' };
       case ComplaintStatus.REJECTED:
         return { text: 'text-red-700', bg: 'bg-red-100' };
       default:

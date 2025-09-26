@@ -153,7 +153,7 @@ export default function Header() {
               {/* 사용자 프로필 영역 */}
               <div className="flex items-center gap-2">
                 {/* 프로필 아바타 */}
-                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
                   {loginMember.nickname ? loginMember.nickname.charAt(0).toUpperCase() : 'U'}
                 </div>
                 {/* 닉네임 (마이페이지 링크) */}
@@ -201,7 +201,7 @@ export default function Header() {
           ) : (
             <>
               <Link href="/login" className="text-gray-600 hover:text-gray-900">로그인</Link>
-              <Link href="/signup" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">
+              <Link href="/signup" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
                 회원가입
               </Link>
             </>

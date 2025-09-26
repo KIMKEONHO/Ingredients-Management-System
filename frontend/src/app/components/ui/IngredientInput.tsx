@@ -150,7 +150,7 @@ export default function IngredientInput({
               type="button"
               onClick={() => handleSelectIngredient(ingredient)}
               className={`w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors ${
-                index === selectedIndex ? 'bg-green-50 text-green-700' : ''
+                index === selectedIndex ? 'bg-blue-50 text-blue-700' : ''
               } ${index === 0 ? 'rounded-t-lg' : ''} ${
                 index === filteredIngredients.length - 1 ? 'rounded-b-lg' : ''
               }`}
