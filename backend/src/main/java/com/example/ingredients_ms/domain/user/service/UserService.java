@@ -23,6 +23,7 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,6 +45,9 @@ public class UserService {
     private final JwtProvider jwtProvider;
     private final EmailService emailService;
 
+    @Value("${custom.default.profile-url}")
+    private String defaultProfileUrl;
+
     @Transactional
     public CreateUserResponseDto createUser(CreateUserRequestDto createUserRequestDto) {
 
@@ -61,6 +65,7 @@ public class UserService {
                 .nickname(createUserRequestDto.getNickName())
                 .email(createUserRequestDto.getEmail())
                 .password(passwordEncoder.encode(createUserRequestDto.getPassword()))
+                .profileUrl(defaultProfileUrl) // 디폴트 이미지로 설정
                 .status(Status.ACTIVE)
                 .role(Role.USER)
                 .build();
