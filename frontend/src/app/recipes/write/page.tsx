@@ -390,9 +390,10 @@ export default function RecipeWritePage() {
                     </label>
                     <ImageUpload
                       value={formData.imageUrl}
-                      onChange={(imageUrl) => setFormData(prev => ({ 
+                      onChange={(imageUrl, file) => setFormData(prev => ({ 
                         ...prev, 
-                        imageUrl
+                        imageUrl,
+                        recipeImageFile: file
                       }))}
                       placeholder="레시피 대표 이미지를 업로드하세요"
                     />
@@ -590,8 +591,9 @@ export default function RecipeWritePage() {
                             </label>
                             <ImageUpload
                               value={step.imageUrl || ''}
-                              onChange={(imageUrl) => {
+                              onChange={(imageUrl, file) => {
                                 updateStep(step.id, 'imageUrl', imageUrl);
+                                updateStep(step.id, 'imageFile', file);
                               }}
                               placeholder="단계별 이미지를 업로드하세요"
                               className="h-32"
