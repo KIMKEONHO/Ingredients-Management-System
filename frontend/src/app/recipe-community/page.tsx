@@ -22,6 +22,8 @@ export default function RecipeCommunityPage() {
         setIsLoading(true);
         setError(null);
         const recipesData = await recipeService.getAllRecipes();
+        console.log('레시피 공유 페이지 - API에서 받은 레시피 목록:', recipesData);
+        console.log('레시피 공유 페이지 - 각 레시피의 ID들:', recipesData.map(recipe => ({ id: recipe.recipeId, title: recipe.title })));
         setRecipes(recipesData);
       } catch (error) {
         console.error('레시피 데이터 로드 실패:', error);
@@ -147,9 +149,12 @@ export default function RecipeCommunityPage() {
                 <div className="space-y-6">
                   {filteredRecipes.map((recipe, index) => (
                     <div
-                      key={index}
+                      key={recipe.recipeId}
                       className="bg-white rounded-xl shadow-sm border border-blue-100 p-6 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => router.push(`/recipes/${index}`)}
+                      onClick={() => {
+                        console.log('레시피 공유 페이지 - 클릭된 레시피 ID:', recipe.recipeId, 'type:', typeof recipe.recipeId);
+                        router.push(`/recipes/${recipe.recipeId}`);
+                      }}
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
