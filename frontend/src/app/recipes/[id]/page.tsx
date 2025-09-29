@@ -303,41 +303,34 @@ export default function RecipeDetailPage() {
               
               <div className="space-y-8">
                 {recipe.recipeStepResponseDtos.map((step, index) => (
-                  <div key={index} className="flex gap-8">
-                    {/* Left Side - Instructions */}
-                    <div className="flex-1">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                          {step.stepNumber}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-gray-800 leading-relaxed mb-3">{step.description}</p>
-                          {step.cookingTime && step.cookingTime > 0 && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <span>약 {step.cookingTime}분 소요 예정</span>
-                            </div>
-                          )}
-                        </div>
+                  <div key={index} className="bg-gray-50 rounded-lg p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                        {step.stepNumber}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-gray-800 leading-relaxed mb-3">{step.description}</p>
+                        {step.cookingTime && step.cookingTime > 0 && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>약 {step.cookingTime}분 소요 예정</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
-                    {/* Right Side - Image */}
-                    <div className="w-80 flex-shrink-0">
-                      {step.imageUrl ? (
+                    {/* Step Image - Full width below content */}
+                    {step.imageUrl && (
+                      <div className="mt-4">
                         <img 
                           src={step.imageUrl} 
                           alt={`${step.stepNumber}단계 이미지`}
-                          className="w-full h-48 object-cover rounded-lg"
+                          className="w-full max-h-64 object-cover rounded-lg"
                         />
-                      ) : (
-                        <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                          <span className="text-gray-500">이미지 없음</span>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

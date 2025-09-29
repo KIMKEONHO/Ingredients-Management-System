@@ -52,7 +52,7 @@ export default function RecipeWritePage() {
     difficultyLevel: 1,
     servings: 1,
     imageUrl: '',
-    recipeType: 'MAIN',
+    recipeType: 'main',
     ingredients: [],
     steps: []
   });
@@ -374,11 +374,10 @@ export default function RecipeWritePage() {
                       onChange={(e) => setFormData(prev => ({ ...prev, recipeType: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
-                      <option value="MAIN">메인 요리</option>
-                      <option value="SIDE">사이드 요리</option>
-                      <option value="DESSERT">디저트</option>
-                      <option value="BEVERAGE">음료</option>
-                      <option value="SNACK">간식</option>
+                      <option value="main">메인 요리</option>
+                      <option value="side">사이드 요리</option>
+                      <option value="desert">디저트</option>
+                      <option value="beverage">음료</option>
                     </select>
                   </div>
 
@@ -520,40 +519,41 @@ export default function RecipeWritePage() {
                 <div className="space-y-4">
                   {formData.steps.map((step, index) => (
                     <div key={step.id} className="p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-4">
                         <h4 className="text-lg font-semibold text-gray-900">
                           단계 {step.stepNumber}
                         </h4>
                         <button
                           type="button"
                           onClick={() => removeStep(step.id)}
-                          className="px-3 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                          className="px-3 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors z-10 relative"
                         >
                           삭제
                         </button>
                       </div>
                       
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            조리 설명 *
-                          </label>
-                          <textarea
-                            rows={3}
-                            required
-                            value={step.description}
-                            onChange={(e) => updateStep(step.id, 'description', e.target.value)}
-                            placeholder="이 단계에서 해야 할 일을 자세히 설명해주세요"
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                              errors[`step_${index}_description`] ? 'border-red-500' : 'border-gray-300'
-                            }`}
-                          />
-                          {errors[`step_${index}_description`] && (
-                            <p className="mt-1 text-sm text-red-600">{errors[`step_${index}_description`]}</p>
-                          )}
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex gap-6">
+                        {/* Left Side - Description and Time */}
+                        <div className="flex-1 space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              조리 설명 *
+                            </label>
+                            <textarea
+                              rows={3}
+                              required
+                              value={step.description}
+                              onChange={(e) => updateStep(step.id, 'description', e.target.value)}
+                              placeholder="이 단계에서 해야 할 일을 자세히 설명해주세요"
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                                errors[`step_${index}_description`] ? 'border-red-500' : 'border-gray-300'
+                              }`}
+                            />
+                            {errors[`step_${index}_description`] && (
+                              <p className="mt-1 text-sm text-red-600">{errors[`step_${index}_description`]}</p>
+                            )}
+                          </div>
+                          
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               소요 시간 (분)
@@ -563,7 +563,7 @@ export default function RecipeWritePage() {
                               min="0"
                               value={step.cookingTime || ''}
                               onChange={(e) => updateStep(step.id, 'cookingTime', parseInt(e.target.value) || 0)}
-                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                              className={`w-full max-w-xs px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                                 errors[`step_${index}_cookingTime`] ? 'border-red-500' : 'border-gray-300'
                               }`}
                             />
@@ -571,21 +571,22 @@ export default function RecipeWritePage() {
                               <p className="mt-1 text-sm text-red-600">{errors[`step_${index}_cookingTime`]}</p>
                             )}
                           </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              단계 이미지
-                            </label>
-                            <ImageUpload
-                              value={step.imageUrl || ''}
-                              onChange={(imageUrl, file) => {
-                                updateStep(step.id, 'imageUrl', imageUrl);
-                                updateStep(step.id, 'imageFile', file);
-                              }}
-                              placeholder="단계별 이미지를 업로드하세요"
-                              className="h-32"
-                            />
-                          </div>
+                        </div>
+                        
+                        {/* Right Side - Image */}
+                        <div className="w-80 flex-shrink-0">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            단계 이미지
+                          </label>
+                          <ImageUpload
+                            value={step.imageUrl || ''}
+                            onChange={(imageUrl, file) => {
+                              updateStep(step.id, 'imageUrl', imageUrl);
+                              updateStep(step.id, 'imageFile', file);
+                            }}
+                            placeholder="단계별 이미지를 업로드하세요"
+                            className="h-32"
+                          />
                         </div>
                       </div>
                     </div>
