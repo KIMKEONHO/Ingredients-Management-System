@@ -65,4 +65,51 @@ public class RecipeStepService {
                 .toList();
     }
 
+    public void deleteRecipeStepByRecipeId(Long recipeId){
+
+        List<RecipeStep> recipeSteps = recipeStepRepository.findByRecipeId(recipeId);
+
+        // 각 레시피 단계의 이미지를 S3에서 삭제
+        for (RecipeStep recipeStep : recipeSteps) {
+            if (recipeStep.getImageUrl() != null && !recipeStep.getImageUrl().isEmpty()) {
+                try {
+                    // S3 URL에서 파일명 추출
+                    String fileName = extractFileNameFromUrl(recipeStep.getImageUrl());
+                    if (fileName != null) {
+                        imageService.deleteImage(fileName, ImageFolderType.RECIPE_STEP);
+                        log.info("레시피 단계 이미지 삭제 완료: {}", fileName);
+                    }
+                } catch (Exception e) {
+                    log.error("레시피 단계 이미지 삭제 실패: {}", recipeStep.getImageUrl(), e);
+                    // 이미지 삭제 실패해도 DB 삭제는 계속 진행
+                }
+            }
+        }
+
+        recipeStepRepository.deleteByRecipe_Id(recipeId);
+    }
+    
+    /**
+     * S3 URL에서 파일명을 추출합니다.
+     * @param imageUrl S3 이미지 URL
+     * @return 파일명
+     */
+    private String extractFileNameFromUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            // URL에서 마지막 '/' 이후의 부분이 파일명
+            int lastSlashIndex = imageUrl.lastIndexOf('/');
+            if (lastSlashIndex != -1 && lastSlashIndex < imageUrl.length() - 1) {
+                return imageUrl.substring(lastSlashIndex + 1);
+            }
+        } catch (Exception e) {
+            log.error("URL에서 파일명 추출 실패: {}", imageUrl, e);
+        }
+        
+        return null;
+    }
+
 }
