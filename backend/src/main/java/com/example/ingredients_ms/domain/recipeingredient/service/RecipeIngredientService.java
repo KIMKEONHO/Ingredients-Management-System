@@ -43,6 +43,7 @@ public class RecipeIngredientService {
         return recipeIngredientRepository.findByRecipeId(recipeId).stream().map(ingredient -> RecipeIngredientResponseDto.builder()
                         .ingredientName(ingredient.getIngredient().getName())
                         .unit(ingredient.getUnit())
+                        .notes(ingredient.getNotes())
                         .quantity(ingredient.getQuantity())
                 .build())
                 .toList();
