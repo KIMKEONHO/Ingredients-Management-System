@@ -151,4 +151,68 @@ public class RecipeService {
     }
 
 
+    @Transactional
+    public RsData<?> deleteRecipe(Long recipeId, Long userId){
+
+        Optional<Recipe> opRecipe = recipeRepository.findById(recipeId);
+
+        if(opRecipe.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.RECIPE_NOT_FOUND);
+        }
+
+        if(!opRecipe.get().getAuthor().getId().equals(userId)){
+            throw new BusinessLogicException(ExceptionCode.NOT_OWNER);
+        }
+
+        Recipe recipe = opRecipe.get();
+
+        // 레시피 메인 이미지를 S3에서 삭제
+        if (recipe.getImageUrl() != null && !recipe.getImageUrl().isEmpty()) {
+            try {
+                String fileName = extractFileNameFromUrl(recipe.getImageUrl());
+                if (fileName != null) {
+                    imageService.deleteImage(fileName, ImageFolderType.RECIPE_MAIN);
+                    log.info("레시피 메인 이미지 삭제 완료: {}", fileName);
+                }
+            } catch (Exception e) {
+                log.error("레시피 메인 이미지 삭제 실패: {}", recipe.getImageUrl(), e);
+                // 이미지 삭제 실패해도 레시피 삭제는 계속 진행
+            }
+        }
+
+        // 레시피 재료 모두 삭제
+        recipeIngredientService.deleteRecipeIngredientByRecipeId(recipeId);
+
+        // 레시피 단계 모두 삭제
+        recipeStepService.deleteRecipeStepByRecipeId(recipeId);
+
+        // 레시피 삭제
+        recipeRepository.deleteById(recipeId);
+
+        return new RsData<>("204", "레시피가 삭제되었습니다.");
+    }
+    
+    /**
+     * S3 URL에서 파일명을 추출합니다.
+     * @param imageUrl S3 이미지 URL
+     * @return 파일명
+     */
+    private String extractFileNameFromUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            // URL에서 마지막 '/' 이후의 부분이 파일명
+            int lastSlashIndex = imageUrl.lastIndexOf('/');
+            if (lastSlashIndex != -1 && lastSlashIndex < imageUrl.length() - 1) {
+                return imageUrl.substring(lastSlashIndex + 1);
+            }
+        } catch (Exception e) {
+            log.error("URL에서 파일명 추출 실패: {}", imageUrl, e);
+        }
+        
+        return null;
+    }
+
 }
