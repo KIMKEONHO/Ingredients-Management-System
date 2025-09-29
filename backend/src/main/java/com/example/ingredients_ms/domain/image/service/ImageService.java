@@ -129,6 +129,35 @@ public class ImageService {
     }
     
     /**
+     * URL이 내부 S3 URL인지 확인합니다.
+     * @param imageUrl 확인할 이미지 URL
+     * @return 내부 S3 URL이면 true
+     */
+    public boolean isInternalS3Url(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return false;
+        }
+        
+        // 내부 S3 URL 패턴: https://{bucketName}.s3.{region}.amazonaws.com/{path}
+        String s3UrlPattern = "https://" + bucketName + ".s3." + region + ".amazonaws.com/";
+        return imageUrl.startsWith(s3UrlPattern);
+    }
+
+    /**
+     * S3 URL에서 파일 키를 추출합니다.
+     * @param s3Url S3 URL
+     * @return 파일 키
+     */
+    public String extractS3KeyFromUrl(String s3Url) {
+        if (!isInternalS3Url(s3Url)) {
+            return null;
+        }
+        
+        String s3UrlPattern = "https://" + bucketName + ".s3." + region + ".amazonaws.com/";
+        return s3Url.substring(s3UrlPattern.length());
+    }
+    
+    /**
      * 이미지 파일 유효성을 검증합니다.
      * @param file 검증할 파일
      */
