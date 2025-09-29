@@ -5,11 +5,13 @@ import com.example.ingredients_ms.domain.image.service.ImageFolderType;
 import com.example.ingredients_ms.domain.image.service.ImageService;
 import com.example.ingredients_ms.domain.recipe.entity.Recipe;
 import com.example.ingredients_ms.domain.recipestep.dto.request.CreateRecipeStepRequestDto;
+import com.example.ingredients_ms.domain.recipestep.dto.response.RecipeStepResponseDto;
 import com.example.ingredients_ms.domain.recipestep.entity.RecipeStep;
 import com.example.ingredients_ms.domain.recipestep.repository.RecipeStepRepository;
 import com.example.ingredients_ms.global.rsdata.RsData;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,6 +19,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RecipeStepService {
 
     private final RecipeStepRepository recipeStepRepository;
@@ -51,5 +54,15 @@ public class RecipeStepService {
 
     }
 
+    public List<RecipeStepResponseDto> findRecipeStepByRecipeId(Long recipeId){
+
+        return recipeStepRepository.findByRecipeId(recipeId).stream().map(recipeStep -> RecipeStepResponseDto.builder()
+                        .stepNumber(recipeStep.getStepNumber())
+                        .description(recipeStep.getDescription())
+                        .imageUrl(recipeStep.getImageUrl())
+                        .cookingTime(recipeStep.getCookingTime())
+                        .build())
+                .toList();
+    }
 
 }
