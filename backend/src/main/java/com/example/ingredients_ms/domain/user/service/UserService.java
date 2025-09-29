@@ -345,6 +345,7 @@ public class UserService {
                 .nickName(user.getNickname())
                 .phoneNum(user.getPhoneNum())
                 .email(user.getEmail())
+                .profile(user.getProfileUrl())
                 .userStatus(user.getStatus())
                 .createdAt(user.getCreatedAt())
                 .build();
