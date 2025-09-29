@@ -34,4 +34,9 @@ public class RecipeController {
         return recipeService.findAllRecipe();
     }
 
+    @GetMapping("/detail/{recipeId}")
+    public RsData<?> recipeDetail(@PathVariable("recipeId") Long recipeId){
+        return recipeService.findRecipeById(recipeId);
+    }
+
 }
