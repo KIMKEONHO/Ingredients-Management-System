@@ -5,10 +5,13 @@ import com.example.ingredients_ms.domain.image.service.ImageFolderType;
 import com.example.ingredients_ms.domain.image.service.ImageService;
 import com.example.ingredients_ms.domain.recipe.dto.request.CreateRecipeRequestDto;
 import com.example.ingredients_ms.domain.recipe.dto.response.AllRecipeResponseDto;
+import com.example.ingredients_ms.domain.recipe.dto.response.RecipeDetailResponseDto;
 import com.example.ingredients_ms.domain.recipe.entity.Recipe;
 import com.example.ingredients_ms.domain.recipe.entity.RecipeType;
 import com.example.ingredients_ms.domain.recipe.repository.RecipeRepository;
+import com.example.ingredients_ms.domain.recipeingredient.dto.response.RecipeIngredientResponseDto;
 import com.example.ingredients_ms.domain.recipeingredient.service.RecipeIngredientService;
+import com.example.ingredients_ms.domain.recipestep.dto.response.RecipeStepResponseDto;
 import com.example.ingredients_ms.domain.recipestep.service.RecipeStepService;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.service.UserService;
@@ -17,6 +20,7 @@ import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.global.rsdata.RsData;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,6 +29,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RecipeService {
 
     private final RecipeRepository recipeRepository;
@@ -94,6 +99,7 @@ public class RecipeService {
 
         List<AllRecipeResponseDto> response = recipes.stream().map(recipe ->
                         AllRecipeResponseDto.builder()
+                                .recipeId(recipe.getId())
                         .createdAt(recipe.getCreatedAt())
                                 .recipeIngredientResponseDto(recipeIngredientService.findRecipeIngredientByRecipeId(recipe.getId()))
                         .userNickName(recipe.getAuthor().getUserName())
@@ -106,6 +112,42 @@ public class RecipeService {
                 .toList();
 
         return new RsData<>("200","모든 레시피를 찾았습니다.", response);
+    }
+
+    @Transactional
+    public RsData<?> findRecipeById(Long recipeId){
+
+        Optional<Recipe> opRecipe = recipeRepository.findById(recipeId);
+
+        if(opRecipe.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.RECIPE_NOT_FOUND);
+        }
+
+        Recipe recipe = opRecipe.get();
+
+        List<RecipeIngredientResponseDto> ingredients = recipeIngredientService.findRecipeIngredientByRecipeId(recipeId);
+
+        List<RecipeStepResponseDto> steps = recipeStepService.findRecipeStepByRecipeId(recipeId);
+
+        RecipeDetailResponseDto response = RecipeDetailResponseDto.builder()
+                .userId(recipe.getAuthor().getId())
+                .cookingTime(recipe.getCookingTime())
+                .createdAt(recipe.getCreatedAt())
+                .description(recipe.getDescription())
+                .difficultyLevel(recipe.getDifficultyLevel())
+                .imageUrl(recipe.getImageUrl())
+                .likeCount(recipe.getLikeCount())
+                .profileUrl(recipe.getAuthor().getProfileUrl())
+                .userNickName(recipe.getAuthor().getNickname())
+                .viewCount(recipe.getViewCount())
+                .title(recipe.getTitle())
+                .servings(recipe.getServings())
+                .recipeType(recipe.getRecipeType())
+                .recipeIngredientResponseDtos(ingredients)
+                .recipeStepResponseDtos(steps)
+                .build();
+
+        return new RsData<>("200","해당 레시피를 찾았습니다.", response);
     }
 
 
