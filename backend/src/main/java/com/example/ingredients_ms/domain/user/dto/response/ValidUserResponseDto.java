@@ -7,6 +7,7 @@ import lombok.Setter;
 @Getter@Setter@Builder
 public class ValidUserResponseDto {
 
+    private Long userId;
     private String email;
     private String name;
     private String profile;
