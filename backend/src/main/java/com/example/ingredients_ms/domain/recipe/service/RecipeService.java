@@ -108,6 +108,8 @@ public class RecipeService {
                         .difficultyLevel(recipe.getDifficultyLevel())
                         .userProfile(recipe.getAuthor().getProfileUrl())
                         .cookingTime(recipe.getCookingTime())
+                                .imageUrl(recipe.getImageUrl())
+                                .viewCount(recipe.getViewCount())
                         .build())
                 .toList();
 
