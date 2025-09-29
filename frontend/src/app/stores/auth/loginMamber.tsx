@@ -4,6 +4,10 @@ import { useEffect } from "react";
 
 type Member = {
   id: number;
+  userId?: number; // 백엔드 응답의 userId 필드
+  email?: string; // 백엔드 응답의 email 필드
+  name?: string; // 백엔드 응답의 name 필드
+  profile?: string; // 백엔드 응답의 profile 필드
   createDate: string;
   modifyDate: string;
   nickname: string;
