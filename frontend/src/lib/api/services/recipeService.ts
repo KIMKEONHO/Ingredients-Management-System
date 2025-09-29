@@ -49,19 +49,19 @@ export type RecipeStepResponseDto = {
 
 // 레시피 상세 응답 타입
 export type RecipeDetailResponseDto = {
-  cookingTime: number;
-  createdAt: string;
-  description: string;
-  difficultyLevel: number;
-  imageUrl?: string;
-  likeCount: number;
-  profileUrl?: string;
-  userNickName: string;
-  userId?: number; // 작성자 ID 추가
-  viewCount: number;
+  userId: number;
   title: string;
+  description: string;
+  cookingTime: number;
+  difficultyLevel: number;
   servings: number;
+  imageUrl?: string;
   recipeType: string;
+  viewCount: number;
+  likeCount: number;
+  userNickName: string;
+  createdAt: string;
+  profileUrl?: string;
   recipeIngredientResponseDtos: RecipeIngredientResponseDto[];
   recipeStepResponseDtos: RecipeStepResponseDto[];
 };
@@ -143,6 +143,7 @@ export const recipeService = {
     
     console.log('API 요청 URL:', url);
     console.log('요청하는 recipeId:', recipeId, 'type:', typeof recipeId);
+    console.log('API 요청 시작 시간:', new Date().toISOString());
     
     const response = await fetch(url, {
       method: 'GET',
@@ -152,14 +153,24 @@ export const recipeService = {
       },
     });
 
+    console.log('API 응답 상태:', response.status, response.statusText);
+    console.log('API 요청 완료 시간:', new Date().toISOString());
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('API 오류 응답:', errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
     const result: RsDataRecipeDetailResponseDto = await response.json();
+    console.log('API 응답 데이터:', result);
+    
     if (!result?.data) {
+      console.error('응답 데이터가 없습니다:', result);
       throw new Error('레시피 상세 정보를 찾을 수 없습니다.');
     }
+    
+    console.log('레시피 상세 데이터:', result.data);
     return result.data;
   },
 

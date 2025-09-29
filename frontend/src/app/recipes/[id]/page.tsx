@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { UserGuard } from '@/lib/auth/authGuard';
 import { COLOR_PRESETS } from '@/lib/constants/colors';
@@ -20,29 +20,74 @@ export default function RecipeDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // 중복 요청 방지를 위한 ref
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastFetchedRecipeIdRef = useRef<string | null>(null);
 
-  // 레시피 상세 정보 로드
-  useEffect(() => {
-    const fetchRecipeDetail = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        console.log('레시피 상세 조회 - recipeId:', recipeId, 'type:', typeof recipeId);
-        const recipeDetail = await recipeService.getRecipeDetail(recipeId);
+  // 레시피 상세 정보 로드 (중복 요청 방지)
+  const fetchRecipeDetail = useCallback(async (id: string) => {
+    // 이미 같은 recipeId로 요청 중인 경우 중복 요청 방지
+    if (lastFetchedRecipeIdRef.current === id) {
+      console.log('이미 요청 중인 레시피입니다:', id);
+      return;
+    }
+
+    // 이전 요청이 있다면 취소
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // 새로운 AbortController 생성
+    abortControllerRef.current = new AbortController();
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('레시피 상세 조회 요청 시작 - recipeId:', id, 'type:', typeof id, 'timestamp:', new Date().toISOString());
+      const recipeDetail = await recipeService.getRecipeDetail(id);
+      console.log('레시피 상세 조회 요청 완료 - recipeId:', id, 'timestamp:', new Date().toISOString());
+      
+      // 요청이 취소되지 않았을 때만 상태 업데이트
+      if (!abortControllerRef.current.signal.aborted) {
+        console.log('레시피 데이터 설정:', recipeDetail);
         setRecipe(recipeDetail);
-      } catch (error) {
-        console.error('레시피 상세 정보 로드 실패:', error);
+        setIsLoading(false); // 성공 시 로딩 상태 해제
+        lastFetchedRecipeIdRef.current = id; // 성공 시에만 ref 업데이트
+      }
+    } catch (error) {
+      // AbortError는 무시 (요청 취소)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('레시피 상세 조회 요청이 취소되었습니다:', id);
+        return;
+      }
+      
+      console.error('레시피 상세 정보 로드 실패:', error);
+      if (!abortControllerRef.current?.signal.aborted) {
         setError('레시피 정보를 불러오는데 실패했습니다.');
-      } finally {
-        setIsLoading(false);
+        setIsLoading(false); // 에러 시 로딩 상태 해제
+        lastFetchedRecipeIdRef.current = null; // 에러 시 ref 초기화
+      }
+    }
+  }, []); // 의존성 배열에서 recipe 제거
+
+  useEffect(() => {
+    if (recipeId) {
+      // 새로운 recipeId로 변경될 때 로딩 상태 초기화
+      setIsLoading(true);
+      setError(null);
+      setRecipe(null);
+      fetchRecipeDetail(recipeId);
+    }
+
+    // 컴포넌트 언마운트 시 요청 취소
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
-
-    if (recipeId) {
-      fetchRecipeDetail();
-    }
-  }, [recipeId]);
+  }, [recipeId, fetchRecipeDetail]);
 
   // 난이도 텍스트 변환
   const getDifficultyText = (level: number) => {
@@ -145,13 +190,14 @@ export default function RecipeDetailPage() {
   }
 
   if (error || !recipe) {
+    console.log('오류 또는 레시피 없음:', { error, recipe, isLoading });
     return (
       <UserGuard>
         <div className={`min-h-screen ${COLOR_PRESETS.STATISTICS_PAGE.background} p-6`}>
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8">
               <div className="text-center py-12">
-                <div className="text-red-500 text-lg mb-4">⚠️ {error}</div>
+                <div className="text-red-500 text-lg mb-4">⚠️ {error || '레시피를 찾을 수 없습니다.'}</div>
                 <div className="flex gap-4 justify-center">
                   <button
                     onClick={() => router.back()}
