@@ -39,7 +39,6 @@ interface RecipeFormData {
   imageUrl: string;
   recipeImageFile?: File; // 메인 이미지 파일
   recipeType: string;
-  isPublic: boolean;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
 }
@@ -54,7 +53,6 @@ export default function RecipeWritePage() {
     servings: 1,
     imageUrl: '',
     recipeType: 'MAIN',
-    isPublic: true,
     ingredients: [],
     steps: []
   });
@@ -192,7 +190,7 @@ export default function RecipeWritePage() {
   };
 
   // 단계 업데이트
-  const updateStep = (id: string, field: keyof RecipeStep, value: string | number) => {
+  const updateStep = (id: string, field: keyof RecipeStep, value: string | number | File | undefined) => {
     setFormData(prev => ({
       ...prev,
       steps: prev.steps.map(step =>
@@ -223,7 +221,7 @@ export default function RecipeWritePage() {
         serving: formData.servings,
         recipeType: formData.recipeType,
         imageUrl: formData.imageUrl || undefined,
-        isPublic: formData.isPublic,
+        isPublic: true,
         ingredientsRequestDto: formData.ingredients.map(ingredient => ({
           ingredientId: ingredient.ingredientId!,
           quantity: ingredient.quantity,
@@ -399,17 +397,6 @@ export default function RecipeWritePage() {
                     />
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.isPublic}
-                        onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">공개 레시피로 설정</span>
-                    </label>
-                  </div>
                 </div>
               </SectionCard>
 
