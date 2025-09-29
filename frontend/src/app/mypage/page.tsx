@@ -10,7 +10,7 @@ import { userService, UserProfile } from "../../lib/api/services/userService";
 
 
 export default function MyPage() {
-  const { isLogin, loginMember, logoutAndHome } = useGlobalLoginMember();
+  const { isLogin, loginMember, logoutAndHome, setLoginMember } = useGlobalLoginMember();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile>({
     nickName: "",
@@ -159,41 +159,29 @@ export default function MyPage() {
     setMessage('');
 
     try {
-      // FormData 생성
-      const formData = new FormData();
-      formData.append('file', file);
-
-      // 이미지 업로드 API 호출
-      const response = await fetch('/api/v1/images/upload', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('이미지 업로드에 실패했습니다.');
-      }
-
-      const result = await response.json();
+      // 백엔드 프로필 이미지 변경 API 호출
+      const response = await userService.updateProfileImage(file);
       
-      if (result.resultCode && result.resultCode.startsWith('2')) {
-        // 업로드 성공 시 프로필에 이미지 URL 설정
-        const imageUrl = result.data?.imageUrl;
-        if (imageUrl) {
-          setProfile(prev => ({
-            ...prev,
-            profile: imageUrl
-          }));
-          setMessage('프로필 사진이 성공적으로 업로드되었습니다.');
-        } else {
-          setMessage('이미지 URL을 받아오지 못했습니다.');
+      if (response.success) {
+        // 성공 시 프로필 정보 다시 불러오기
+        const profileResponse = await userService.getUserProfile();
+        if (profileResponse.success && profileResponse.data) {
+          setProfile(profileResponse.data);
+          
+          // 전역 상태도 업데이트 (헤더에 즉시 반영)
+          setLoginMember({
+            ...loginMember,
+            profile: profileResponse.data.profile,
+            nickname: profileResponse.data.nickName
+          });
         }
+        setMessage('프로필 사진이 성공적으로 변경되었습니다.');
       } else {
-        setMessage(result.msg || '이미지 업로드에 실패했습니다.');
+        setMessage(response.message || '프로필 사진 변경에 실패했습니다.');
       }
     } catch (error) {
-      console.error('이미지 업로드 오류:', error);
-      setMessage('이미지 업로드 중 오류가 발생했습니다.');
+      console.error('프로필 이미지 변경 오류:', error);
+      setMessage('프로필 이미지 변경 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -207,6 +195,12 @@ export default function MyPage() {
       const response = await userService.updateUserProfile(profile);
       
       if (response.success) {
+        // 전역 상태도 업데이트 (헤더에 즉시 반영)
+        setLoginMember({
+          ...loginMember,
+          nickname: profile.nickName
+        });
+        
         setMessage("프로필이 성공적으로 업데이트되었습니다.");
         setIsEditing(false);
       } else {

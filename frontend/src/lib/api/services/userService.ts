@@ -233,11 +233,16 @@ export const userService = {
     }
   },
 
-  // 프로필 이미지 업데이트
-  async updateProfileImage(profileUrl: string): Promise<UserProfileResponse> {
+  // 프로필 이미지 업데이트 (MultipartFile)
+  async updateProfileImage(profileImage: File): Promise<UserProfileResponse> {
     try {
-      const response = await apiClient.post<Record<string, unknown>>('/api/v1/users/exchange/profile', {
-        profileUrl: profileUrl
+      const formData = new FormData();
+      formData.append('profileImage', profileImage);
+
+      const response = await apiClient.post<Record<string, unknown>>('/api/v1/users/exchange/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
       
       console.log('프로필 이미지 변경 응답:', response);
@@ -286,10 +291,11 @@ export const userService = {
         updates.push(this.updatePhone(profile.phoneNum));
       }
       
-      if (profile.profile) {
-        console.log('프로필 이미지 업데이트 시작:', profile.profile);
-        updates.push(this.updateProfileImage(profile.profile));
-      }
+      // 프로필 이미지는 별도로 처리하지 않음 (File 객체가 필요하므로)
+      // if (profile.profile) {
+      //   console.log('프로필 이미지 업데이트 시작:', profile.profile);
+      //   updates.push(this.updateProfileImage(profile.profile));
+      // }
       
       if (updates.length === 0) {
         throw new Error('업데이트할 내용이 없습니다.');
