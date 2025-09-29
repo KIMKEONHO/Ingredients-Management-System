@@ -55,7 +55,6 @@ export function useLoginMember() {
       if (isLoggedIn === 'true' && userData) {
         try {
           const parsedUserData = JSON.parse(userData);
-          console.log('로컬 스토리지에서 사용자 데이터 복원:', parsedUserData);
           _setLoginMember(parsedUserData);
         } catch (error) {
           console.error('사용자 데이터 파싱 실패:', error);
@@ -68,7 +67,6 @@ export function useLoginMember() {
   }, []);
 
   const removeLoginMember = () => {
-    console.log('로그인 멤버 제거');
     _setLoginMember(createEmptyMember());
     setLoginMemberPending(false);
     
@@ -76,12 +74,10 @@ export function useLoginMember() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('userData');
-      console.log('로컬 스토리지에서 로그인 상태 제거됨');
     }
   };
 
   const setLoginMember = (member: Member) => {
-    console.log('로그인 멤버 설정:', member);
     _setLoginMember({
       ...member,
       roles: member.roles || ['USER'] // roles가 없으면 기본값으로 USER 설정
@@ -92,22 +88,16 @@ export function useLoginMember() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userData', JSON.stringify(member));
-      console.log('로컬 스토리지에 로그인 상태 저장됨:', {
-        isLoggedIn: localStorage.getItem('isLoggedIn'),
-        userData: localStorage.getItem('userData')
-      });
     }
   };
 
   const setNoLoginMember = () => {
-    console.log('로그인 멤버 제거 (setNoLoginMember)');
     setLoginMemberPending(false);
     
     // 로그인 상태를 로컬 스토리지에서 제거
     if (typeof window !== 'undefined') {
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('userData');
-      console.log('로컬 스토리지에서 로그인 상태 제거됨 (setNoLoginMember)');
     }
   };
 
