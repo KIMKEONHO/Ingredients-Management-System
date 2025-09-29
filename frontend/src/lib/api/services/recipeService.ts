@@ -77,6 +77,8 @@ export type AllRecipeResponseDto = {
   difficultyLevel: number;
   userProfile?: string;
   cookingTime: number;
+  imageUrl?: string;
+  viewCount: number;
 };
 
 // 레시피 응답 타입

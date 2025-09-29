@@ -24,6 +24,7 @@ export default function RecipeCommunityPage() {
         const recipesData = await recipeService.getAllRecipes();
         console.log('레시피 공유 페이지 - API에서 받은 레시피 목록:', recipesData);
         console.log('레시피 공유 페이지 - 각 레시피의 ID들:', recipesData.map(recipe => ({ id: recipe.recipeId, title: recipe.title })));
+        console.log('레시피 공유 페이지 - 이미지 URL들:', recipesData.map(recipe => ({ id: recipe.recipeId, title: recipe.title, imageUrl: recipe.imageUrl })));
         setRecipes(recipesData);
       } catch (error) {
         console.error('레시피 데이터 로드 실패:', error);
@@ -117,7 +118,7 @@ export default function RecipeCommunityPage() {
             </PageHeader>
 
             {/* Recipes List Card */}
-            <SectionCard title="커뮤니티 레시피" variant="statistics">
+            <SectionCard title="커뮤니티 레시피" variant="statistics" className="p-0">
               {isLoading ? (
                 <div className="flex justify-center items-center h-64">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -146,19 +147,66 @@ export default function RecipeCommunityPage() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                   {filteredRecipes.map((recipe, index) => (
                     <div
                       key={recipe.recipeId}
-                      className="bg-white rounded-xl shadow-sm border border-blue-100 p-6 hover:shadow-md transition-shadow cursor-pointer"
+                      className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group"
                       onClick={() => {
                         console.log('레시피 공유 페이지 - 클릭된 레시피 ID:', recipe.recipeId, 'type:', typeof recipe.recipeId);
                         router.push(`/recipes/${recipe.recipeId}`);
                       }}
                     >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-medium overflow-hidden">
+                      {/* 이미지 섹션 */}
+                      <div className="relative aspect-square overflow-hidden bg-gray-100">
+                        {recipe.imageUrl && recipe.imageUrl.trim() !== '' ? (
+                          <img 
+                            src={recipe.imageUrl} 
+                            alt={recipe.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onLoad={() => {
+                              console.log('이미지 로드 성공:', recipe.imageUrl);
+                            }}
+                            onError={(e) => {
+                              console.log('이미지 로드 실패:', recipe.imageUrl);
+                              // 이미지 로드 실패 시 기본 이미지로 대체
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = `
+                                  <div class="w-full h-full bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center">
+                                    <div class="text-6xl opacity-30">🍳</div>
+                                  </div>
+                                `;
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center">
+                            <div className="text-6xl opacity-30">🍳</div>
+                          </div>
+                        )}
+                        {/* 난이도 배지 */}
+                        <div className="absolute top-3 right-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(recipe.difficultyLevel)} backdrop-blur-sm bg-white/80`}>
+                            {getDifficultyText(recipe.difficultyLevel)}
+                          </span>
+                        </div>
+                        {/* 조리시간 배지 */}
+                        <div className="absolute top-3 left-3">
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-black/50 text-white backdrop-blur-sm">
+                            ⏱️ {recipe.cookingTime}분
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 콘텐츠 섹션 */}
+                      <div className="p-4">
+                        {/* 사용자 정보 */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium overflow-hidden">
                             {recipe.userProfile ? (
                               <img 
                                 src={recipe.userProfile} 
@@ -169,44 +217,58 @@ export default function RecipeCommunityPage() {
                               recipe.userNickName.charAt(0).toUpperCase()
                             )}
                           </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900">{recipe.title}</h3>
-                            <p className="text-sm text-gray-500">
-                              {recipe.userNickName} • {formatDate(recipe.createdAt)}
-                            </p>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{recipe.userNickName}</p>
+                            <p className="text-xs text-gray-500">{formatDate(recipe.createdAt)}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(recipe.difficultyLevel)}`}>
-                            {getDifficultyText(recipe.difficultyLevel)}
-                          </span>
-                          <span className="text-sm text-gray-500">⏱️ {recipe.cookingTime}분</span>
+
+                        {/* 레시피 제목 */}
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                          {recipe.title}
+                        </h3>
+                        
+                        {/* 레시피 설명 */}
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">{recipe.description}</p>
+                        
+                        {/* 주요 재료 */}
+                        {recipe.recipeIngredientResponseDto && recipe.recipeIngredientResponseDto.length > 0 && (
+                          <div className="mb-3">
+                            <div className="flex flex-wrap gap-1">
+                              {recipe.recipeIngredientResponseDto.slice(0, 3).map((ingredient, idx) => (
+                                <span key={idx} className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-700">
+                                  {ingredient.ingredientName}
+                                </span>
+                              ))}
+                              {recipe.recipeIngredientResponseDto.length > 3 && (
+                                <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-500">
+                                  +{recipe.recipeIngredientResponseDto.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 하단 액션 영역 */}
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <span>👁️</span>
+                              <span>{recipe.viewCount || 0}</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span>❤️</span>
+                              <span>0</span>
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-600 font-medium group-hover:text-blue-700">
+                            자세히 보기 →
+                          </div>
                         </div>
                       </div>
-                      
-                      <p className="text-gray-600 mb-4 line-clamp-2">{recipe.description}</p>
-                      
-                      {recipe.recipeIngredientResponseDto && recipe.recipeIngredientResponseDto.length > 0 && (
-                        <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-4 mb-4 border border-green-200">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-medium text-gray-700">🍽️ 주요 재료</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {recipe.recipeIngredientResponseDto.slice(0, 5).map((ingredient, idx) => (
-                              <span key={idx} className="px-2 py-1 bg-white rounded-full text-xs text-gray-700 border">
-                                {ingredient.ingredientName} {ingredient.quantity}{ingredient.unit}
-                              </span>
-                            ))}
-                            {recipe.recipeIngredientResponseDto.length > 5 && (
-                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-500">
-                                +{recipe.recipeIngredientResponseDto.length - 5}개 더
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ))}
+                  </div>
                 </div>
               )}
             </SectionCard>
