@@ -23,6 +23,8 @@ public enum ExceptionCode {
     DIET_NOT_FOUND(404, "식단이 존재하지 않습니다."),
     NOT_ADMIN(403, "관리자 권한이 없습니다."),
     UNKNOW_THEME(404,"알 수 없는 시간단위 입니다."),
+
+    RECIPE_NOT_FOUND(404,"레시피를 찾을 수 없습니다."),
     
     // 이미지 관련 예외
     IMAGE_UPLOAD_FAILED(500, "이미지 업로드에 실패했습니다."),
