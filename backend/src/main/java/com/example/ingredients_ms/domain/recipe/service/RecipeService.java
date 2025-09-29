@@ -119,13 +119,10 @@ public class RecipeService {
     @Transactional
     public RsData<?> findRecipeById(Long recipeId){
 
-        Optional<Recipe> opRecipe = recipeRepository.findById(recipeId);
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.RECIPE_NOT_FOUND));
 
-        if(opRecipe.isEmpty()){
-            throw new BusinessLogicException(ExceptionCode.RECIPE_NOT_FOUND);
-        }
-
-        Recipe recipe = opRecipe.get();
+        increaseViewCount(recipeId);
 
         List<RecipeIngredientResponseDto> ingredients = recipeIngredientService.findRecipeIngredientByRecipeId(recipeId);
 
@@ -149,9 +146,21 @@ public class RecipeService {
                 .recipeStepResponseDtos(steps)
                 .build();
 
+
+
         return new RsData<>("200","해당 레시피를 찾았습니다.", response);
     }
 
+    /**
+     * 조회수 증가를 별도 트랜잭션으로 처리
+     * @param recipeId 레시피 ID
+     */
+    @Transactional
+    public void increaseViewCount(Long recipeId) {
+        log.info("조회수 증가 메서드 호출 - recipeId: {}", recipeId);
+        recipeRepository.incrementViewCount(recipeId);
+        log.info("조회수 증가 완료 - recipeId: {}", recipeId);
+    }
 
     @Transactional
     public RsData<?> deleteRecipe(Long recipeId, Long userId){
