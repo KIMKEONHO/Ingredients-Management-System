@@ -158,13 +158,12 @@ public class UserService {
             throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
         }
 
-        ValidUserResponseDto validUserResponseDto = ValidUserResponseDto.builder()
+        return ValidUserResponseDto.builder()
+                .userId(user.get().getId())
                 .email(user.get().getEmail())
                 .name(user.get().getUserName())
                 .profile(user.get().getProfileUrl())
                 .build();
-
-        return validUserResponseDto;
     }
 
 
