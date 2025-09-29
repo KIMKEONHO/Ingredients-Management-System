@@ -101,7 +101,7 @@ export const API_ENDPOINTS = {
     RECIPE: {
       BASE: '/api/v1/recipe',
       CREATE: '/api/v1/recipe/', // 레시피 생성
-      DETAIL: '/api/v1/recipe/:recipeId', // 레시피 상세 조회
+      DETAIL: '/api/v1/recipe/detail/:recipeId', // 레시피 상세 조회
       UPDATE: '/api/v1/recipe/:recipeId', // 레시피 수정
       DELETE: '/api/v1/recipe/:recipeId', // 레시피 삭제
       ALL: '/api/v1/recipe/all', // 전체 레시피 조회
