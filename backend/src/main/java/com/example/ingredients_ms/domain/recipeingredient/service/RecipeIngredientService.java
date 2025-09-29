@@ -48,4 +48,8 @@ public class RecipeIngredientService {
                 .build())
                 .toList();
     }
+
+    public void deleteRecipeIngredientByRecipeId(Long recipeId){
+        recipeIngredientRepository.deleteByRecipe_Id(recipeId);
+    }
 }
