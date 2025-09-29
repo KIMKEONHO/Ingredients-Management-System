@@ -25,6 +25,8 @@ public class AllRecipeResponseDto {
     private LocalDateTime createdAt;
     private Integer difficultyLevel;
     private Integer cookingTime;
+    private String imageUrl;
+    private Long viewCount;
 
     // 레시피 재료
     private List<RecipeIngredientResponseDto> recipeIngredientResponseDto;
