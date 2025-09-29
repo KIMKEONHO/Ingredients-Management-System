@@ -45,6 +45,14 @@ export interface UserProfile {
   modifyDate: string;
 }
 
+// ValidUserResponseDto 타입 정의 (백엔드 응답 구조에 맞춤)
+export interface ValidUserResponseDto {
+  userId: number;
+  email: string;
+  name: string;
+  profile: string;
+}
+
 export class AuthService {
   // 로그인
   static async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
@@ -61,11 +69,11 @@ export class AuthService {
             success: true, 
             data: { 
               user: {
-                id: userResult.data.id,
-                username: userResult.data.username,
-                nickname: userResult.data.nickname,
+                id: userResult.data.userId,
+                username: userResult.data.email, // email을 username으로 사용
+                nickname: userResult.data.name, // name을 nickname으로 사용
                 email: userResult.data.email,
-                roles: userResult.data.roles
+                roles: ['USER'] // 기본 역할
               }
             } 
           };
@@ -158,9 +166,9 @@ export class AuthService {
   }
 
   // 현재 사용자 정보 가져오기
-  static async getCurrentUser(): Promise<ApiResponse<UserProfile>> {
+  static async getCurrentUser(): Promise<ApiResponse<ValidUserResponseDto>> {
     try {
-      const response = await apiClient.get<UserProfile>(API_ENDPOINTS.AUTH.ME);
+      const response = await apiClient.get<ValidUserResponseDto>(API_ENDPOINTS.AUTH.ME);
       return { success: true, data: response };
     } catch (error: unknown) {
       const errorMessage = error && typeof error === 'object' && 'response' in error 
