@@ -87,13 +87,14 @@ public class ImageService {
     }
     
     /**
-     * S3에서 이미지를 삭제합니다.
+     * S3에서 이미지를 삭제합니다. (폴더 타입별)
      * @param fileName 삭제할 파일명
+     * @param folderType 이미지 폴더 타입
      * @return 삭제 결과
      */
-    public RsData<Void> deleteImage(String fileName) {
+    public RsData<Void> deleteImage(String fileName, ImageFolderType folderType) {
         try {
-            String s3Key = imgDirName + "/" + fileName;
+            String s3Key = imgDirName + "/" + folderType.getFolderPath() + "/" + fileName;
             
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                     .bucket(bucketName)
@@ -107,6 +108,15 @@ public class ImageService {
         } catch (Exception e) {
             throw new ImageException(ExceptionCode.IMAGE_DELETE_FAILED, "이미지 삭제 중 오류가 발생했습니다: " + e.getMessage());
         }
+    }
+    
+    /**
+     * 
+     * @param fileName 삭제할 파일명
+     * @return 삭제 결과
+     */
+    public RsData<Void> deleteImage(String fileName) {
+        return deleteImage(fileName, ImageFolderType.GENERAL);
     }
     
     /**
