@@ -139,6 +139,66 @@ export default function MyPage() {
     }));
   };
 
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 크기 검증 (5MB 제한)
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('파일 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+
+    // 파일 타입 검증
+    if (!file.type.startsWith('image/')) {
+      setMessage('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage('');
+
+    try {
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // 이미지 업로드 API 호출
+      const response = await fetch('/api/v1/images/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('이미지 업로드에 실패했습니다.');
+      }
+
+      const result = await response.json();
+      
+      if (result.resultCode && result.resultCode.startsWith('2')) {
+        // 업로드 성공 시 프로필에 이미지 URL 설정
+        const imageUrl = result.data?.imageUrl;
+        if (imageUrl) {
+          setProfile(prev => ({
+            ...prev,
+            profile: imageUrl
+          }));
+          setMessage('프로필 사진이 성공적으로 업로드되었습니다.');
+        } else {
+          setMessage('이미지 URL을 받아오지 못했습니다.');
+        }
+      } else {
+        setMessage(result.msg || '이미지 업로드에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('이미지 업로드 오류:', error);
+      setMessage('이미지 업로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     setIsLoading(true);
     setMessage("");
@@ -201,7 +261,62 @@ export default function MyPage() {
          {hasLoadedProfile ? '내 정보를 확인하고 수정할 수 있습니다.' : '프로필 정보를 불러오는 중...'}
        </p>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2">
+        {/* 프로필 사진 영역 */}
+        <SectionCard title="프로필 사진">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+                {profile.profile ? (
+                  <img
+                    src={profile.profile}
+                    alt="프로필 사진"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-gray-400 text-4xl">
+                    <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              {isEditing && (
+                <button
+                  onClick={() => document.getElementById('profile-image-input')?.click()}
+                  className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  title="프로필 사진 변경"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <input
+              id="profile-image-input"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-2">
+                {profile.profile ? '프로필 사진이 설정되어 있습니다.' : '프로필 사진을 설정해보세요.'}
+              </p>
+              {isEditing && (
+                <button
+                  onClick={() => document.getElementById('profile-image-input')?.click()}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg transform hover:scale-105"
+                >
+                  {profile.profile ? '사진 변경' : '사진 추가'}
+                </button>
+              )}
+            </div>
+          </div>
+        </SectionCard>
+
         {/* 프로필 정보 */}
         <SectionCard title="프로필 정보">
           <div className="space-y-4">
@@ -282,7 +397,7 @@ export default function MyPage() {
                 <>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     수정하기
                   </button>
@@ -292,13 +407,13 @@ export default function MyPage() {
                   <button
                     onClick={handleSave}
                     disabled={isLoading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 font-medium shadow-md hover:shadow-lg transform hover:scale-105 disabled:transform-none"
                   >
                     {isLoading ? "저장 중..." : "저장"}
                   </button>
                   <button
                     onClick={handleCancel}
-                    className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
+                    className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-6 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     취소
                   </button>
@@ -311,20 +426,32 @@ export default function MyPage() {
                  {/* 계정 정보 */}
          <SectionCard title="계정 정보">
            <div className="space-y-4">
-             <div className="flex justify-between items-center py-2 border-b">
-               <span className="text-gray-600">가입일</span>
-               <span className="text-gray-900">
+             <div className="flex justify-between items-center py-3 px-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+               <div className="flex items-center space-x-2">
+                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                 </svg>
+                 <span className="text-gray-700 font-medium">가입일</span>
+               </div>
+               <span className="text-gray-900 font-semibold">
                  {hasLoadedProfile && profile.createdAt 
                    ? new Date(profile.createdAt).toLocaleDateString('ko-KR') 
                    : hasLoadedProfile ? '정보 없음' : '불러오는 중...'}
                </span>
              </div>
-             <div className="flex justify-between items-center py-2 border-b">
-               <span className="text-gray-600">계정 상태</span>
-               <span className={`font-medium ${
+             <div className="flex justify-between items-center py-3 px-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100">
+               <div className="flex items-center space-x-2">
+                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                 </svg>
+                 <span className="text-gray-700 font-medium">계정 상태</span>
+               </div>
+               <span className={`font-semibold px-3 py-1 rounded-full text-sm ${
                  hasLoadedProfile && profile.userStatus 
-                   ? profile.userStatus === '활성' ? 'text-green-600' : 'text-orange-600'
-                   : 'text-gray-400'
+                   ? profile.userStatus === '활성' 
+                     ? 'bg-green-100 text-green-800 border border-green-200' 
+                     : 'bg-orange-100 text-orange-800 border border-orange-200'
+                   : 'bg-gray-100 text-gray-600 border border-gray-200'
                }`}>
                  {hasLoadedProfile && profile.userStatus ? profile.userStatus : '불러오는 중...'}
                </span>
