@@ -140,11 +140,11 @@ export const recipeService = {
   getRecipeDetail: async (recipeId: string): Promise<RecipeDetailResponseDto> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
     const url = `${API_BASE_URL}${createApiUrl(API_ENDPOINTS.RECIPE.DETAIL, { recipeId })}`;
-    
+
     console.log('API 요청 URL:', url);
     console.log('요청하는 recipeId:', recipeId, 'type:', typeof recipeId);
     console.log('API 요청 시작 시간:', new Date().toISOString());
-    
+
     const response = await fetch(url, {
       method: 'GET',
       credentials: 'include',
@@ -155,7 +155,7 @@ export const recipeService = {
 
     console.log('API 응답 상태:', response.status, response.statusText);
     console.log('API 요청 완료 시간:', new Date().toISOString());
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API 오류 응답:', errorText);
@@ -164,12 +164,12 @@ export const recipeService = {
 
     const result: RsDataRecipeDetailResponseDto = await response.json();
     console.log('API 응답 데이터:', result);
-    
+
     if (!result?.data) {
       console.error('응답 데이터가 없습니다:', result);
       throw new Error('레시피 상세 정보를 찾을 수 없습니다.');
     }
-    
+
     console.log('레시피 상세 데이터:', result.data);
     return result.data;
   },
@@ -178,9 +178,9 @@ export const recipeService = {
   deleteRecipe: async (recipeId: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
     const url = `${API_BASE_URL}${createApiUrl(API_ENDPOINTS.RECIPE.DELETE, { recipeId })}`;
-    
+
     console.log('레시피 삭제 API 요청 URL:', url);
-    
+
     const response = await fetch(url, {
       method: 'DELETE',
       credentials: 'include',
@@ -239,7 +239,7 @@ export const recipeService = {
     const url = `${API_BASE_URL}${API_ENDPOINTS.RECIPE.CREATE}`;
     
     console.log('API 요청 URL:', url);
-    
+
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
