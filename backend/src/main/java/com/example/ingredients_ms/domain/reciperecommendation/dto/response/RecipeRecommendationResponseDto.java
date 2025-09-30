@@ -14,6 +14,8 @@ public class RecipeRecommendationResponseDto {
     private String title;
     // 조리 시간 (분)
     private Integer cookingTime;
+    // 이미지
+    private String imageUrl;
     // 난이도 레벨
     private Integer difficultyLevel;
     // 좋아요 수
@@ -26,6 +28,7 @@ public class RecipeRecommendationResponseDto {
         return RecipeRecommendationResponseDto.builder()
                 .recipeId(recipe.getId())
                 .title(recipe.getTitle())
+                .imageUrl(recipe.getImageUrl())
                 .cookingTime(recipe.getCookingTime())
                 .difficultyLevel(recipe.getDifficultyLevel())
                 .likeCount(recipe.getLikeCount())
