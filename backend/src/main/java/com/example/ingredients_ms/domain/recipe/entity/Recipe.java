@@ -6,6 +6,7 @@ import com.example.ingredients_ms.domain.recipestep.entity.RecipeStep;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -44,9 +45,11 @@ public class Recipe extends BaseEntity {
     @Column(name = "is_public", nullable = false)
     private Boolean isPublic = true; // 공개 여부
 
+    @Builder.Default
     @Column(name = "view_count")
     private Long viewCount = 0L;
 
+    @Builder.Default
     @Column(name = "like_count")
     private Long likeCount = 0L;
 

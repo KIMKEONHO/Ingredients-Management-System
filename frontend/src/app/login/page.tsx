@@ -59,6 +59,7 @@ export default function LoginPage() {
         const userData = {
           id: result.data.user.id,
           nickname: result.data.user.nickname,
+          profile: result.data.user.profile, // profile 필드 추가
           createDate: new Date().toISOString(),
           modifyDate: new Date().toISOString(),
           roles: result.data.user.roles
@@ -70,22 +71,17 @@ export default function LoginPage() {
         if (typeof window !== 'undefined') {
           localStorage.setItem('isLoggedIn', 'true');
           localStorage.setItem('userData', JSON.stringify(userData));
-          console.log('로컬 스토리지에 사용자 데이터 저장됨:', userData);
         }
         
         // 로그인 성공 후 약간의 지연을 두어 상태가 업데이트되도록 함
         setTimeout(() => {
-          console.log('로그인 성공, 리다이렉트 처리');
-          
           // 로그인 전에 접근하려던 페이지가 있으면 해당 페이지로 이동
           const redirectPath = sessionStorage.getItem('redirectAfterLogin');
           if (redirectPath && redirectPath !== '/login') {
-            console.log('원래 접근하려던 페이지로 이동:', redirectPath);
             sessionStorage.removeItem('redirectAfterLogin');
             router.push(redirectPath);
           } else {
             // 기본적으로 메인 페이지로 이동
-            console.log('메인 페이지로 이동');
             router.push('/');
           }
         }, 200);

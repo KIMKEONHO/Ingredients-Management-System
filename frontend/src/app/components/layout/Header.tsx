@@ -8,6 +8,7 @@ export default function Header() {
   const { isLogin, loginMember, logoutAndHome } = useGlobalLoginMember();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
   const [notifications, setNotifications] = useState<
     Array<{ id: number; message: string; read: boolean }>
   >([]);
@@ -147,17 +148,43 @@ export default function Header() {
           {isLogin ? (
             <div className="flex items-center gap-3">
               {/* 사용자 프로필 영역 */}
-              <div className="flex items-center gap-2">
-                {/* 프로필 아바타 */}
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  {loginMember.nickname ? loginMember.nickname.charAt(0).toUpperCase() : 'U'}
+              <div className="flex items-center gap-3">
+                {/* 프로필 이미지 또는 아바타 */}
+                <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center border-2 border-gray-200 shadow-sm">
+                  {loginMember.profile ? (
+                    <img 
+                      src={loginMember.profile} 
+                      alt={`${loginMember.nickname}의 프로필`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // 이미지 로드 실패 시 아바타로 대체
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `
+                            <div class="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                              ${loginMember.nickname ? loginMember.nickname.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                          `;
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                      {loginMember.nickname ? loginMember.nickname.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
                 </div>
                 {/* 닉네임 (마이페이지 링크) */}
                 <Link 
                   href="/mypage" 
-                  className="text-gray-700 hover:text-gray-900 font-medium px-2 py-1 rounded-md hover:bg-gray-100 transition-colors"
+                  className="text-gray-700 hover:text-gray-900 font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center gap-1"
                 >
-                  {loginMember.nickname || '사용자'}
+                  <span>{loginMember.nickname || '사용자'}</span>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </Link>
               </div>
               

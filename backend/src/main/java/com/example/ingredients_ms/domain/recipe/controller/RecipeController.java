@@ -34,4 +34,13 @@ public class RecipeController {
         return recipeService.findAllRecipe();
     }
 
+    @GetMapping("/detail/{recipeId}")
+    public RsData<?> recipeDetail(@PathVariable("recipeId") Long recipeId){
+        return recipeService.findRecipeById(recipeId);
+    }
+
+    @DeleteMapping("/{recipeId}")
+    public RsData<?> deleteRecipe(@PathVariable("recipeId") Long recipeId, @CurrentUser SecurityUser securityUser){
+        return recipeService.deleteRecipe(recipeId,securityUser.getId());
+    }
 }

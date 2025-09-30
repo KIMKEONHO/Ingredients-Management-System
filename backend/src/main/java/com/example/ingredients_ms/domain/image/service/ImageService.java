@@ -87,13 +87,14 @@ public class ImageService {
     }
     
     /**
-     * S3에서 이미지를 삭제합니다.
+     * S3에서 이미지를 삭제합니다. (폴더 타입별)
      * @param fileName 삭제할 파일명
+     * @param folderType 이미지 폴더 타입
      * @return 삭제 결과
      */
-    public RsData<Void> deleteImage(String fileName) {
+    public RsData<Void> deleteImage(String fileName, ImageFolderType folderType) {
         try {
-            String s3Key = imgDirName + "/" + fileName;
+            String s3Key = imgDirName + "/" + folderType.getFolderPath() + "/" + fileName;
             
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                     .bucket(bucketName)
@@ -110,12 +111,50 @@ public class ImageService {
     }
     
     /**
+     * 
+     * @param fileName 삭제할 파일명
+     * @return 삭제 결과
+     */
+    public RsData<Void> deleteImage(String fileName) {
+        return deleteImage(fileName, ImageFolderType.GENERAL);
+    }
+    
+    /**
      * S3 파일 URL을 생성합니다.
      * @param s3Key S3 객체 키
      * @return 완전한 S3 URL
      */
     public String getS3FileUrl(String s3Key) {
         return "https://" + bucketName + ".s3." + region + ".amazonaws.com/" + s3Key;
+    }
+    
+    /**
+     * URL이 내부 S3 URL인지 확인합니다.
+     * @param imageUrl 확인할 이미지 URL
+     * @return 내부 S3 URL이면 true
+     */
+    public boolean isInternalS3Url(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return false;
+        }
+        
+        // 내부 S3 URL 패턴: https://{bucketName}.s3.{region}.amazonaws.com/{path}
+        String s3UrlPattern = "https://" + bucketName + ".s3." + region + ".amazonaws.com/";
+        return imageUrl.startsWith(s3UrlPattern);
+    }
+
+    /**
+     * S3 URL에서 파일 키를 추출합니다.
+     * @param s3Url S3 URL
+     * @return 파일 키
+     */
+    public String extractS3KeyFromUrl(String s3Url) {
+        if (!isInternalS3Url(s3Url)) {
+            return null;
+        }
+        
+        String s3UrlPattern = "https://" + bucketName + ".s3." + region + ".amazonaws.com/";
+        return s3Url.substring(s3UrlPattern.length());
     }
     
     /**

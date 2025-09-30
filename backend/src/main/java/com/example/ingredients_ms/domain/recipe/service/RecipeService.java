@@ -5,10 +5,13 @@ import com.example.ingredients_ms.domain.image.service.ImageFolderType;
 import com.example.ingredients_ms.domain.image.service.ImageService;
 import com.example.ingredients_ms.domain.recipe.dto.request.CreateRecipeRequestDto;
 import com.example.ingredients_ms.domain.recipe.dto.response.AllRecipeResponseDto;
+import com.example.ingredients_ms.domain.recipe.dto.response.RecipeDetailResponseDto;
 import com.example.ingredients_ms.domain.recipe.entity.Recipe;
 import com.example.ingredients_ms.domain.recipe.entity.RecipeType;
 import com.example.ingredients_ms.domain.recipe.repository.RecipeRepository;
+import com.example.ingredients_ms.domain.recipeingredient.dto.response.RecipeIngredientResponseDto;
 import com.example.ingredients_ms.domain.recipeingredient.service.RecipeIngredientService;
+import com.example.ingredients_ms.domain.recipestep.dto.response.RecipeStepResponseDto;
 import com.example.ingredients_ms.domain.recipestep.service.RecipeStepService;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.service.UserService;
@@ -17,6 +20,7 @@ import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.global.rsdata.RsData;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,6 +29,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RecipeService {
 
     private final RecipeRepository recipeRepository;
@@ -94,6 +99,7 @@ public class RecipeService {
 
         List<AllRecipeResponseDto> response = recipes.stream().map(recipe ->
                         AllRecipeResponseDto.builder()
+                                .recipeId(recipe.getId())
                         .createdAt(recipe.getCreatedAt())
                                 .recipeIngredientResponseDto(recipeIngredientService.findRecipeIngredientByRecipeId(recipe.getId()))
                         .userNickName(recipe.getAuthor().getUserName())
@@ -102,11 +108,122 @@ public class RecipeService {
                         .difficultyLevel(recipe.getDifficultyLevel())
                         .userProfile(recipe.getAuthor().getProfileUrl())
                         .cookingTime(recipe.getCookingTime())
+                                .imageUrl(recipe.getImageUrl())
+                                .viewCount(recipe.getViewCount())
                         .build())
                 .toList();
 
         return new RsData<>("200","모든 레시피를 찾았습니다.", response);
     }
 
+    @Transactional
+    public RsData<?> findRecipeById(Long recipeId){
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.RECIPE_NOT_FOUND));
+
+        increaseViewCount(recipeId);
+
+        List<RecipeIngredientResponseDto> ingredients = recipeIngredientService.findRecipeIngredientByRecipeId(recipeId);
+
+        List<RecipeStepResponseDto> steps = recipeStepService.findRecipeStepByRecipeId(recipeId);
+
+        RecipeDetailResponseDto response = RecipeDetailResponseDto.builder()
+                .userId(recipe.getAuthor().getId())
+                .cookingTime(recipe.getCookingTime())
+                .createdAt(recipe.getCreatedAt())
+                .description(recipe.getDescription())
+                .difficultyLevel(recipe.getDifficultyLevel())
+                .imageUrl(recipe.getImageUrl())
+                .likeCount(recipe.getLikeCount())
+                .profileUrl(recipe.getAuthor().getProfileUrl())
+                .userNickName(recipe.getAuthor().getNickname())
+                .viewCount(recipe.getViewCount())
+                .title(recipe.getTitle())
+                .servings(recipe.getServings())
+                .recipeType(recipe.getRecipeType())
+                .recipeIngredientResponseDtos(ingredients)
+                .recipeStepResponseDtos(steps)
+                .build();
+
+
+
+        return new RsData<>("200","해당 레시피를 찾았습니다.", response);
+    }
+
+    /**
+     * 조회수 증가를 별도 트랜잭션으로 처리
+     * @param recipeId 레시피 ID
+     */
+    @Transactional
+    public void increaseViewCount(Long recipeId) {
+        log.info("조회수 증가 메서드 호출 - recipeId: {}", recipeId);
+        recipeRepository.incrementViewCount(recipeId);
+        log.info("조회수 증가 완료 - recipeId: {}", recipeId);
+    }
+
+    @Transactional
+    public RsData<?> deleteRecipe(Long recipeId, Long userId){
+
+        Optional<Recipe> opRecipe = recipeRepository.findById(recipeId);
+
+        if(opRecipe.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.RECIPE_NOT_FOUND);
+        }
+
+        if(!opRecipe.get().getAuthor().getId().equals(userId)){
+            throw new BusinessLogicException(ExceptionCode.NOT_OWNER);
+        }
+
+        Recipe recipe = opRecipe.get();
+
+        // 레시피 메인 이미지를 S3에서 삭제
+        if (recipe.getImageUrl() != null && !recipe.getImageUrl().isEmpty()) {
+            try {
+                String fileName = extractFileNameFromUrl(recipe.getImageUrl());
+                if (fileName != null) {
+                    imageService.deleteImage(fileName, ImageFolderType.RECIPE_MAIN);
+                    log.info("레시피 메인 이미지 삭제 완료: {}", fileName);
+                }
+            } catch (Exception e) {
+                log.error("레시피 메인 이미지 삭제 실패: {}", recipe.getImageUrl(), e);
+                // 이미지 삭제 실패해도 레시피 삭제는 계속 진행
+            }
+        }
+
+        // 레시피 재료 모두 삭제
+        recipeIngredientService.deleteRecipeIngredientByRecipeId(recipeId);
+
+        // 레시피 단계 모두 삭제
+        recipeStepService.deleteRecipeStepByRecipeId(recipeId);
+
+        // 레시피 삭제
+        recipeRepository.deleteById(recipeId);
+
+        return new RsData<>("204", "레시피가 삭제되었습니다.");
+    }
+    
+    /**
+     * S3 URL에서 파일명을 추출합니다.
+     * @param imageUrl S3 이미지 URL
+     * @return 파일명
+     */
+    private String extractFileNameFromUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            // URL에서 마지막 '/' 이후의 부분이 파일명
+            int lastSlashIndex = imageUrl.lastIndexOf('/');
+            if (lastSlashIndex != -1 && lastSlashIndex < imageUrl.length() - 1) {
+                return imageUrl.substring(lastSlashIndex + 1);
+            }
+        } catch (Exception e) {
+            log.error("URL에서 파일명 추출 실패: {}", imageUrl, e);
+        }
+        
+        return null;
+    }
 
 }
