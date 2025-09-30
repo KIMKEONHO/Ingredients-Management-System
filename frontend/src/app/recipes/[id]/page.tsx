@@ -226,7 +226,6 @@ export default function RecipeDetailPage() {
         <div className="max-w-6xl mx-auto">
           {/* Main Card Container */}
           <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8">
-          
           {/* Back Button and Action Buttons */}
           <div className="pt-6 pb-4 flex justify-between items-center">
             <button

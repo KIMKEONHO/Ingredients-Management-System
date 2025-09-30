@@ -226,7 +226,7 @@ export const recipeService = {
     }
 
     console.log('FormData 내용:');
-    for (let [key, value] of formData.entries()) {
+    for (const [key, value] of formData.entries()) {
       if (value instanceof File) {
         console.log(`${key}: File(${value.name}, ${value.size} bytes)`);
       } else {
