@@ -457,8 +457,8 @@ function InventoryContent() {
         ingredient.categoryName &&
         (ingredient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
          ingredient.categoryName.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-      .slice(0, 10); // 최대 10개까지만 표시
+      );
+      // 검색어가 있을 때는 모든 결과를 표시 (제한 없음)
   };
 
   // 식재료 선택 핸들러
