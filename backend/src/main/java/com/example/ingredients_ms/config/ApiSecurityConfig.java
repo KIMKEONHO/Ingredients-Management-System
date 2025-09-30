@@ -88,6 +88,7 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/api/*/users/change/status").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE,"/api/*/users/drop/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH,"/api/*/users/change/userdata").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,"/api/*/users/exchange/profile").hasAnyRole("USER","ADMIN")
 
                         // 유저 통계 및 관리 api
                         .requestMatchers(HttpMethod.GET, "/api/*/users/statistics/").hasRole("ADMIN")
@@ -132,6 +133,8 @@ public class ApiSecurityConfig {
                         // 레시피 관련 api
                         .requestMatchers(HttpMethod.POST, "/api/*/recipe/").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET,"/api/*/recipe/all").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/*/recipe/detail/*").permitAll()
+                        .requestMatchers(HttpMethod.DELETE,"/api/*/recipe/*").hasAnyRole("USER","ADMIN")
 
                         // 레시피 추천 관련 api
                         .requestMatchers(HttpMethod.GET, "/api/*/recipe/recommend/").hasAnyRole("USER","ADMIN")

@@ -52,9 +52,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     });
                     
                     if (response.ok) {
-                        const data = await response.json();
-                        console.log('백엔드 로그인 성공:', data);
-                        setLoginMember(data);
+                        const result = await response.json();
+                        setLoginMember(result.data);
                     } else {
                         console.log('백엔드 로그인 실패:', response.status);
                         // 백엔드 실패 시에도 로컬 상태는 유지

@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import { API_ENDPOINTS } from '../endpoints';
+import { API_ENDPOINTS, createApiUrl } from '../endpoints';
 
 // 레시피 재료 타입
 export type CreateRecipeIngredientsRequestDto = {
@@ -36,10 +36,39 @@ export type RecipeIngredientResponseDto = {
   ingredientName: string;
   unit: string;
   quantity: number;
+  notes?: string;
+};
+
+// 레시피 단계 응답 타입
+export type RecipeStepResponseDto = {
+  stepNumber: number;
+  description: string;
+  imageUrl?: string;
+  cookingTime: number;
+};
+
+// 레시피 상세 응답 타입
+export type RecipeDetailResponseDto = {
+  userId: number;
+  title: string;
+  description: string;
+  cookingTime: number;
+  difficultyLevel: number;
+  servings: number;
+  imageUrl?: string;
+  recipeType: string;
+  viewCount: number;
+  likeCount: number;
+  userNickName: string;
+  createdAt: string;
+  profileUrl?: string;
+  recipeIngredientResponseDtos: RecipeIngredientResponseDto[];
+  recipeStepResponseDtos: RecipeStepResponseDto[];
 };
 
 // 모든 레시피 응답 타입
 export type AllRecipeResponseDto = {
+  recipeId: number;
   createdAt: string;
   recipeIngredientResponseDto: RecipeIngredientResponseDto[];
   userNickName: string;
@@ -48,7 +77,8 @@ export type AllRecipeResponseDto = {
   difficultyLevel: number;
   userProfile?: string;
   cookingTime: number;
-  imageUrl?: string; // 레시피 이미지 URL 추가
+  imageUrl?: string;
+  viewCount: number;
 };
 
 // 레시피 응답 타입
@@ -78,11 +108,17 @@ export type RsDataAllRecipeResponseDto = {
   data?: AllRecipeResponseDto[];
 };
 
+export type RsDataRecipeDetailResponseDto = {
+  resultCode?: string;
+  msg?: string;
+  data?: RecipeDetailResponseDto;
+};
+
 export const recipeService = {
   // 모든 레시피 조회
   getAllRecipes: async (): Promise<AllRecipeResponseDto[]> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
-    const url = `${API_BASE_URL}/api/v1/recipe/all`;
+    const url = `${API_BASE_URL}${API_ENDPOINTS.RECIPE.ALL}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -96,32 +132,67 @@ export const recipeService = {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const result = await response.json();
-    
-    // API 응답 데이터 검사
-    console.log('=== API 응답 데이터 검사 ===');
-    console.log('API 응답 전체:', result);
-    console.log('API 응답 타입:', typeof result);
-    console.log('API 응답 키들:', Object.keys(result || {}));
-    console.log('resultCode:', result?.resultCode);
-    console.log('msg:', result?.msg);
-    console.log('data 타입:', typeof result?.data);
-    console.log('data:', result?.data);
-    
-    // data가 배열인지 확인
-    if (Array.isArray(result?.data)) {
-      console.log('데이터 배열 길이:', result.data.length);
-      if (result.data.length > 0) {
-        console.log('첫 번째 레시피 상세:', result.data[0]);
-        console.log('첫 번째 레시피 키들:', Object.keys(result.data[0] || {}));
-        console.log('첫 번째 레시피 imageUrl:', result.data[0].imageUrl);
-        console.log('imageUrl 타입:', typeof result.data[0].imageUrl);
-      }
-    } else {
-      console.log('data가 배열이 아님:', result?.data);
+    const result: RsDataAllRecipeResponseDto = await response.json();
+    return result?.data || [];
+  },
+
+  // 레시피 상세 조회
+  getRecipeDetail: async (recipeId: string): Promise<RecipeDetailResponseDto> => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
+    const url = `${API_BASE_URL}${createApiUrl(API_ENDPOINTS.RECIPE.DETAIL, { recipeId })}`;
+
+    console.log('API 요청 URL:', url);
+    console.log('요청하는 recipeId:', recipeId, 'type:', typeof recipeId);
+    console.log('API 요청 시작 시간:', new Date().toISOString());
+
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('API 응답 상태:', response.status, response.statusText);
+    console.log('API 요청 완료 시간:', new Date().toISOString());
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API 오류 응답:', errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
-    
-    return Array.isArray(result?.data) ? result.data : [];
+
+    const result: RsDataRecipeDetailResponseDto = await response.json();
+    console.log('API 응답 데이터:', result);
+
+    if (!result?.data) {
+      console.error('응답 데이터가 없습니다:', result);
+      throw new Error('레시피 상세 정보를 찾을 수 없습니다.');
+    }
+
+    console.log('레시피 상세 데이터:', result.data);
+    return result.data;
+  },
+
+  // 레시피 삭제
+  deleteRecipe: async (recipeId: string): Promise<void> => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
+    const url = `${API_BASE_URL}${createApiUrl(API_ENDPOINTS.RECIPE.DELETE, { recipeId })}`;
+
+    console.log('레시피 삭제 API 요청 URL:', url);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.msg || `레시피 삭제에 실패했습니다. (${response.status})`);
+    }
   },
 
   createRecipe: async (
@@ -140,6 +211,7 @@ export const recipeService = {
     
     // 메인 이미지 추가 (있는 경우)
     if (recipeImage) {
+      console.log('메인 이미지 파일 추가:', recipeImage.name, recipeImage.size);
       formData.append('recipeImage', recipeImage);
     }
     
@@ -147,15 +219,27 @@ export const recipeService = {
     if (stepImages && stepImages.length > 0) {
       stepImages.forEach((image, index) => {
         if (image) {
+          console.log(`단계 ${index} 이미지 파일 추가:`, image.name, image.size);
           formData.append('stepImages', image);
         }
       });
+    }
+
+    console.log('FormData 내용:');
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: File(${value.name}, ${value.size} bytes)`);
+      } else {
+        console.log(`${key}:`, value);
+      }
     }
 
     // fetch API를 직접 사용하여 multipart/form-data 전송
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
     const url = `${API_BASE_URL}${API_ENDPOINTS.RECIPE.CREATE}`;
     
+    console.log('API 요청 URL:', url);
+
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
@@ -166,10 +250,13 @@ export const recipeService = {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API 응답 오류:', response.status, errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const result: RsDataRecipeResponseDto = await response.json();
+    console.log('API 응답:', result);
     return result?.data || {};
   },
 };

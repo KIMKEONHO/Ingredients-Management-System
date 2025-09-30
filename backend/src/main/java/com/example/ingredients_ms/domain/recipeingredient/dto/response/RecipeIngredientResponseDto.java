@@ -14,5 +14,6 @@ public class RecipeIngredientResponseDto {
     private String ingredientName;
     private Double quantity;
     private String unit;
+    private String notes;
 
 }

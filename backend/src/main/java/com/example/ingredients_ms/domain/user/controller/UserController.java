@@ -21,6 +21,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -151,6 +152,16 @@ public class UserController {
         userService.changePhoneNum(currentUser.getEmail(), requestDto.getPhoneNum()) ;
 
         return new RsData<>("204","핸드폰 번호가 변경되었습니다.");
+    }
+
+    @PostMapping("/exchange/profile")
+    @Operation(summary = "프로필 이미지 변경", description = "사용자의 프로필 이미지를 변경합니다")
+    public RsData<?> exchangeProfile(
+            @CurrentUser SecurityUser currentUser,
+            @RequestParam("profileImage") MultipartFile profileImage
+    ) {
+        userService.changeProfileImage(currentUser.getEmail(), profileImage);
+        return new RsData<>("204", "프로필 이미지가 변경되었습니다.");
     }
 
     @PostMapping("/admin/login")

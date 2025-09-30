@@ -31,6 +31,7 @@ export interface LoginResponse {
     username: string;
     nickname: string;
     email: string;
+    profile?: string;
     roles: string[];
   };
 }
@@ -43,6 +44,14 @@ export interface UserProfile {
   roles: string[];
   createDate: string;
   modifyDate: string;
+}
+
+// ValidUserResponseDto 타입 정의 (백엔드 응답 구조에 맞춤)
+export interface ValidUserResponseDto {
+  userId: number;
+  email: string;
+  name: string;
+  profile: string;
 }
 
 export class AuthService {
@@ -61,11 +70,12 @@ export class AuthService {
             success: true, 
             data: { 
               user: {
-                id: userResult.data.id,
-                username: userResult.data.username,
-                nickname: userResult.data.nickname,
+                id: userResult.data.userId,
+                username: userResult.data.email, // email을 username으로 사용
+                nickname: userResult.data.name, // name을 nickname으로 사용
                 email: userResult.data.email,
-                roles: userResult.data.roles
+                profile: userResult.data.profile, // profile 필드 추가
+                roles: ['USER'] // 기본 역할
               }
             } 
           };
@@ -158,10 +168,19 @@ export class AuthService {
   }
 
   // 현재 사용자 정보 가져오기
-  static async getCurrentUser(): Promise<ApiResponse<UserProfile>> {
+  static async getCurrentUser(): Promise<ApiResponse<ValidUserResponseDto>> {
     try {
-      const response = await apiClient.get<UserProfile>(API_ENDPOINTS.AUTH.ME);
-      return { success: true, data: response };
+      const response = await apiClient.get<{ resultCode: string; msg: string; data: ValidUserResponseDto }>(API_ENDPOINTS.AUTH.ME);
+      
+      // RsData 구조에 맞춰 파싱
+      if (response.resultCode === "200" && response.data) {
+        return { success: true, data: response.data };
+      } else {
+        return { 
+          success: false, 
+          error: response.msg || '사용자 정보를 가져올 수 없습니다.' 
+        };
+      }
     } catch (error: unknown) {
       const errorMessage = error && typeof error === 'object' && 'response' in error 
         ? (error as AxiosError)?.response?.data?.message 
@@ -191,16 +210,6 @@ export class AuthService {
                          sessionStorage.getItem('authToken') ||
                          localStorage.getItem('isLoggedIn') === 'true';
     
-    console.log('쿠키 확인:', { 
-      hasAccessToken, 
-      hasAuthHeader, 
-      cookies: cookies.map(c => c.trim()),
-      localStorage: {
-        isLoggedIn: localStorage.getItem('isLoggedIn'),
-        authToken: localStorage.getItem('authToken'),
-        userData: localStorage.getItem('userData')
-      }
-    });
     
     return hasAccessToken || !!hasAuthHeader;
   }
@@ -218,16 +227,13 @@ export class AuthService {
         },
       });
       
-      console.log('백엔드 인증 상태 확인 결과:', response.status, response.ok);
       return response.ok;
     } catch (error) {
-      console.error('인증 상태 확인 실패:', error);
       // 에러가 발생해도 로컬 스토리지에 로그인 정보가 있으면 true 반환
       if (typeof window !== 'undefined') {
         const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         const userData = localStorage.getItem('userData');
         if (isLoggedIn && userData) {
-          console.log('백엔드 연결 실패했지만 로컬 로그인 정보 존재, 인증 성공으로 처리');
           return true;
         }
       }

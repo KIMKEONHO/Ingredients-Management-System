@@ -398,9 +398,12 @@ export default function RecipeRecommendationPage() {
                 <div className="space-y-6">
                   {filteredRecipes.map((recipe, index) => (
                     <div
-                      key={index}
+                      key={recipe.recipeId}
                       className="bg-white rounded-xl shadow-sm border border-orange-100 p-6 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => router.push(`/recipes/${index}`)}
+                      onClick={() => {
+                        console.log('레시피 추천 페이지 - 클릭된 레시피 ID:', recipe.recipeId, 'type:', typeof recipe.recipeId);
+                        router.push(`/recipes/${recipe.recipeId}`);
+                      }}
                     >
                       <div className="flex items-start gap-6 mb-4">
                         {/* 레시피 이미지 - 크기 증가 */}
@@ -542,3 +545,4 @@ export default function RecipeRecommendationPage() {
     </UserGuard>
   );
 }
+

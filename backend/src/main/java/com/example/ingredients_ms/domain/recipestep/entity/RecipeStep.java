@@ -3,6 +3,7 @@ package com.example.ingredients_ms.domain.recipestep.entity;
 import com.example.ingredients_ms.domain.recipe.entity.Recipe;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
@@ -10,6 +11,7 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "recipe_step")
 @SuperBuilder
 @NoArgsConstructor
+@Getter
 public class RecipeStep extends BaseEntity {
     @Column(name = "step_number", nullable = false)
     private Integer stepNumber;

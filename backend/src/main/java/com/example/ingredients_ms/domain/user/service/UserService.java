@@ -2,6 +2,10 @@ package com.example.ingredients_ms.domain.user.service;
 
 import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.email.service.EmailService;
+import com.example.ingredients_ms.domain.image.dto.ImageUploadResponseDto;
+import com.example.ingredients_ms.domain.image.exception.ImageException;
+import com.example.ingredients_ms.domain.image.service.ImageFolderType;
+import com.example.ingredients_ms.domain.image.service.ImageService;
 import com.example.ingredients_ms.domain.user.dto.request.ChangeStatusRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.ChangeUserDataRequestDto;
 import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
@@ -28,6 +32,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -44,6 +49,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final EmailService emailService;
+    private final ImageService imageService;
 
     @Value("${custom.default.profile-url}")
     private String defaultProfileUrl;
@@ -158,13 +164,12 @@ public class UserService {
             throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
         }
 
-        ValidUserResponseDto validUserResponseDto = ValidUserResponseDto.builder()
+        return ValidUserResponseDto.builder()
+                .userId(user.get().getId())
                 .email(user.get().getEmail())
                 .name(user.get().getUserName())
                 .profile(user.get().getProfileUrl())
                 .build();
-
-        return validUserResponseDto;
     }
 
 
@@ -346,6 +351,7 @@ public class UserService {
                 .nickName(user.getNickname())
                 .phoneNum(user.getPhoneNum())
                 .email(user.getEmail())
+                .profile(user.getProfileUrl())
                 .userStatus(user.getStatus())
                 .createdAt(user.getCreatedAt())
                 .build();
@@ -388,6 +394,44 @@ public class UserService {
 
         userRepository.save(user);
 
+    }
+
+    @Transactional
+    public void changeProfileImage(String email, MultipartFile profileImage) {
+        Optional<User> opUser = userRepository.findByEmail(email);
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+        String currentProfileUrl = user.getProfileUrl();
+
+        // 기존 프로필 이미지가 기본 이미지가 아니고, 내부 S3 URL인 경우에만 삭제
+        if (!currentProfileUrl.equals(defaultProfileUrl) && imageService.isInternalS3Url(currentProfileUrl)) {
+            try {
+                // S3 URL에서 파일 키 추출
+                String s3Key = imageService.extractS3KeyFromUrl(currentProfileUrl);
+                if (s3Key != null) {
+                    // 기존 이미지 삭제
+                    imageService.deleteImage(s3Key, ImageFolderType.PROFILE);
+                }
+            } catch (Exception e) {
+                // 기존 이미지 삭제 실패는 로그만 남기고 계속 진행
+                log.warn("기존 프로필 이미지 삭제 실패: {}", e.getMessage());
+            }
+        }
+
+        try {
+            // 새 이미지를 S3에 업로드
+            RsData<ImageUploadResponseDto> uploadResult = imageService.uploadImage(profileImage, ImageFolderType.PROFILE);
+
+            // 업로드된 이미지 URL로 프로필 업데이트
+            user.setProfileUrl(uploadResult.getData().getImageUrl());
+            userRepository.save(user);
+
+        } catch (ImageException e) {
+            throw new BusinessLogicException(ExceptionCode.IMAGE_UPLOAD_FAILED);
+        }
     }
 
     public Optional<User> findUserById(Long userId){

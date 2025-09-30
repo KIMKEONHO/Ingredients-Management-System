@@ -233,6 +233,48 @@ export const userService = {
     }
   },
 
+  // 프로필 이미지 업데이트 (MultipartFile)
+  async updateProfileImage(profileImage: File): Promise<UserProfileResponse> {
+    try {
+      const formData = new FormData();
+      formData.append('profileImage', profileImage);
+
+      const response = await apiClient.post<Record<string, unknown>>('/api/v1/users/exchange/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      console.log('프로필 이미지 변경 응답:', response);
+      
+      // 백엔드 응답 구조 확인 및 안전한 처리
+      if (response && typeof response === 'object' && 'data' in response) {
+        const responseData = response.data as Record<string, unknown>;
+        // 백엔드에서 RsData 형태로 응답하는 경우
+        if ('resultCode' in responseData || 'success' in responseData) {
+          return {
+            success: true,
+            message: (responseData.msg as string) || '프로필 이미지가 성공적으로 변경되었습니다.'
+          };
+        }
+        // 기타 응답 구조는 기본 성공 응답으로 처리
+        return {
+          success: true,
+          message: '프로필 이미지가 성공적으로 변경되었습니다.'
+        };
+      }
+      
+      // 응답이 없는 경우 기본 성공 응답
+      return {
+        success: true,
+        message: '프로필 이미지가 성공적으로 변경되었습니다.'
+      };
+    } catch (error: unknown) {
+      console.error('프로필 이미지 변경 실패:', error);
+      throw new Error('프로필 이미지 변경에 실패했습니다.');
+    }
+  },
+
   // 사용자 프로필 업데이트 (기존 호환성 유지)
   async updateUserProfile(profile: UserProfile): Promise<UserProfileResponse> {
     try {
@@ -248,6 +290,12 @@ export const userService = {
         console.log('전화번호 업데이트 시작:', profile.phoneNum);
         updates.push(this.updatePhone(profile.phoneNum));
       }
+      
+      // 프로필 이미지는 별도로 처리하지 않음 (File 객체가 필요하므로)
+      // if (profile.profile) {
+      //   console.log('프로필 이미지 업데이트 시작:', profile.profile);
+      //   updates.push(this.updateProfileImage(profile.profile));
+      // }
       
       if (updates.length === 0) {
         throw new Error('업데이트할 내용이 없습니다.');

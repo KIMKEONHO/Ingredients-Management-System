@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useGlobalLoginMember } from '@/app/stores/auth/loginMamber';
-import { AuthService } from '@/lib/api/services/authService';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -18,7 +17,6 @@ export function AuthGuard({
 }: AuthGuardProps) {
   const { isLogin, loginMember, isLoginMemberPending } = useGlobalLoginMember();
   const router = useRouter();
-  const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
