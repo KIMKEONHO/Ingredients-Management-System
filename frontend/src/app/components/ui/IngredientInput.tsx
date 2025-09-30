@@ -56,7 +56,7 @@ export default function IngredientInput({
       ingredient.name?.toLowerCase().includes(value.toLowerCase())
     );
     
-    setFilteredIngredients(filtered.slice(0, 5)); // 최대 5개만 표시
+    setFilteredIngredients(filtered); // 모든 검색 결과 표시
     setShowDropdown(filtered.length > 0);
     setSelectedIndex(-1);
   }, [value, ingredients]);

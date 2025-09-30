@@ -135,6 +135,9 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET,"/api/*/recipe/all").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.GET,"/api/*/recipe/detail/*").permitAll()
                         .requestMatchers(HttpMethod.DELETE,"/api/*/recipe/*").hasAnyRole("USER","ADMIN")
+
+                        // 레시피 추천 관련 api
+                        .requestMatchers(HttpMethod.GET, "/api/*/recipe/recommend/").hasAnyRole("USER","ADMIN")
                 )
                 .csrf(csrf->csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
