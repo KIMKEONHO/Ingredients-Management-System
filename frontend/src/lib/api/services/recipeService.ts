@@ -48,6 +48,7 @@ export type AllRecipeResponseDto = {
   difficultyLevel: number;
   userProfile?: string;
   cookingTime: number;
+  imageUrl?: string; // 레시피 이미지 URL 추가
 };
 
 // 레시피 응답 타입
@@ -95,8 +96,32 @@ export const recipeService = {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const result: RsDataAllRecipeResponseDto = await response.json();
-    return result?.data || [];
+    const result = await response.json();
+    
+    // API 응답 데이터 검사
+    console.log('=== API 응답 데이터 검사 ===');
+    console.log('API 응답 전체:', result);
+    console.log('API 응답 타입:', typeof result);
+    console.log('API 응답 키들:', Object.keys(result || {}));
+    console.log('resultCode:', result?.resultCode);
+    console.log('msg:', result?.msg);
+    console.log('data 타입:', typeof result?.data);
+    console.log('data:', result?.data);
+    
+    // data가 배열인지 확인
+    if (Array.isArray(result?.data)) {
+      console.log('데이터 배열 길이:', result.data.length);
+      if (result.data.length > 0) {
+        console.log('첫 번째 레시피 상세:', result.data[0]);
+        console.log('첫 번째 레시피 키들:', Object.keys(result.data[0] || {}));
+        console.log('첫 번째 레시피 imageUrl:', result.data[0].imageUrl);
+        console.log('imageUrl 타입:', typeof result.data[0].imageUrl);
+      }
+    } else {
+      console.log('data가 배열이 아님:', result?.data);
+    }
+    
+    return Array.isArray(result?.data) ? result.data : [];
   },
 
   createRecipe: async (
