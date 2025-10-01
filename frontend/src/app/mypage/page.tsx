@@ -26,15 +26,7 @@ export default function MyPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    console.log('마이페이지 useEffect 실행:', { isLogin, loginMember });
-    
-    // 세션 상태 디버깅
-    console.log('브라우저 쿠키:', document.cookie);
-    console.log('로컬 스토리지:', localStorage);
-    console.log('세션 스토리지:', sessionStorage);
-    
     if (!isLogin || !loginMember) {
-      console.log('로그인 상태가 아니므로 로그인 페이지로 이동');
       router.push('/login');
       return;
     }
@@ -42,12 +34,8 @@ export default function MyPage() {
     // API에서 사용자 프로필 정보 가져오기
     const fetchUserProfile = async () => {
       try {
-        console.log('프로필 정보 요청 시작...');
         const response = await userService.getUserProfile();
-        console.log('프로필 응답:', response);
-        
-        console.log('응답 구조 상세 분석:', {
-          success: response.success,
+        console.log({
           data: response.data,
           message: response.message,
           fullResponse: response
@@ -82,12 +70,6 @@ export default function MyPage() {
           };
           if (errorResponse.response?.status === 403) {
             setMessage('접근 권한이 없습니다. 로그인 상태를 확인해주세요.');
-            console.log('403 에러 상세 정보:', {
-              status: errorResponse.response.status,
-              statusText: errorResponse.response.statusText,
-              data: errorResponse.response.data,
-              headers: errorResponse.response.headers
-            });
             return;
           }
           if (errorResponse.response?.status === 500) {
@@ -137,6 +119,41 @@ export default function MyPage() {
       ...prev,
       [name]: value
     }));
+  };
+
+  // 전화번호 포맷팅 함수
+  const formatPhoneNumber = (value: string) => {
+    // 숫자만 추출
+    const numbers = value.replace(/\D/g, '');
+    
+    // 길이에 따라 포맷팅
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else if (numbers.length <= 11) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+    } else {
+      // 11자리 초과시 11자리까지만 사용
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
+  // 전화번호 입력 처리
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    const formattedValue = formatPhoneNumber(value);
+    
+    setProfile(prev => ({
+      ...prev,
+      phoneNum: formattedValue
+    }));
+  };
+
+  // 전화번호 유효성 검사
+  const validatePhoneNumber = (phone: string) => {
+    const numbers = phone.replace(/\D/g, '');
+    return numbers.length === 11 && numbers.startsWith('010');
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,6 +209,13 @@ export default function MyPage() {
     setMessage("");
 
     try {
+      // 전화번호 유효성 검사
+      if (profile.phoneNum && !validatePhoneNumber(profile.phoneNum)) {
+        setMessage("올바른 전화번호 형식을 입력해주세요. (010-1234-5678)");
+        setIsLoading(false);
+        return;
+      }
+
       const response = await userService.updateUserProfile(profile);
       
       if (response.success) {
@@ -352,14 +376,27 @@ export default function MyPage() {
                         type="tel"
                         name="phoneNum"
                         value={profile.phoneNum || ''}
-                        onChange={handleInputChange}
+                        onChange={handlePhoneChange}
                         disabled={!isEditing}
                         placeholder={hasLoadedProfile ? '010-0000-0000' : '전화번호를 불러오는 중...'}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
+                        maxLength={13}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 ${
+                          profile.phoneNum && !validatePhoneNumber(profile.phoneNum) && isEditing
+                            ? 'border-red-300 focus:ring-red-500'
+                            : 'border-gray-300'
+                        }`}
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        전화번호를 변경할 수 있습니다. 010-1234-5678 형식으로 입력해주세요.
-                      </p>
+                      <div className="mt-1">
+                        {profile.phoneNum && !validatePhoneNumber(profile.phoneNum) && isEditing ? (
+                          <p className="text-xs text-red-600">
+                            ⚠️ 올바른 전화번호 형식이 아닙니다. 010으로 시작하는 11자리 숫자를 입력해주세요.
+                          </p>
+                        ) : (
+                          <p className="text-xs text-gray-500">
+                            전화번호를 변경할 수 있습니다. 010-1234-5678 형식으로 입력해주세요.
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                                              {/* 프로필 이미지 필드는 백엔드에서 아직 제공하지 않음 */}

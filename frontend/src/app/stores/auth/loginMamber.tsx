@@ -6,7 +6,7 @@ type Member = {
   id: number;
   userId?: number; // 백엔드 응답의 userId 필드
   email?: string; // 백엔드 응답의 email 필드
-  name?: string; // 백엔드 응답의 name 필드
+  name?: string; // 백엔드 응답의 name 필드 (카카오/구글 로그인 시 사용)
   profile?: string; // 백엔드 응답의 profile 필드
   createDate: string;
   modifyDate: string;

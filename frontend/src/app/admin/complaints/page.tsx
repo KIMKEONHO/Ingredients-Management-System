@@ -227,7 +227,7 @@ function ComplaintManagementPage() {
   const getStatusText = (status: Complaint['status']) => {
     const statusMap = {
       pending: '보류',
-      processing: '처리중',
+      processing: '진행중',
       completed: '완료',
       rejected: '거부됨'
     };

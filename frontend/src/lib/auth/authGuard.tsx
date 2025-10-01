@@ -32,18 +32,11 @@ export function AuthGuard({
         const isLoggedInLocal = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true';
         const userData = typeof window !== 'undefined' && localStorage.getItem('userData');
         
-        console.log('AuthGuard 인증 확인:', { 
-          isLogin, 
-          isLoggedInLocal, 
-          hasUserData: !!userData,
-          isLoginMemberPending 
-        });
         
         // 로컬 스토리지에 로그인 정보가 있으면 인증 성공으로 처리
         if (isLoggedInLocal && userData) {
           try {
             const parsedUserData = JSON.parse(userData);
-            console.log('로컬 스토리지에서 사용자 데이터 확인됨:', parsedUserData);
             
             // 권한 확인 (requiredRoles가 있을 때만)
             if (requiredRoles.length > 0) {
@@ -52,7 +45,6 @@ export function AuthGuard({
               );
               
               if (!hasRequiredRole) {
-                console.log('권한 부족, 접근 거부 페이지로 이동');
                 router.push('/access-denied');
                 return;
               }
@@ -70,7 +62,6 @@ export function AuthGuard({
         
         // 전역 상태에서 로그인 상태 확인
         if (!isLogin) {
-          console.log('전역 상태에서 로그인되지 않음, 로그인 페이지로 이동');
           // 현재 URL을 저장하여 로그인 후 원래 페이지로 돌아갈 수 있도록 함
           if (typeof window !== 'undefined') {
             sessionStorage.setItem('redirectAfterLogin', window.location.pathname);

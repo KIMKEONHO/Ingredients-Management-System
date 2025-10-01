@@ -19,9 +19,9 @@ export class ComplaintStatusUtils {
   static getStatusLabel(status: ComplaintStatus): string {
     switch (status) {
       case ComplaintStatus.PENDING:
-        return '접수됨';
+        return '보류';
       case ComplaintStatus.IN_PROGRESS:
-        return '처리 중';
+        return '진행중';
       case ComplaintStatus.COMPLETED:
         return '완료';
       case ComplaintStatus.REJECTED:
@@ -90,9 +90,15 @@ export const getAllComplaints = async (): Promise<Complaint[]> => {
 // 단일 민원 조회
 export const getComplaint = async (complaintId: number): Promise<ComplaintDetailResponseDto | null> => {
   try {
-    const response = await apiClient.get<ComplaintDetailResponseDto>(`/api/v1/complaints/${complaintId}`);
+    const response = await apiClient.get<RsData<ComplaintDetailResponseDto>>(`/api/v1/complaints/${complaintId}`);
     console.log('getComplaint 응답:', response);
-    return response || null;
+    
+    // RsData 형태의 응답에서 data 추출
+    if (response && response.data) {
+      return response.data;
+    }
+    
+    return null;
   } catch (error) {
     console.error('민원을 가져오는 중 오류가 발생했습니다:', error);
     throw new Error('민원을 가져올 수 없습니다.');

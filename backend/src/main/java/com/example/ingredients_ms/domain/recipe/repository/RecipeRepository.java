@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface RecipeRepository extends JpaRepository<Recipe,Long> {
@@ -40,5 +41,8 @@ public interface RecipeRepository extends JpaRepository<Recipe,Long> {
                 r.like_count DESC, r.view_count DESC
         """, nativeQuery = true)
     List<Recipe> findRecipesByAvailableIngredients(@Param("ingredientIds") List<Long> ingredientIds);
+
+    // 통계용 메서드
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
 }

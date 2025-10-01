@@ -1,22 +1,31 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import ImageCropModal from './ImageCropModal';
 
 interface ImageUploadProps {
   value?: string;
   onChange: (imageUrl: string, file?: File) => void;
   placeholder?: string;
   className?: string;
+  enableCrop?: boolean;
+  aspectRatio?: number;
+  cropTitle?: string;
 }
 
 export default function ImageUpload({ 
   value, 
   onChange, 
   placeholder = "이미지를 드래그하거나 클릭하여 업로드하세요",
-  className = ""
+  className = "",
+  enableCrop = false,
+  aspectRatio = 16 / 9,
+  cropTitle = "이미지 크롭"
 }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 파일 처리 함수
@@ -38,8 +47,15 @@ export default function ImageUpload({
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        // base64 URL과 File 객체를 모두 전달
-        onChange(result, file);
+        
+        if (enableCrop) {
+          // 크롭 기능이 활성화된 경우 크롭 모달 표시
+          setTempImageUrl(result);
+          setShowCropModal(true);
+        } else {
+          // 크롭 기능이 비활성화된 경우 바로 적용
+          onChange(result, file);
+        }
         setIsUploading(false);
       };
       reader.readAsDataURL(file);
@@ -48,7 +64,7 @@ export default function ImageUpload({
       alert('파일 업로드에 실패했습니다.');
       setIsUploading(false);
     }
-  }, [onChange]);
+  }, [onChange, enableCrop]);
 
   // 드래그 이벤트 핸들러
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -88,6 +104,19 @@ export default function ImageUpload({
   const handleRemove = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onChange('', undefined);
+  }, [onChange]);
+
+  // 크롭 모달 닫기
+  const handleCropClose = useCallback(() => {
+    setShowCropModal(false);
+    setTempImageUrl('');
+  }, []);
+
+  // 크롭 완료 처리
+  const handleCropComplete = useCallback((croppedImageUrl: string, croppedFile: File) => {
+    onChange(croppedImageUrl, croppedFile);
+    setShowCropModal(false);
+    setTempImageUrl('');
   }, [onChange]);
 
   return (
@@ -164,6 +193,18 @@ export default function ImageUpload({
           </div>
         )}
       </div>
+
+      {/* 크롭 모달 */}
+      {showCropModal && (
+        <ImageCropModal
+          isOpen={showCropModal}
+          imageUrl={tempImageUrl}
+          onClose={handleCropClose}
+          onCrop={handleCropComplete}
+          aspectRatio={aspectRatio}
+          title={cropTitle}
+        />
+      )}
     </div>
   );
 }
