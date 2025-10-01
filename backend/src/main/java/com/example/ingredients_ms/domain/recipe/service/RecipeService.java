@@ -110,6 +110,7 @@ public class RecipeService {
                         .cookingTime(recipe.getCookingTime())
                                 .imageUrl(recipe.getImageUrl())
                                 .viewCount(recipe.getViewCount())
+                                .likeCount(recipe.getLikeCount().intValue())//좋아요 카운트
                         .build())
                 .toList();
 
