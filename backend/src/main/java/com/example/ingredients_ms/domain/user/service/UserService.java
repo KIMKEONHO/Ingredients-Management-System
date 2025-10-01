@@ -6,10 +6,7 @@ import com.example.ingredients_ms.domain.image.dto.ImageUploadResponseDto;
 import com.example.ingredients_ms.domain.image.exception.ImageException;
 import com.example.ingredients_ms.domain.image.service.ImageFolderType;
 import com.example.ingredients_ms.domain.image.service.ImageService;
-import com.example.ingredients_ms.domain.user.dto.request.ChangeStatusRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.ChangeUserDataRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.CreateUserRequestDto;
-import com.example.ingredients_ms.domain.user.dto.request.LoginRequestDto;
+import com.example.ingredients_ms.domain.user.dto.request.*;
 import com.example.ingredients_ms.domain.user.dto.response.CreateUserResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.FindIdResponseDto;
 import com.example.ingredients_ms.domain.user.dto.response.ProfileReposeDto;
@@ -432,6 +429,23 @@ public class UserService {
         } catch (ImageException e) {
             throw new BusinessLogicException(ExceptionCode.IMAGE_UPLOAD_FAILED);
         }
+    }
+
+    public RsData<?> changeProfileData(Long userId, ExchangeProfileDataRequestDto requestDto){
+
+        Optional<User> opUser = userRepository.findById(userId);
+        if(opUser.isEmpty()){
+            throw new BusinessLogicException(ExceptionCode.USER_NOT_FOUND);
+        }
+
+        User user = opUser.get();
+
+        user.setNickname(requestDto.getNickname());
+        user.setPhoneNum(requestDto.getPhoneNum());
+
+        userRepository.save(user);
+
+        return new RsData<>("204","유저 정보가 변경되었습니다.");
     }
 
     public Optional<User> findUserById(Long userId){

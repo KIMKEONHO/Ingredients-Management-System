@@ -44,22 +44,26 @@ export default function RecipeCommunityPage() {
     recipe.userNickName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // 난이도 텍스트 변환
+  // 난이도 텍스트 변환 (1-5 단계)
   const getDifficultyText = (level: number) => {
     switch (level) {
-      case 1: return '쉬움';
-      case 2: return '보통';
-      case 3: return '어려움';
+      case 1: return '매우 쉬움';
+      case 2: return '쉬움';
+      case 3: return '보통';
+      case 4: return '어려움';
+      case 5: return '매우 어려움';
       default: return '보통';
     }
   };
 
-  // 난이도 색상 변환
+  // 난이도 색상 변환 (1-5 단계)
   const getDifficultyColor = (level: number) => {
     switch (level) {
       case 1: return 'bg-green-100 text-green-800';
-      case 2: return 'bg-yellow-100 text-yellow-800';
-      case 3: return 'bg-red-100 text-red-800';
+      case 2: return 'bg-blue-100 text-blue-800';
+      case 3: return 'bg-yellow-100 text-yellow-800';
+      case 4: return 'bg-orange-100 text-orange-800';
+      case 5: return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };

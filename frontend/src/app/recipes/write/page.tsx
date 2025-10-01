@@ -314,11 +314,26 @@ export default function RecipeWritePage() {
                       조리 시간 (분) *
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       required
-                      min="1"
-                      value={formData.cookingTime}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cookingTime: parseInt(e.target.value) || 0 }))}
+                      placeholder="예: 30"
+                      value={formData.cookingTime === 0 ? '' : formData.cookingTime.toString()}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // 숫자만 입력 허용하고 앞의 0 제거
+                        if (value === '') {
+                          setFormData(prev => ({ ...prev, cookingTime: 0 }));
+                        } else if (/^\d+$/.test(value)) {
+                          const numValue = parseInt(value, 10);
+                          setFormData(prev => ({ ...prev, cookingTime: numValue }));
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // 숫자, 백스페이스, 삭제, 화살표 키만 허용
+                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                         errors.cookingTime ? 'border-red-500' : 'border-gray-300'
                       }`}
@@ -351,11 +366,26 @@ export default function RecipeWritePage() {
                       인분 *
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       required
-                      min="1"
-                      value={formData.servings}
-                      onChange={(e) => setFormData(prev => ({ ...prev, servings: parseInt(e.target.value) || 1 }))}
+                      placeholder="예: 4"
+                      value={formData.servings === 0 ? '' : formData.servings.toString()}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // 숫자만 입력 허용하고 앞의 0 제거
+                        if (value === '') {
+                          setFormData(prev => ({ ...prev, servings: 0 }));
+                        } else if (/^\d+$/.test(value)) {
+                          const numValue = parseInt(value, 10);
+                          setFormData(prev => ({ ...prev, servings: numValue }));
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // 숫자, 백스페이스, 삭제, 화살표 키만 허용
+                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                         errors.servings ? 'border-red-500' : 'border-gray-300'
                       }`}
@@ -393,6 +423,9 @@ export default function RecipeWritePage() {
                         recipeImageFile: file
                       }))}
                       placeholder="레시피 대표 이미지를 업로드하세요"
+                      enableCrop={true}
+                      aspectRatio={16/9}
+                      cropTitle="레시피 대표 이미지 크롭"
                     />
                   </div>
 
@@ -441,11 +474,29 @@ export default function RecipeWritePage() {
                           양
                         </label>
                         <input
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          value={ingredient.quantity}
-                          onChange={(e) => updateIngredient(ingredient.id, 'quantity', parseFloat(e.target.value) || 0)}
+                          type="text"
+                          placeholder="예: 100"
+                          value={ingredient.quantity === 0 ? '' : ingredient.quantity.toString()}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // 숫자와 소수점만 입력 허용하고 앞의 0 제거
+                            if (value === '') {
+                              updateIngredient(ingredient.id, 'quantity', 0);
+                            } else if (/^\d*\.?\d*$/.test(value) && value !== '.') {
+                              const numValue = parseFloat(value) || 0;
+                              updateIngredient(ingredient.id, 'quantity', numValue);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            // 숫자, 소수점, 백스페이스, 삭제, 화살표 키만 허용
+                            if (!/[0-9.]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                            // 소수점이 이미 있는 경우 추가 소수점 입력 방지
+                            if (e.key === '.' && ingredient.quantity.toString().includes('.')) {
+                              e.preventDefault();
+                            }
+                          }}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                             errors[`ingredient_${index}_quantity`] ? 'border-red-500' : 'border-gray-300'
                           }`}
@@ -586,6 +637,9 @@ export default function RecipeWritePage() {
                             }}
                             placeholder="단계별 이미지를 업로드하세요"
                             className="h-32"
+                            enableCrop={true}
+                            aspectRatio={4/3}
+                            cropTitle={`${step.stepNumber}단계 이미지 크롭`}
                           />
                         </div>
                       </div>

@@ -25,52 +25,32 @@ export default function Footer() {
                 식재료 관리 서비스입니다. AI가 재고를 확인해 메뉴를 추천해 드려요.
               </p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-gray-800 font-medium mb-4">기능</h3>
+                <h3 className="text-gray-800 font-medium mb-4">주요 기능</h3>
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li>
-                    <a href="/inventory" className="hover:text-indigo-600">식재료 재고 관리</a>
+                    <a href="/statistics" className="hover:text-indigo-600">식재료 소비 통계</a>
                   </li>
                   <li>
-                    <a href="/stats" className="hover:text-indigo-600">식재료 소비 통계</a>
+                    <a href="/support" className="hover:text-indigo-600">민원 센터</a>
                   </li>
                   <li>
-                    <a href="/complaints" className="hover:text-indigo-600">민원 센터</a>
+                    <a href="/recipe-recommendation" className="hover:text-indigo-600">레시피 추천</a>
                   </li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-gray-800 font-medium mb-4">관리 도구</h3>
+                <ul className="space-y-2 text-sm text-gray-600">
                   <li>
                     <a href="/callender" className="hover:text-indigo-600">식단 관리</a>
                   </li>
                   <li>
-                    <a href="/ai/menu" className="hover:text-indigo-600">레시피 추천</a>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-gray-800 font-medium mb-4">고객센터</h3>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>
-                    <a href="/help/faq" className="hover:text-indigo-600">자주 묻는 질문</a>
+                    <a href="/recipe-community" className="hover:text-indigo-600">레시피 공유</a>
                   </li>
                   <li>
-                    <a href="/help/contact" className="hover:text-indigo-600">1:1 문의</a>
-                  </li>
-                  <li>
-                    <a href="/notices" className="hover:text-indigo-600">공지사항</a>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-gray-800 font-medium mb-4">기타</h3>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>
-                    <a href="/docs" className="hover:text-indigo-600">사용 가이드</a>
-                  </li>
-                  <li>
-                    <a href="/status" className="hover:text-indigo-600">서비스 상태</a>
-                  </li>
-                  <li>
-                    <a href="/legal/privacy" className="hover:text-indigo-600">개인정보 처리방침</a>
+                    <a href="/inventory" className="hover:text-indigo-600">재고 관리</a>
                   </li>
                 </ul>
               </div>
@@ -79,7 +59,7 @@ export default function Footer() {
           <div className="pt-8 border-t border-gray-200 text-sm text-gray-500 flex flex-col md:flex-row items-center md:justify-between text-center gap-4">
             <div>© {new Date().getFullYear()} IMS. All rights reserved.</div>
             <div className="flex items-center gap-4">
-              <a href="mailto:support@ims.app" className="hover:text-indigo-600">support@ims.app</a>
+              <a href="mailto:jerry6475@gmail.com" className="hover:text-indigo-600">jerry6475@gmail.com</a>
               <a href="/terms" className="hover:text-indigo-600">이용약관</a>
             </div>
           </div>
