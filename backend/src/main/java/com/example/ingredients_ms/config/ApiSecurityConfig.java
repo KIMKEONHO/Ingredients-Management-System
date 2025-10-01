@@ -140,6 +140,11 @@ public class ApiSecurityConfig {
 
                         // 레시피 추천 관련 api
                         .requestMatchers(HttpMethod.GET, "/api/*/recipe/recommend/").hasAnyRole("USER","ADMIN")
+
+                        // 관리자 통계 관련 api
+                        .requestMatchers(HttpMethod.GET,"/api/*/admin/statistics/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/*/admin/charts/{theme}").hasRole("ADMIN")
+
                 )
                 .csrf(csrf->csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
