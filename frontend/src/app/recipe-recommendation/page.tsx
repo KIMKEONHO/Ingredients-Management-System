@@ -525,8 +525,12 @@ export default function RecipeRecommendationPage() {
                             <span className="font-medium">{recipe.cookingTime}분</span>
                           </span>
                           <span className="flex items-center gap-2">
-                            <span className="text-lg">👥</span>
-                            <span className="font-medium">1인분</span>
+                            <span className="text-lg">👁️</span>
+                            <span className="font-medium">{recipe.viewCount?.toLocaleString() || 0}</span>
+                          </span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-lg text-red-500">❤️</span>
+                            <span className="font-medium">{recipe.likeCount?.toLocaleString() || 0}</span>
                           </span>
                         </div>
                         <button className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium shadow-sm">

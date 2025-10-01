@@ -31,6 +31,7 @@ public class RecipeLike extends BaseEntity {
 
     // 좋아요 생성 시점 기록 (BaseEntity의 createdAt과 별도로)
     @Column(name = "liked_at", nullable = false)
+    @Builder.Default
     private LocalDateTime likedAt = LocalDateTime.now();
 
     // 좋아요 취소 여부 (소프트 삭제용)

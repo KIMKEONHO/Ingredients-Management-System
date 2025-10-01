@@ -69,4 +69,14 @@ public class Recipe extends BaseEntity {
     // 좋아요와의 관계
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL)
     private List<RecipeLike> recipeLikes = new ArrayList<>();
+
+    // 좋아요 증감 메서드
+    public void increaseLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        this.likeCount--;
+    }
+
 }

@@ -79,6 +79,7 @@ export type AllRecipeResponseDto = {
   cookingTime: number;
   imageUrl?: string;
   viewCount: number;
+  likeCount?: number; // 좋아요 수 (백엔드에서 제공하는 경우)
 };
 
 // 레시피 응답 타입

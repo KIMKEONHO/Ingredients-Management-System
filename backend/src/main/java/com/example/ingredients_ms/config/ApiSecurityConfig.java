@@ -138,6 +138,11 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET,"/api/*/recipe/detail/*").permitAll()
                         .requestMatchers(HttpMethod.DELETE,"/api/*/recipe/*").hasAnyRole("USER","ADMIN")
 
+                        //레시피 좋아요 관련 api
+                        .requestMatchers(HttpMethod.POST,"/api/*/recipe/*/like").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,"/api/*/recipe/*/like").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/*/recipe/*/like").hasAnyRole("USER","ADMIN")
+
                         // 레시피 추천 관련 api
                         .requestMatchers(HttpMethod.GET, "/api/*/recipe/recommend/").hasAnyRole("USER","ADMIN")
 
