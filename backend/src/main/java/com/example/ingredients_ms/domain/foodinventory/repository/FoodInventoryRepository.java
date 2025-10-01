@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -63,5 +64,8 @@ group by fi.ingredient.id, fi.ingredient.name
 order by consumedQty desc
 """)
     List<IngredientStatsProjection> findTopConsumedByUserId(@Param("userId") long userId, Pageable pageable);
+
+    // 통계용 메서드
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
 }
