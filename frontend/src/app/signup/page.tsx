@@ -47,10 +47,28 @@ export default function SignupPage() {
     return passwordRegex.test(password);
   };
 
+  // 전화번호 포맷팅 함수
+  const formatPhoneNumber = (value: string) => {
+    // 숫자만 추출
+    const numbers = value.replace(/\D/g, '');
+    
+    // 길이에 따라 포맷팅
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else if (numbers.length <= 11) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+    } else {
+      // 11자리 초과시 11자리까지만 사용
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
   // 전화번호 유효성 검사 (010-1234-5678 형식)
   const validatePhone = (phone: string) => {
-    const phoneRegex = /^01(?:0|1|[6-9])-(?:\d{3}|\d{4})-\d{4}$/;
-    return phoneRegex.test(phone);
+    const numbers = phone.replace(/\D/g, '');
+    return numbers.length === 11 && numbers.startsWith('010');
   };
 
   // 실시간 유효성 검사 실행
@@ -240,6 +258,15 @@ export default function SignupPage() {
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  // 전화번호 입력 처리
+  const handlePhoneChange = (value: string) => {
+    const formattedValue = formatPhoneNumber(value);
+    setFormData(prev => ({
+      ...prev,
+      phoneNumber: formattedValue
     }));
   };
 
@@ -460,13 +487,23 @@ export default function SignupPage() {
                   <input
                     type="tel"
                     value={formData.phoneNumber}
-                    onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="전화번호를 입력하세요 (010-1234-5678)"
-                    className={`w-full rounded-lg border ${COLOR_PRESETS.LOGIN_PAGE.border} pl-10 pr-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 ${COLOR_PRESETS.LOGIN_PAGE.focus}`}
+                    maxLength={13}
+                    className={`w-full rounded-lg border pl-10 pr-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 ${
+                      formData.phoneNumber && !validatePhone(formData.phoneNumber)
+                        ? 'border-red-300 focus:ring-red-500'
+                        : `${COLOR_PRESETS.LOGIN_PAGE.border} ${COLOR_PRESETS.LOGIN_PAGE.focus}`
+                    }`}
                   />
                 </div>
                 {validationErrors.phoneNumber && (
                   <p className="mt-1 text-sm text-red-600">{validationErrors.phoneNumber}</p>
+                )}
+                {formData.phoneNumber && !validatePhone(formData.phoneNumber) && (
+                  <p className="mt-1 text-sm text-red-600">
+                    ⚠️ 올바른 전화번호 형식이 아닙니다. 010으로 시작하는 11자리 숫자를 입력해주세요.
+                  </p>
                 )}
               </div>
 
