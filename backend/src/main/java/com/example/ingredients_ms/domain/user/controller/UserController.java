@@ -206,4 +206,12 @@ public class UserController {
         return new RsData<>("201","유저를 업데이트하였습니다");
     }
 
+    @PostMapping("/exchange/profile-data")
+    public RsData<?> exchangeProfileData(
+            @CurrentUser SecurityUser currentUser,
+            @RequestBody ExchangeProfileDataRequestDto requestDto
+    ){
+        return userService.changeProfileData(currentUser.getId(), requestDto);
+    }
+
 }
