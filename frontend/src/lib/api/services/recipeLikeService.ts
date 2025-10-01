@@ -1,10 +1,22 @@
 import { apiClient } from '../client';
-import type { components } from '../../backend/apiV1/schema';
 
 // 타입 정의
-export type RecipeLikeResponseDto = components['schemas']['RecipeLikeResponseDto'];
-export type RsDataRecipeLikeResponseDto = components['schemas']['RsDataRecipeLikeResponseDto'];
-export type RsDataBoolean = components['schemas']['RsDataBoolean'];
+export type RecipeLikeResponseDto = {
+  likeCount?: number;
+  active?: boolean;
+};
+
+export type RsDataRecipeLikeResponseDto = {
+  resultCode?: string;
+  msg?: string;
+  data?: RecipeLikeResponseDto;
+};
+
+export type RsDataBoolean = {
+  resultCode?: string;
+  msg?: string;
+  data?: boolean;
+};
 
 /**
  * 레시피 좋아요 서비스
