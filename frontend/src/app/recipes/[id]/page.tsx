@@ -7,6 +7,7 @@ import { COLOR_PRESETS } from '@/lib/constants/colors';
 import PageHeader from '../../components/ui/PageHeader';
 import SectionCard from '../../components/ui/SectionCard';
 import { recipeService, RecipeDetailResponseDto } from '@/lib/api/services/recipeService';
+import { recipeLikeService, RecipeLikeResponseDto } from '@/lib/api/services/recipeLikeService';
 import { useGlobalLoginMember } from '@/app/stores/auth/loginMamber';
 
 export default function RecipeDetailPage() {
@@ -20,6 +21,11 @@ export default function RecipeDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // 좋아요 관련 상태
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
   
   // 중복 요청 방지를 위한 ref
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -53,6 +59,10 @@ export default function RecipeDetailPage() {
       if (!abortControllerRef.current.signal.aborted) {
         console.log('레시피 데이터 설정:', recipeDetail);
         setRecipe(recipeDetail);
+        // 레시피의 좋아요 수를 초기화
+        const initialLikeCount = recipeDetail.likeCount || 0;
+        setLikeCount(initialLikeCount);
+        console.log('초기 좋아요 수 설정:', initialLikeCount);
         setIsLoading(false); // 성공 시 로딩 상태 해제
         lastFetchedRecipeIdRef.current = id; // 성공 시에만 ref 업데이트
       }
@@ -72,6 +82,40 @@ export default function RecipeDetailPage() {
     }
   }, []); // 의존성 배열에서 recipe 제거
 
+  // 좋아요 상태 조회
+  const fetchLikeStatus = useCallback(async (id: string) => {
+    try {
+      const liked = await recipeLikeService.checkIsLiked(id);
+      setIsLiked(liked);
+      console.log('좋아요 상태 조회 완료:', liked);
+    } catch (error) {
+      console.error('좋아요 상태 조회 실패:', error);
+      // 에러 시 기본값 유지
+      setIsLiked(false);
+    }
+  }, []);
+
+  // 좋아요 토글 핸들러
+  const handleLikeToggle = async () => {
+    if (isLikeLoading) return;
+
+    try {
+      setIsLikeLoading(true);
+      const result = await recipeLikeService.toggleLike(recipeId, isLiked);
+      
+      // 상태 업데이트
+      setIsLiked(result.active || false);
+      setLikeCount(result.likeCount || 0);
+      
+      console.log('좋아요 토글 완료:', result);
+    } catch (error) {
+      console.error('좋아요 토글 실패:', error);
+      alert('좋아요 처리에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (recipeId) {
       // 새로운 recipeId로 변경될 때 로딩 상태 초기화
@@ -79,6 +123,7 @@ export default function RecipeDetailPage() {
       setError(null);
       setRecipe(null);
       fetchRecipeDetail(recipeId);
+      fetchLikeStatus(recipeId);
     }
 
     // 컴포넌트 언마운트 시 요청 취소
@@ -87,7 +132,7 @@ export default function RecipeDetailPage() {
         abortControllerRef.current.abort();
       }
     };
-  }, [recipeId, fetchRecipeDetail]);
+  }, [recipeId, fetchRecipeDetail, fetchLikeStatus]);
 
   // 난이도 텍스트 변환
   const getDifficultyText = (level: number) => {
@@ -270,6 +315,7 @@ export default function RecipeDetailPage() {
                     alt={recipe.title}
                     className="w-full h-96 object-cover rounded-lg"
                   />
+                  {/* 조회수 */}
                   <div className="absolute bottom-4 right-4">
                     <div className="bg-gray-800 bg-opacity-70 rounded-full px-3 py-2 flex items-center gap-2">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -278,6 +324,38 @@ export default function RecipeDetailPage() {
                       </svg>
                       <span className="text-white text-sm">{recipe.viewCount?.toLocaleString()}</span>
                     </div>
+                  </div>
+                  {/* 좋아요 버튼 */}
+                  <div className="absolute bottom-4 left-4">
+                    <button
+                      onClick={handleLikeToggle}
+                      disabled={isLikeLoading}
+                      className={`
+                        bg-white bg-opacity-90 rounded-full px-4 py-2 flex items-center gap-2 
+                        transition-all duration-200 shadow-lg hover:scale-105 active:scale-95
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                        ${isLiked ? 'text-red-500' : 'text-gray-600'}
+                      `}
+                    >
+                      {isLikeLoading ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-500"></div>
+                      ) : (
+                        <svg 
+                          className="w-5 h-5" 
+                          fill={isLiked ? "currentColor" : "none"} 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                          />
+                        </svg>
+                      )}
+                      <span className="font-semibold">{likeCount.toLocaleString()}</span>
+                    </button>
                   </div>
                 </div>
               )}
