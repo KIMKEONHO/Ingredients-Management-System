@@ -35,7 +35,7 @@ export default function SupportPage() {
       const response = await ComplaintService.createComplaint(requestData);
       
       if (response.resultCode === "201") {
-        alert("민원이 성공적으로 접수되었습니다.");
+        alert("민원이 성공적으로 제출되었습니다. 보류 상태로 등록되었습니다.");
         
         // 폼 초기화
         setFormData({
@@ -44,11 +44,11 @@ export default function SupportPage() {
           content: ""
         });
       } else {
-        alert("민원 접수 중 오류가 발생했습니다. 다시 시도해주세요.");
+        alert("민원 제출 중 오류가 발생했습니다. 다시 시도해주세요.");
       }
     } catch (error) {
-      console.error("민원 접수 오류:", error);
-      alert("민원 접수 중 오류가 발생했습니다. 다시 시도해주세요.");
+      console.error("민원 제출 오류:", error);
+      alert("민원 제출 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -204,8 +204,8 @@ export default function SupportPage() {
                     <h3 className="text-lg font-semibold text-gray-900">연락처</h3>
                   </div>
                   <div className="space-y-2 text-gray-600">
-                    <p>이메일: support@foodtracker.com</p>
-                    <p>전화: 02-1234-5678</p>
+                    <p>이메일: jerry6475@gmail.com</p>
+                    <p>전화: 010-3699-6475</p>
                     <p>운영시간: 평일 09:00-18:00</p>
                   </div>
                 </div>
