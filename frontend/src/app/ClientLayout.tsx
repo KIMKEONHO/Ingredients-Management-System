@@ -27,8 +27,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const checkAuthStatus = async () => {
             try {
-                console.log('로그인 상태 확인 중...');
-                
                 // OAuth 콜백 처리 (우선순위 높음)
                 const urlParams = new URLSearchParams(window.location.search);
                 const isOAuthCallback = urlParams.get('oauth') === 'success' || 
@@ -37,14 +35,10 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 
                 if (isOAuthCallback && !isLogin) {
                     try {
-                        console.log('OAuth 콜백 감지, 사용자 정보 가져오기 시작...');
-                        
                         // 현재 사용자 정보 가져오기
                         const userResult = await AuthService.getCurrentUser();
                         
                         if (userResult.success && userResult.data) {
-                            console.log('OAuth 로그인 사용자 정보:', userResult.data);
-                            
                             // 사용자 정보를 스토어에 저장
                             const userData = {
                                 id: userResult.data.userId,
@@ -64,10 +58,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                             newUrl.searchParams.delete('oauth');
                             window.history.replaceState({}, '', newUrl.toString());
                             
-                            console.log('OAuth 로그인 완료, 사용자 정보 저장됨:', userData);
                             return; // OAuth 처리 완료
-                        } else {
-                            console.log('OAuth 로그인 후 사용자 정보를 가져올 수 없음');
                         }
                     } catch (error) {
                         console.error('OAuth 콜백 처리 중 오류:', error);
@@ -101,7 +92,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                         const result = await response.json();
                         setLoginMember(result.data);
                     } else {
-                        console.log('백엔드 로그인 실패:', response.status);
                         // 백엔드 실패 시에도 로컬 상태는 유지
                         if (!isLoggedInLocal) {
                             setNoLoginMember();

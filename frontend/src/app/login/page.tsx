@@ -59,6 +59,8 @@ export default function LoginPage() {
         const userData = {
           id: result.data.user.id,
           nickname: result.data.user.nickname,
+          name: result.data.user.username || result.data.user.nickname, // username을 name으로 사용
+          email: result.data.user.email, // email 필드 추가
           profile: result.data.user.profile, // profile 필드 추가
           createDate: new Date().toISOString(),
           modifyDate: new Date().toISOString(),

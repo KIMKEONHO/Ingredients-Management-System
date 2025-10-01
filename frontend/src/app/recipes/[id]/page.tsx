@@ -329,28 +329,19 @@ export default function RecipeDetailPage() {
               </div>
               
               <div className="space-y-3">
-                {recipe.recipeIngredientResponseDtos.map((ingredient, index) => {
-                  console.log(`재료 ${index + 1}:`, {
-                    name: ingredient.ingredientName,
-                    quantity: ingredient.quantity,
-                    unit: ingredient.unit,
-                    notes: ingredient.notes
-                  });
-                  
-                  return (
-                    <div key={index} className="py-3 border-b border-gray-200">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gray-800 font-medium">{ingredient.ingredientName}</span>
-                        <span className="text-gray-600">{ingredient.quantity}{ingredient.unit}</span>
-                      </div>
-                      {ingredient.notes && ingredient.notes.trim() && (
-                        <div className="text-sm text-gray-500 italic">
-                          💡 {ingredient.notes}
-                        </div>
-                      )}
+                {recipe.recipeIngredientResponseDtos.map((ingredient, index) => (
+                  <div key={index} className="py-3 border-b border-gray-200">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-gray-800 font-medium">{ingredient.ingredientName}</span>
+                      <span className="text-gray-600">{ingredient.quantity}{ingredient.unit}</span>
                     </div>
-                  );
-                })}
+                    {ingredient.notes && ingredient.notes.trim() && (
+                      <div className="text-sm text-gray-500 italic">
+                        💡 {ingredient.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

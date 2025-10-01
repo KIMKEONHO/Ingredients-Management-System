@@ -26,15 +26,7 @@ export default function MyPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    console.log('마이페이지 useEffect 실행:', { isLogin, loginMember });
-    
-    // 세션 상태 디버깅
-    console.log('브라우저 쿠키:', document.cookie);
-    console.log('로컬 스토리지:', localStorage);
-    console.log('세션 스토리지:', sessionStorage);
-    
     if (!isLogin || !loginMember) {
-      console.log('로그인 상태가 아니므로 로그인 페이지로 이동');
       router.push('/login');
       return;
     }
@@ -42,12 +34,7 @@ export default function MyPage() {
     // API에서 사용자 프로필 정보 가져오기
     const fetchUserProfile = async () => {
       try {
-        console.log('프로필 정보 요청 시작...');
         const response = await userService.getUserProfile();
-        console.log('프로필 응답:', response);
-        
-        console.log('응답 구조 상세 분석:', {
-          success: response.success,
           data: response.data,
           message: response.message,
           fullResponse: response
@@ -82,12 +69,6 @@ export default function MyPage() {
           };
           if (errorResponse.response?.status === 403) {
             setMessage('접근 권한이 없습니다. 로그인 상태를 확인해주세요.');
-            console.log('403 에러 상세 정보:', {
-              status: errorResponse.response.status,
-              statusText: errorResponse.response.statusText,
-              data: errorResponse.response.data,
-              headers: errorResponse.response.headers
-            });
             return;
           }
           if (errorResponse.response?.status === 500) {

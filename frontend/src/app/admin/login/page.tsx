@@ -31,21 +31,20 @@ export default function AdminLoginPage() {
 
     try {
       const result = await AuthService.adminLogin({ email, password });
-      console.log('관리자 로그인 결과:', result); // 디버깅용 로그
       
       if (result.success && result.data) {
-        console.log('로그인 성공, 사용자 정보:', result.data.user); // 디버깅용 로그
-        
         // 로그인 성공 시 사용자 정보를 스토어에 저장
         const loginData = {
           id: result.data.user.id,
           nickname: result.data.user.nickname,
+          name: result.data.user.username || result.data.user.nickname, // username을 name으로 사용
+          email: result.data.user.email, // email 필드 추가
+          profile: result.data.user.profile, // profile 필드 추가
           createDate: new Date().toISOString(),
           modifyDate: new Date().toISOString(),
           roles: result.data.user.roles
         };
         
-        console.log('스토어에 저장할 데이터:', loginData); // 디버깅용 로그
         setLoginMember(loginData);
         
         // 관리자 대시보드로 이동
@@ -54,7 +53,6 @@ export default function AdminLoginPage() {
         setErrorMessage(result.error || "로그인에 실패했습니다.");
       }
     } catch (error) {
-      console.error('관리자 로그인 에러:', error); // 디버깅용 로그
       setErrorMessage("로그인 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);

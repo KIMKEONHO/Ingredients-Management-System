@@ -172,7 +172,7 @@ export default function Header() {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
-                      {(loginMember.nickname || loginMember.name) ? (loginMember.nickname || loginMember.name).charAt(0).toUpperCase() : 'U'}
+                      {(loginMember?.nickname || loginMember?.name) ? (loginMember?.nickname || loginMember?.name)?.charAt(0).toUpperCase() : 'U'}
                     </div>
                   )}
                 </div>
