@@ -104,19 +104,6 @@ export default function AdminSidebar() {
             통계
           </Link>
 
-          <Link
-            href="/admin/callender"
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 w-full ${
-              isActive('/admin/callender')
-                ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-700'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 000-2H6z" clipRule="evenodd" />
-            </svg>
-            일정 관리
-          </Link>
         </nav>
 
         {/* User Menu - 하단에 배치 */}
