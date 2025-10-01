@@ -11,4 +11,7 @@ import java.util.List;
 public interface DietRepository extends JpaRepository<Diet,Long> {
     List<Diet> findAllByUserIdAndDateBetween(Long userId, LocalDateTime start, LocalDateTime end);
     List<Diet> findByUserIdAndDateBetween(Long userId, LocalDateTime start, LocalDateTime end);
+    
+    // 통계용 메서드
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }
