@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import type { components } from '@/lib/backend/apiV1/schema';
+import type { components } from '../../backend/apiV1/schema';
 
 // 타입 정의
 export type RecipeLikeResponseDto = components['schemas']['RecipeLikeResponseDto'];
