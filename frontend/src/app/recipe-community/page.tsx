@@ -254,11 +254,11 @@ export default function RecipeCommunityPage() {
                           <div className="flex items-center gap-4 text-xs text-gray-500">
                             <span className="flex items-center gap-1">
                               <span>👁️</span>
-                              <span>{recipe.viewCount || 0}</span>
+                              <span>{recipe.viewCount?.toLocaleString() || 0}</span>
                             </span>
                             <span className="flex items-center gap-1">
-                              <span>❤️</span>
-                              <span>0</span>
+                              <span className="text-red-500">❤️</span>
+                              <span>{recipe.likeCount?.toLocaleString() || 0}</span>
                             </span>
                           </div>
                           <div className="text-xs text-blue-600 font-medium group-hover:text-blue-700">
