@@ -12,6 +12,8 @@ public enum ExceptionCode {
     CATEGORY_NOT_FOUND(404, "존재하지 않는 카테고리입니다."),
     INGREDIENT_NOT_FOUND(404, "존재하지 않는 식재료입니다."),
     DUPLICATE_INGREDIENT(409, "이미 존재하는 식재료입니다."),
+    LIKE_NOT_FOUND(404, "존재하지 않는 식재료입니다."),
+    LIKE_ALREADY_EXISTS(409,  "이미 '좋아요'를 누른 레시피입니다."),
     ALREADY_USER(409, "이미 존재하는 유저입니다."),
     INVALID_TOKEN(401, "유효하지 않은 토큰입니다."),
     CART_NOT_FOUND(404, "카트가 존재하지 않습니다."),
