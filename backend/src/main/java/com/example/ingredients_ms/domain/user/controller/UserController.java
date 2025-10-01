@@ -9,6 +9,7 @@ import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.service.UserService;
 import com.example.ingredients_ms.global.jwt.JwtProvider;
 import com.example.ingredients_ms.global.jwt.TokenService;
+import com.example.ingredients_ms.domain.useractivity.service.UserActivityService;
 import com.example.ingredients_ms.global.rsdata.RsData;
 import com.example.ingredients_ms.global.security.CurrentUser;
 import com.example.ingredients_ms.global.security.SecurityUser;
@@ -34,6 +35,7 @@ public class UserController {
     private final UserService userService;
     private final JwtProvider jwtProvider;
     private final TokenService tokenService;
+    private final UserActivityService userActivityService;
 
     @PostMapping("/signup")
     @Operation(summary = "유저 생성", description = "유저를 생성하는 로직")
@@ -51,10 +53,13 @@ public class UserController {
         // 1. 인증 처리
         User user = userService.login(loginRequestDto);
 
-        // 2. Access/Refresh Token 발급 + 쿠키 설정 (TokenService 사용)
+        // 2. 로그인 활동 로그 기록
+        userActivityService.logLogin(user);
+
+        // 3. Access/Refresh Token 발급 + 쿠키 설정 (TokenService 사용)
         String accessToken = tokenService.makeAuthCookies(user, response);
 
-        // 3. 응답
+        // 4. 응답
         return new RsData<>("200", "로그인하였습니다.", accessToken);
     }
 
@@ -168,6 +173,9 @@ public class UserController {
     public RsData<?> adminLogin(@RequestBody LoginRequestDto loginRequestDto, HttpServletResponse response) {
 
         User user = userService.adminLogin(loginRequestDto);
+
+        // 관리자 로그인 활동 로그 기록
+        userActivityService.logLogin(user);
 
         String accessToken = tokenService.makeAuthCookies(user, response);
 
