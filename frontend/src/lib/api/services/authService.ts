@@ -115,20 +115,38 @@ export class AuthService {
       
       // 백엔드 RsData 응답 구조에 맞춰 처리
       if (response.resultCode === "200") {
-        // 관리자 로그인 성공 시 바로 관리자 권한으로 사용자 정보 반환
-        // getCurrentUser 호출 없이 credentials 정보로 사용자 객체 생성
-        return { 
-          success: true, 
-          data: { 
-            user: {
-              id: Date.now(), // 임시 ID (백엔드에서 실제 ID를 반환하지 않는 경우)
-              username: credentials.email,
-              nickname: credentials.email.split('@')[0], // 이메일에서 닉네임 추출
-              email: credentials.email,
-              roles: ['ADMIN'] // 관리자 권한 명시적 설정
-            }
-          } 
-        };
+        // 관리자 로그인 성공 후 사용자 정보를 가져오기 위해 getCurrentUser 호출
+        const userResult = await this.getCurrentUser();
+        
+        if (userResult.success && userResult.data) {
+          return { 
+            success: true, 
+            data: { 
+              user: {
+                id: userResult.data.userId,
+                username: userResult.data.email, // email을 username으로 사용
+                nickname: userResult.data.name, // name을 nickname으로 사용
+                email: userResult.data.email,
+                profile: userResult.data.profile, // profile 필드 추가
+                roles: ['ADMIN'] // 관리자 권한 명시적 설정
+              }
+            } 
+          };
+        } else {
+          // getCurrentUser 실패 시 기본 정보로 반환
+          return { 
+            success: true, 
+            data: { 
+              user: { 
+                id: Date.now(), // 임시 ID
+                username: credentials.email, 
+                nickname: credentials.email.split('@')[0], 
+                email: credentials.email, 
+                roles: ['ADMIN'] 
+              } 
+            } 
+          };
+        }
       } else {
         return { success: false, error: response.msg || '관리자 로그인에 실패했습니다.' };
       }

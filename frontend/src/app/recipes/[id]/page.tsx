@@ -20,6 +20,9 @@ export default function RecipeDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState<string>('');
+  const [modalImageAlt, setModalImageAlt] = useState<string>('');
   
   // 중복 요청 방지를 위한 ref
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -89,6 +92,26 @@ export default function RecipeDetailPage() {
     };
   }, [recipeId, fetchRecipeDetail]);
 
+  // ESC 키로 이미지 모달 닫기
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showImageModal) {
+        closeImageModal();
+      }
+    };
+
+    if (showImageModal) {
+      document.addEventListener('keydown', handleKeyDown);
+      // 모달이 열려있을 때 body 스크롤 방지
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showImageModal]);
+
   // 난이도 텍스트 변환
   const getDifficultyText = (level: number) => {
     switch (level) {
@@ -153,6 +176,20 @@ export default function RecipeDetailPage() {
     (recipe.userId && currentUser.userId && recipe.userId === currentUser.userId) || // ID로 비교 (우선)
     currentUser.email === recipe.userNickName // 이메일로 비교 (백업)
   );
+
+  // 이미지 모달 열기
+  const openImageModal = (imageUrl: string, alt: string) => {
+    setModalImageUrl(imageUrl);
+    setModalImageAlt(alt);
+    setShowImageModal(true);
+  };
+
+  // 이미지 모달 닫기
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    setModalImageUrl('');
+    setModalImageAlt('');
+  };
 
   // 레시피 삭제 처리
   const handleDeleteRecipe = async () => {
@@ -268,7 +305,8 @@ export default function RecipeDetailPage() {
                   <img 
                     src={recipe.imageUrl} 
                     alt={recipe.title}
-                    className="w-full h-96 object-cover rounded-lg"
+                    className="w-full h-96 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => openImageModal(recipe.imageUrl!, recipe.title)}
                   />
                   <div className="absolute bottom-4 right-4">
                     <div className="bg-gray-800 bg-opacity-70 rounded-full px-3 py-2 flex items-center gap-2">
@@ -277,6 +315,14 @@ export default function RecipeDetailPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                       <span className="text-white text-sm">{recipe.viewCount?.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  {/* 확대 아이콘 */}
+                  <div className="absolute top-4 right-4">
+                    <div className="bg-black bg-opacity-50 rounded-full p-2">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      </svg>
                     </div>
                   </div>
                 </div>
@@ -356,33 +402,48 @@ export default function RecipeDetailPage() {
               <div className="space-y-8">
                 {recipe.recipeStepResponseDtos.map((step, index) => (
                   <div key={index} className="bg-gray-50 rounded-lg p-6">
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-6">
+                      {/* Step Number */}
                       <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                         {step.stepNumber}
                       </div>
-                      <div className="flex-1">
-                        <p className="text-gray-800 leading-relaxed mb-3">{step.description}</p>
-                        {step.cookingTime && step.cookingTime > 0 && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>약 {step.cookingTime}분 소요 예정</span>
+                      
+                      {/* Content and Image Container */}
+                      <div className="flex-1 flex flex-col lg:flex-row gap-6">
+                        {/* Text Content */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-800 leading-relaxed mb-3">{step.description}</p>
+                          {step.cookingTime && step.cookingTime > 0 && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span>약 {step.cookingTime}분 소요 예정</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Step Image - Right side on desktop, full width on mobile */}
+                        {step.imageUrl && (
+                          <div className="flex-shrink-0 w-full lg:w-80 relative">
+                            <img 
+                              src={step.imageUrl} 
+                              alt={`${step.stepNumber}단계 이미지`}
+                              className="w-full h-48 lg:h-48 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => openImageModal(step.imageUrl!, `${step.stepNumber}단계 이미지`)}
+                            />
+                            {/* 확대 아이콘 */}
+                            <div className="absolute top-2 right-2">
+                              <div className="bg-black bg-opacity-50 rounded-full p-1">
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                </svg>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
                     </div>
-                    
-                    {/* Step Image - Full width below content */}
-                    {step.imageUrl && (
-                      <div className="mt-4">
-                        <img 
-                          src={step.imageUrl} 
-                          alt={`${step.stepNumber}단계 이미지`}
-                          className="w-full max-h-64 object-cover rounded-lg"
-                        />
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -426,6 +487,37 @@ export default function RecipeDetailPage() {
               >
                 {isDeleting ? '삭제 중...' : '삭제'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 이미지 확대 모달 */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-7xl max-h-full w-full h-full flex items-center justify-center">
+            {/* 닫기 버튼 */}
+            <button
+              onClick={closeImageModal}
+              className="absolute top-4 right-4 z-10 w-10 h-10 bg-black bg-opacity-50 text-white rounded-full flex items-center justify-center hover:bg-opacity-70 transition-all"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* 이미지 */}
+            <img
+              src={modalImageUrl}
+              alt={modalImageAlt}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            />
+            
+            {/* 이미지 설명 */}
+            <div className="absolute bottom-4 left-4 right-4 text-center">
+              <div className="bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg">
+                <p className="text-sm">{modalImageAlt}</p>
+              </div>
             </div>
           </div>
         </div>

@@ -423,6 +423,9 @@ export default function RecipeWritePage() {
                         recipeImageFile: file
                       }))}
                       placeholder="레시피 대표 이미지를 업로드하세요"
+                      enableCrop={true}
+                      aspectRatio={16/9}
+                      cropTitle="레시피 대표 이미지 크롭"
                     />
                   </div>
 
@@ -634,6 +637,9 @@ export default function RecipeWritePage() {
                             }}
                             placeholder="단계별 이미지를 업로드하세요"
                             className="h-32"
+                            enableCrop={true}
+                            aspectRatio={4/3}
+                            cropTitle={`${step.stepNumber}단계 이미지 크롭`}
                           />
                         </div>
                       </div>

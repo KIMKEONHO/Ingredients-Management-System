@@ -17,10 +17,7 @@ export default function AdminGuard({ children, fallback }: AdminGuardProps) {
 
   useEffect(() => {
     const checkAdminAuth = () => {
-      console.log('AdminGuard - loginMember:', loginMember); // 디버깅용 로그
-      
       if (!loginMember) {
-        console.log('AdminGuard - 로그인되지 않음, /admin/login으로 리다이렉트'); // 디버깅용 로그
         // 로그인되지 않은 경우 관리자 로그인 페이지로 리다이렉트
         router.push('/admin/login');
         return;
@@ -28,22 +25,17 @@ export default function AdminGuard({ children, fallback }: AdminGuardProps) {
 
       // 관리자 권한 확인
       const userRoles = loginMember.roles || [];
-      console.log('AdminGuard - 사용자 역할:', userRoles); // 디버깅용 로그
       
       const isAdmin = userRoles.some((role: string) => 
         role === 'ADMIN' || role === 'ROLE_ADMIN' || role === 'admin'
       );
-      
-      console.log('AdminGuard - 관리자 권한 여부:', isAdmin); // 디버깅용 로그
 
       if (!isAdmin) {
-        console.log('AdminGuard - 관리자 권한 없음, /access-denied로 리다이렉트'); // 디버깅용 로그
         // 관리자 권한이 없는 경우 접근 거부 페이지로 리다이렉트
         router.push('/access-denied');
         return;
       }
 
-      console.log('AdminGuard - 관리자 권한 확인됨, 페이지 렌더링'); // 디버깅용 로그
       setIsAuthorized(true);
       setIsLoading(false);
     };
