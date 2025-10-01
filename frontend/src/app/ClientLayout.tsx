@@ -7,6 +7,7 @@ import { useLoginMember } from './stores/auth/loginMamber'
 import Header from './components/layout/Header'
 import Footer from './components/layout/Footer'
 import { LoginMemberContext } from './stores/auth/loginMamber'
+import { AuthService } from '@/lib/api/services/authService'
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
     const { loginMember, setLoginMember, setNoLoginMember, isLoginMemberPending, isLogin, logout, logoutAndHome } =
@@ -27,6 +28,51 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         const checkAuthStatus = async () => {
             try {
                 console.log('로그인 상태 확인 중...');
+                
+                // OAuth 콜백 처리 (우선순위 높음)
+                const urlParams = new URLSearchParams(window.location.search);
+                const isOAuthCallback = urlParams.get('oauth') === 'success' || 
+                                        window.location.pathname.includes('oauth') ||
+                                        document.cookie.includes('accessToken');
+                
+                if (isOAuthCallback && !isLogin) {
+                    try {
+                        console.log('OAuth 콜백 감지, 사용자 정보 가져오기 시작...');
+                        
+                        // 현재 사용자 정보 가져오기
+                        const userResult = await AuthService.getCurrentUser();
+                        
+                        if (userResult.success && userResult.data) {
+                            console.log('OAuth 로그인 사용자 정보:', userResult.data);
+                            
+                            // 사용자 정보를 스토어에 저장
+                            const userData = {
+                                id: userResult.data.userId,
+                                nickname: userResult.data.name || userResult.data.email?.split('@')[0] || '사용자',
+                                name: userResult.data.name,
+                                email: userResult.data.email,
+                                profile: userResult.data.profile,
+                                createDate: new Date().toISOString(),
+                                modifyDate: new Date().toISOString(),
+                                roles: ['USER']
+                            };
+                            
+                            setLoginMember(userData);
+                            
+                            // URL에서 OAuth 파라미터 제거
+                            const newUrl = new URL(window.location.href);
+                            newUrl.searchParams.delete('oauth');
+                            window.history.replaceState({}, '', newUrl.toString());
+                            
+                            console.log('OAuth 로그인 완료, 사용자 정보 저장됨:', userData);
+                            return; // OAuth 처리 완료
+                        } else {
+                            console.log('OAuth 로그인 후 사용자 정보를 가져올 수 없음');
+                        }
+                    } catch (error) {
+                        console.error('OAuth 콜백 처리 중 오류:', error);
+                    }
+                }
                 
                 // 로컬 스토리지에서 로그인 상태 먼저 확인
                 const isLoggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
