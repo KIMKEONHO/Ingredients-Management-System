@@ -35,8 +35,10 @@ function AdminStatisticsPage() {
   const timePeriods = ['이번 주', '이번 달', '지난 3개월', '올해'];
 
   // 파이 차트 라벨 렌더링 함수
-  const renderPieLabel = (entry: { name: string; percent: number; value: number }) => {
-    return `${entry.name} ${(entry.percent * 100).toFixed(0)}%`;
+  const renderPieLabel = (props: Record<string, unknown>) => {
+    const name = props.name as string;
+    const percent = props.percent as number;
+    return `${name} ${(percent * 100).toFixed(0)}%`;
   };
 
   // 기간별 테마 매핑
