@@ -35,6 +35,7 @@ export default function MyPage() {
     const fetchUserProfile = async () => {
       try {
         const response = await userService.getUserProfile();
+        console.log({
           data: response.data,
           message: response.message,
           fullResponse: response
