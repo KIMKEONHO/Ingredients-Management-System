@@ -10,6 +10,7 @@ import {
   ComplaintStatusUtils
 } from "@/lib/api/services/complaintService";
 import { ComplaintDetailResponseDto } from "@/lib/backend/apiV1/complaintTypes";
+import { FeedbackService, ComplaintFeedbackResponseDto } from "@/lib/api/services/feedbackService";
 
 export default function ComplaintDetailPage() {
   const params = useParams();
@@ -19,6 +20,8 @@ export default function ComplaintDetailPage() {
   const [complaint, setComplaint] = useState<ComplaintDetailResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<ComplaintFeedbackResponseDto | null>(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   useEffect(() => {
     if (complaintId) {
@@ -26,15 +29,26 @@ export default function ComplaintDetailPage() {
     }
   }, [complaintId]);
 
+  // 민원 정보가 로드된 후 피드백 조회
+  useEffect(() => {
+    if (complaint && complaint.complaintId) {
+      fetchFeedback();
+    }
+  }, [complaint]);
+
   const fetchComplaintDetail = async () => {
     try {
       setLoading(true);
+      console.log("민원 상세 조회 시작, ID:", complaintId);
       const response = await ComplaintService.getComplaint(parseInt(complaintId));
       console.log("민원 상세 응답:", response);
+      console.log("민원 내용:", response?.content);
       
       if (response) {
         setComplaint(response);
+        console.log("민원 데이터 설정 완료:", response);
       } else {
+        console.log("민원 응답이 null입니다.");
         setError("민원을 찾을 수 없습니다.");
       }
     } catch (error: unknown) {
@@ -61,6 +75,25 @@ export default function ComplaintDetailPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFeedback = async () => {
+    if (!complaint?.complaintId) return;
+    
+    try {
+      setFeedbackLoading(true);
+      console.log("피드백 조회 시작, 민원 ID:", complaint.complaintId);
+      const feedbackResponse = await FeedbackService.getFeedback(complaint.complaintId);
+      console.log("피드백 응답:", feedbackResponse);
+      
+      setFeedback(feedbackResponse);
+    } catch (error) {
+      console.error("피드백 조회 오류:", error);
+      // 피드백이 없는 경우는 정상적인 상황이므로 에러로 처리하지 않음
+      setFeedback(null);
+    } finally {
+      setFeedbackLoading(false);
     }
   };
 
@@ -301,10 +334,10 @@ export default function ComplaintDetailPage() {
                 <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500 mb-6">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="h-5 w-5 text-blue-600" />
-                    <span className="font-medium text-blue-800">처리 중</span>
+                    <span className="font-medium text-blue-800">진행중</span>
                   </div>
                   <p className="text-blue-700 text-sm">
-                    민원이 현재 처리 중입니다. 조금만 기다려주세요.
+                    민원이 현재 진행 중입니다. 조금만 기다려주세요.
                   </p>
                 </div>
               )}
@@ -313,11 +346,53 @@ export default function ComplaintDetailPage() {
                 <div className="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-500 mb-6">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="h-5 w-5 text-yellow-600" />
-                    <span className="font-medium text-yellow-800">접수됨</span>
+                    <span className="font-medium text-yellow-800">보류</span>
                   </div>
                   <p className="text-yellow-700 text-sm">
-                    민원이 접수되었습니다. 검토 후 처리 예정입니다.
+                    민원이 보류 상태입니다. 검토 후 처리 예정입니다.
                   </p>
+                </div>
+              )}
+            </div>
+
+            {/* 피드백 섹션 */}
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-blue-600" />
+                관리자 피드백
+              </h3>
+              
+              {feedbackLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">피드백을 불러오는 중...</span>
+                </div>
+              ) : feedback ? (
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">담당자:</span>
+                      <span className="text-sm text-gray-900">{feedback.responderNickname || '관리자'}</span>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">작성일:</span>
+                      <span className="text-sm text-gray-900">
+                        {feedback.createAt ? new Date(feedback.createAt).toLocaleDateString('ko-KR') : '알 수 없음'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="border-t pt-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">피드백 내용:</h4>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {feedback.content || '피드백 내용이 없습니다.'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-100 rounded-lg p-4 text-center">
+                  <MessageSquare className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500">아직 관리자 피드백이 없습니다.</p>
+                  <p className="text-sm text-gray-400 mt-1">처리 완료 후 피드백을 확인할 수 있습니다.</p>
                 </div>
               )}
             </div>
