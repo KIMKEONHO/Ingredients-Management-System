@@ -135,12 +135,9 @@ public class ConsumedLogService {
 
         return result;
     }
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ConsumedLogResponseDto> getAllLogs(Long userId) {
-
-
-
-        List<ConsumedLogResponseDto> result = consumedLogRepository.findAll().stream()
+        List<ConsumedLogResponseDto> result = consumedLogRepository.findAllByUser_Id(userId).stream()
                 .map(ConsumedLogResponseDto::fromEntity) // 생성자를 통해 DTO로 변환
                 .collect(Collectors.toList());
 
