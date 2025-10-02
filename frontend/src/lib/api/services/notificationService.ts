@@ -19,9 +19,9 @@ export interface RsData<T> {
   data: T;
 }
 
-export interface NotificationListResponse extends RsData<NotificationResponseDto[]> {}
-export interface NotificationCountResponse extends RsData<number> {}
-export interface NotificationResponse extends RsData<null> {}
+export type NotificationListResponse = RsData<NotificationResponseDto[]>;
+export type NotificationCountResponse = RsData<number>;
+export type NotificationResponse = RsData<null>;
 
 class NotificationService {
   /**
