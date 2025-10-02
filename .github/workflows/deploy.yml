@@ -80,6 +80,19 @@ jobs:
           comment: Deploy
           command: |
             mkdir -p /dockerProjects/ims
-            curl -o /dockerProjects/ims/zero_downtime_deploy.py https://raw.githubusercontent.com/KIMKEONHO/Ingredients-Management-System/main/backend/infraScript/zero_downtime_deploy.py
-            chmod +x /dockerProjects/ims/zero_downtime_deploy.py
-            /dockerProjects/ims/zero_downtime_deploy.py
+            cd /dockerProjects/ims
+            
+            # 기존 컨테이너 정리
+            docker stop ims-app || true
+            docker rm ims-app || true
+            
+            # 새 컨테이너 실행
+            docker run -d \
+              --name ims-app \
+              --restart unless-stopped \
+              -p 8080:8090 \
+              -e TZ=Asia/Seoul \
+              -v /dockerProjects/ims/volumes/gen:/gen \
+              ghcr.io/kimkeonho/ims:latest
+            
+            echo "Deployment completed successfully"
