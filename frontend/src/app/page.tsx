@@ -146,7 +146,7 @@ export default function Home() {
                 onClick={(e) => handleFeatureClick(e, '/support')}
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M12 3.75A8.25 8.25 8.25 0 1 0 20.25 12 8.26 8.26 0 0 0 12 3.75Zm0 12.75a.75.75 0 0 1-.53-.22l-2.25-2.25a.75.75 0 0 1 1.06-1.06l1.72 1.72 3.97-3.97a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-.53.22Z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M12 3.75A8.25 8.25 0 1 0 20.25 12 8.25 0 0 0 12 3.75Zm0 12.75a.75.75 0 0 1-.53-.22l-2.25-2.25a.75.75 0 0 1 1.06-1.06l1.72 1.72 3.97-3.97a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-.53.22Z"/></svg>
                 </div>
                 <h3 className="mt-6 text-xl font-semibold text-black">민원/문의</h3>
                 <p className="mt-2 text-blue-700">매장 이슈와 요청 사항을 접수하고 처리 현황을 추적합니다.</p>
