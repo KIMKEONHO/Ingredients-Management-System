@@ -858,17 +858,9 @@ export default function StatisticsPage() {
 
   // 현재 선택된 기간의 식재료 데이터 계산
   const topIngredients = useMemo(() => {
-    // 테스트용 더미 데이터 (실제 데이터가 없을 때)
+    // 실제 데이터가 없을 때는 빈 배열 반환
     if (!consumedData || consumedData.length === 0) {
-      const dummyData: ConsumedLogResponseDto[] = [
-        { ingredientName: '양파', categoryName: '채소류', totalConsumedQuantity: 500 },
-        { ingredientName: '닭고기', categoryName: '육류', totalConsumedQuantity: 800 },
-        { ingredientName: '우유', categoryName: '유제품', totalConsumedQuantity: 300 },
-        { ingredientName: '쌀', categoryName: '곡물류', totalConsumedQuantity: 1000 },
-        { ingredientName: '토마토', categoryName: '채소류', totalConsumedQuantity: 400 },
-        { ingredientName: '계란', categoryName: '유제품', totalConsumedQuantity: 600 }
-      ];
-      return calculateTopIngredients(dummyData);
+      return [];
     }
     
     return calculateTopIngredients(consumedData);
