@@ -9,6 +9,7 @@ import com.example.ingredients_ms.domain.complaint.entity.ComplaintStatus;
 import com.example.ingredients_ms.domain.complaint.repository.ComplaintRepository;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.repository.UserRepository;
+import com.example.ingredients_ms.global.alarm.service.NotificationService;
 import com.example.ingredients_ms.global.exeption.BusinessLogicException;
 import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import jakarta.transaction.Transactional;
@@ -26,6 +27,7 @@ public class ComplaintService {
 
     private final ComplaintRepository complaintRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public CreateComplaintResponseDto createComplaint(Long userId, CreateComplaintRequestDto requestDto){
@@ -47,7 +49,19 @@ public class ComplaintService {
                 .category(category)
                 .build();
 
-        complaintRepository.save(complaint);
+        Complaint savedComplaint = complaintRepository.save(complaint);
+
+        // 관리자에게 알람 발송
+        try {
+            notificationService.createComplaintNotification(
+                    savedComplaint.getId(),
+                    savedComplaint.getTitle(),
+                    user.getNickname()
+            );
+            log.info("민원 알람 발송 완료 - 민원 ID: {}, 작성자: {}", savedComplaint.getId(), user.getNickname());
+        } catch (Exception e) {
+            log.error("민원 알람 발송 실패 - 민원 ID: {}, 작성자: {}", savedComplaint.getId(), user.getNickname(), e);
+        }
 
         return CreateComplaintResponseDto.builder()
                 .title(requestDto.getTitle())

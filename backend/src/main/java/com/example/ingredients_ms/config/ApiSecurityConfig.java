@@ -150,6 +150,20 @@ public class ApiSecurityConfig {
                         .requestMatchers(HttpMethod.GET,"/api/*/admin/statistics/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,"/api/*/admin/charts/{theme}").hasRole("ADMIN")
 
+                        // 알람 기능 관련 api
+                        .requestMatchers(HttpMethod.GET,"/api/*/notifications/stream").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/*/notifications").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/*/notifications/unread-count").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,"/api/*/notifications/*/read").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,"/api/*/notifications/read-all").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,"/api/*/notifications/*").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/*/notifications/connections").hasRole("ADMIN")
+
+                        // sse 연결 관련 api
+                        .requestMatchers(HttpMethod.GET,"/sse/connect").permitAll()
+
+
+
                 )
                 .csrf(csrf->csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
