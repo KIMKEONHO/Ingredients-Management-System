@@ -8,6 +8,7 @@ import com.example.ingredients_ms.domain.recipelike.entity.RecipeLike;
 import com.example.ingredients_ms.domain.recipelike.repository.RecipeLikeRepository;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.domain.user.repository.UserRepository;
+import com.example.ingredients_ms.global.alarm.service.NotificationService;
 import com.example.ingredients_ms.global.exeption.BusinessLogicException;
 import com.example.ingredients_ms.global.exeption.ExceptionCode;
 import com.example.ingredients_ms.global.jwt.TokenService;
@@ -28,6 +29,7 @@ public class RecipeLikeService {
     private final RecipeLikeRepository recipeLikeRepository;
     private final RecipeRepository recipeRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     private final TokenService tokenService;
 
@@ -71,6 +73,22 @@ public class RecipeLikeService {
 
         // 3. 최종 '좋아요' 개수를 계산
         recipe.increaseLikeCount();
+
+        // 4. 레시피 작성자에게 알람 발송 (본인이 아닌 경우에만)
+        if (!recipe.getAuthor().getId().equals(userId)) {
+            try {
+                notificationService.createLikeNotification(
+                        recipe.getAuthor().getId(),
+                        recipe.getTitle(),
+                        userId
+                );
+                log.info("좋아요 알람 발송 완료 - 레시피 ID: {}, 작성자 ID: {}, 좋아요 누른 사용자 ID: {}", 
+                        recipeId, recipe.getAuthor().getId(), userId);
+            } catch (Exception e) {
+                log.error("좋아요 알람 발송 실패 - 레시피 ID: {}, 작성자 ID: {}, 좋아요 누른 사용자 ID: {}", 
+                        recipeId, recipe.getAuthor().getId(), userId, e);
+            }
+        }
 
         return RecipeLikeResponseDto.builder()
                 .isActive(true)
