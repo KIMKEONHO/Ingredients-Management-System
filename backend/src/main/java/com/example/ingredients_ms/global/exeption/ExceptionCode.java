@@ -33,7 +33,12 @@ public enum ExceptionCode {
     IMAGE_DELETE_FAILED(500, "이미지 삭제에 실패했습니다."),
     INVALID_IMAGE_FILE(400, "유효하지 않은 이미지 파일입니다."),
     IMAGE_FILE_TOO_LARGE(400, "이미지 파일 크기가 너무 큽니다."),
-    IMAGE_FILE_NOT_FOUND(404, "이미지 파일을 찾을 수 없습니다.")
+    IMAGE_FILE_NOT_FOUND(404, "이미지 파일을 찾을 수 없습니다."),
+    
+    // 알람 관련 예외
+    NOTIFICATION_NOT_FOUND(404, "알람을 찾을 수 없습니다."),
+    ACCESS_DENIED(403, "접근 권한이 없습니다."),
+    ADMIN_NOT_FOUND(404,"관리자를 찾을 수 없습니다.")
     ;
 
     @Getter
