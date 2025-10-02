@@ -5,6 +5,7 @@ import com.example.ingredients_ms.domain.foodinventory.entity.FoodStatus;
 import com.example.ingredients_ms.domain.foodinventory.entity.Place;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -26,6 +27,22 @@ public interface FoodInventoryRepository extends JpaRepository<FoodInventory, Lo
     List<FoodInventory> findByUser_IdAndStatus(Long userId, FoodStatus status);
 
     boolean existsByUser_IdAndId(Long userId, Long id);
+
+    // 만료 임박 식재료 조회 (3일 이내)
+    @Query("SELECT fi FROM FoodInventory fi WHERE fi.status = 'NORMAL' AND fi.expirationDate <= :threeDaysLater AND fi.expirationDate > :now")
+    List<FoodInventory> findExpiringSoonIngredients(@Param("now") LocalDateTime now, @Param("threeDaysLater") LocalDateTime threeDaysLater);
+
+    // 만료된 식재료 조회
+    @Query("SELECT fi FROM FoodInventory fi WHERE fi.status = 'NORMAL' AND fi.expirationDate < :now")
+    List<FoodInventory> findExpiredIngredients(@Param("now") LocalDateTime now);
+
+    // 상태별 식재료 조회
+    List<FoodInventory> findByStatus(FoodStatus status);
+
+    // 상태 업데이트 (배치 처리용)
+    @Modifying
+    @Query("UPDATE FoodInventory fi SET fi.status = :newStatus WHERE fi.id IN :ids")
+    void updateStatusByIds(@Param("ids") List<Long> ids, @Param("newStatus") FoodStatus newStatus);
 
     // 예시 Projection
     public interface IngredientStatsProjection {
