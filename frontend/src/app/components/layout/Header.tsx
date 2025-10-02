@@ -3,28 +3,70 @@
 import Link from "next/link";
 import { useGlobalLoginMember } from "../../stores/auth/loginMamber";
 import { useEffect, useRef, useState } from "react";
+import { useNotifications, useSSENotifications } from "../../../lib/hooks/useNotifications";
+import { NotificationResponseDto } from "../../../lib/api/services/notificationService";
 
 export default function Header() {
   const { isLogin, loginMember, logoutAndHome } = useGlobalLoginMember();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  const [notifications, setNotifications] = useState<
-    Array<{ id: number; message: string; read: boolean }>
-  >([]);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // 알람 관련 훅 사용 (로그인한 사용자만)
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    error,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    deleteAllNotifications,
+    refreshNotifications
+  } = useNotifications(isLogin);
 
-  useEffect(() => {
-    // 초기 더미 알림 데이터 (필요 시 API 연동으로 대체)
-    setNotifications([
-      { id: 1, message: "발주 요청이 승인되었습니다.", read: false },
-      { id: 2, message: "재고 임계값을 초과했습니다.", read: false },
-      { id: 3, message: "이번 주 만료 예정 재료가 있습니다.", read: true },
-    ]);
-  }, []);
+  // SSE 연결로 실시간 알람 수신 (로그인한 사용자만)
+  useSSENotifications((newNotification: NotificationResponseDto) => {
+    // 새 알람이 오면 알람 목록 새로고침
+    refreshNotifications();
+  }, isLogin);
+
+  // 알람 클릭 시 읽음 처리
+  const handleNotificationClick = async (notification: NotificationResponseDto) => {
+    if (!notification.isRead) {
+      await markAsRead(notification.id);
+    }
+  };
+
+  // 알람 삭제 처리
+  const handleDeleteNotification = async (notificationId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await deleteNotification(notificationId);
+  };
+
+  // 모든 알람 일괄 삭제 처리
+  const handleDeleteAllNotifications = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('모든 알람을 삭제하시겠습니까?')) {
+      await deleteAllNotifications();
+    }
+  };
+
+  // 알람 타입에 따른 아이콘 반환
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'LIKE':
+        return '❤️';
+      case 'COMPLAINT':
+        return '📝';
+      case 'EXPIRING_SOON':
+        return '⚠️';
+      default:
+        return '🔔';
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -43,8 +85,9 @@ export default function Header() {
     };
   }, [isNotifOpen, isUserMenuOpen]);
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  // 모든 알람 읽음 처리
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
   };
 
   const handleFeatureClick = (e: React.MouseEvent, featurePath: string) => {
@@ -104,47 +147,114 @@ export default function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <div className="relative text-xl" ref={notifRef}>
-            <button
-              aria-label="알림 보기"
-              className="relative"
-              onClick={() => setIsNotifOpen((prev) => !prev)}
-            >
-              <span role="img" aria-label="bell">🔔</span>
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
+          {isLogin && (
+            <div className="relative text-xl" ref={notifRef}>
+              <button
+                aria-label="알림 보기"
+                className="relative"
+                onClick={() => setIsNotifOpen((prev) => !prev)}
+              >
+                <span role="img" aria-label="bell">🔔</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
             {isNotifOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-white border rounded-md shadow-lg z-50">
-                <div className="px-3 py-2 border-b text-sm font-semibold">알림</div>
+              <div className="absolute right-0 mt-2 w-80 bg-white border rounded-md shadow-lg z-50">
+                <div className="px-3 py-2 border-b text-sm font-semibold flex items-center justify-between">
+                  <span>알림</span>
+                  <div className="flex items-center gap-2">
+                    {notifications.length > 0 && (
+                      <button 
+                        onClick={handleDeleteAllNotifications}
+                        className="text-xs text-red-600 hover:underline"
+                        title="모든 알림 삭제"
+                      >
+                        🗑️ 전체삭제
+                      </button>
+                    )}
+                    <button 
+                      onClick={refreshNotifications}
+                      className="text-xs text-blue-600 hover:underline"
+                      title="새로고침"
+                    >
+                      🔄
+                    </button>
+                    {isLoading && (
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                  </div>
+                </div>
+                
+                {error && (
+                  <div className="px-3 py-2 text-sm text-red-500 bg-red-50">
+                    {error}
+                  </div>
+                )}
+                
                 <ul className="max-h-64 overflow-auto">
                   {notifications.length === 0 ? (
                     <li className="px-3 py-3 text-sm text-gray-500">새 알림이 없습니다.</li>
                   ) : (
-                    notifications.map((n) => (
+                    notifications.map((notification) => (
                       <li
-                        key={n.id}
-                        className={`px-3 py-3 text-sm hover:bg-gray-50 ${
-                          n.read ? "text-gray-500" : "text-gray-800"
+                        key={notification.id}
+                        className={`px-3 py-3 text-sm hover:bg-gray-50 cursor-pointer relative group ${
+                          notification.isRead ? "text-gray-500" : "text-gray-800 bg-blue-50"
                         }`}
+                        onClick={() => handleNotificationClick(notification)}
                       >
-                        {n.message}
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 flex items-start gap-2">
+                            <span className="text-lg mt-0.5">
+                              {getNotificationIcon(notification.type)}
+                            </span>
+                            <div className="flex-1">
+                              <div className="font-medium text-xs text-gray-600 mb-1">
+                                {notification.title}
+                              </div>
+                              <div className="text-sm">
+                                {notification.message}
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {new Date(notification.createdAt).toLocaleString('ko-KR')}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => handleDeleteNotification(notification.id, e)}
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 ml-2 p-1"
+                            title="삭제"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        {!notification.isRead && (
+                          <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-blue-500 rounded-full"></div>
+                        )}
                       </li>
                     ))
                   )}
                 </ul>
-                <div className="px-3 py-2 border-t text-xs flex items-center justify-between">
-                  <span className="text-gray-500">읽지 않은 알림 {unreadCount}개</span>
-                  <button onClick={markAllAsRead} className="text-green-600 hover:underline">
-                    모두 읽음
-                  </button>
-                </div>
+                
+                {notifications.length > 0 && (
+                  <div className="px-3 py-2 border-t text-xs flex items-center justify-between">
+                    <span className="text-gray-500">읽지 않은 알림 {unreadCount}개</span>
+                    <button 
+                      onClick={handleMarkAllAsRead} 
+                      className="text-green-600 hover:underline disabled:opacity-50"
+                      disabled={unreadCount === 0}
+                    >
+                      모두 읽음
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+            </div>
+          )}
           {isLogin ? (
             <div className="flex items-center gap-3">
               {/* 사용자 프로필 영역 */}
