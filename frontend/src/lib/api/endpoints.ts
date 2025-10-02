@@ -107,6 +107,17 @@ export const API_ENDPOINTS = {
       ALL: '/api/v1/recipe/all', // 전체 레시피 조회
     },
 
+    // 알람 관련
+    NOTIFICATIONS: {
+      BASE: '/api/v1/notifications',
+      STREAM: '/api/v1/notifications/stream', // SSE 연결
+      UNREAD_COUNT: '/api/v1/notifications/unread-count', // 읽지 않은 알람 개수
+      MARK_READ: '/api/v1/notifications/:notificationId/read', // 알람 읽음 처리
+      MARK_ALL_READ: '/api/v1/notifications/read-all', // 모든 알람 읽음 처리
+      DELETE: '/api/v1/notifications/:notificationId', // 알람 삭제
+      CONNECTIONS: '/api/v1/notifications/connections', // SSE 연결 상태 (관리자용)
+    },
+
   } as const;
   
   // API URL 생성 헬퍼 함수
