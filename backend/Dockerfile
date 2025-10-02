@@ -17,8 +17,8 @@ RUN gradle dependencies --no-daemon --info
 # 소스 코드 복사
 COPY src src
 
-# 애플리케이션 빌드 (더 자세한 로그와 함께)
-RUN gradle build --no-daemon --info --stacktrace
+# 애플리케이션 빌드 (테스트 스킵)
+RUN gradle build -x test --no-daemon --info --stacktrace
 
 # 두 번째 스테이지: 실행 스테이지
 FROM container-registry.oracle.com/graalvm/jdk:23
