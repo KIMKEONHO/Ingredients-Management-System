@@ -62,12 +62,12 @@ public class FoodInventoryService {
         return FoodInventoryResponseDto.fromEntity(savedFoodInventory);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<FoodInventoryResponseDto> getFoodInventoriesByPlace(Long userId, String placeName){
 
         Place place = Place.valueOf(placeName.toUpperCase());
 
-        List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdAndPlace(userId,place);
+        List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdAndPlaceAndIsDeletedFalse(userId,place);
 
         // places 미리 초기화
 
@@ -80,10 +80,10 @@ public class FoodInventoryService {
 
 
     // 냉장고 안의 모든 식재료를 조회합니다. 뭐가 있는지 한번 볼까요?
-    @Transactional
+    @Transactional(readOnly = true)
     public List<FoodInventoryResponseDto> getFoodInventories(Long userId) {
 
-        List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdOrderById(userId);
+        List<FoodInventory> inventories = foodInventoryRepository.findByUser_IdAndIsDeletedFalseOrderById(userId);
 
         // places 미리 초기화
 
@@ -93,10 +93,10 @@ public class FoodInventoryService {
     }
 
     // 특정 카테고리의 식재료만 필터링해서 보여줍니다. 오늘은 어떤 요리를 해볼까요?
-    @Transactional
+    @Transactional(readOnly = true)
     public List<FoodInventoryResponseDto> getFoodInventoriesByCategory(Long userId, Long categoryId) {
         List<FoodInventory> inventories = foodInventoryRepository
-                .findByUser_IdAndIngredient_Category_IdOrderById(userId, categoryId);
+                .findByUser_IdAndIngredient_Category_IdAndIsDeletedFalseOrderById(userId, categoryId);
 
 
         return inventories.stream()
@@ -108,7 +108,7 @@ public class FoodInventoryService {
     @Transactional
     public FoodInventoryResponseDto updateFoodInventory(Long userId,UpdateFoodInventoryRequestDto requestDto) {
 
-        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndId(userId, requestDto.getFoodInventoryId())
+        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndIdAndIsDeletedFalse(userId, requestDto.getFoodInventoryId())
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
 
         // 저장할 객체에 값 할당
@@ -125,9 +125,11 @@ public class FoodInventoryService {
     @Transactional
     public FoodInventoryResponseDto updateFoodInventoryQuantity(Long userId, Long foodInventoryId, UpdateFoodInventoryQuantityRequestDto requestDto) {
 
-        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndId(userId, foodInventoryId)
+        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndIdAndIsDeletedFalse(userId, foodInventoryId)
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
 
+
+        //로그 작성
         ConsumedLog log = ConsumedLog.builder()
                 .consumedQuantity(foodInventory.getQuantity() - requestDto.getQuantity())
                 .inventory(foodInventory)
@@ -138,8 +140,11 @@ public class FoodInventoryService {
 
         consumedLogRepository.save(log);
 
-        FoodInventory updatedFoodInventory = foodInventoryRepository.save(foodInventory);
-        return FoodInventoryResponseDto.fromEntity(updatedFoodInventory);
+        if(foodInventory.getQuantity()== 0){
+            foodInventory.setStatus(FoodStatus.CONSUMED);
+        }
+
+        return FoodInventoryResponseDto.fromEntity(foodInventory);
     }
 
     // 다 쓴 식재료는 냉장고에서 비워줍니다. 안녕...
@@ -147,16 +152,16 @@ public class FoodInventoryService {
     public void deleteFoodInventory(Long userId, Long foodInventoryId) {
 
         // 사용자가 추가한 식품 재고중에 존재하는지 확인
-        if (!foodInventoryRepository.existsByUser_IdAndId(userId,foodInventoryId)) {
-            throw new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND);
-        }
+        FoodInventory inventory = foodInventoryRepository.findByUser_IdAndIdAndIsDeletedFalse(userId,foodInventoryId)
+                .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
+        inventory.delete();
 
-        foodInventoryRepository.deleteById(foodInventoryId);
+        foodInventoryRepository.save(inventory);
     }
 
     @Transactional
     public FoodInventoryResponseDto updateFoodInventoryStatus(Long userId, Long foodInventoryId, FoodStatus status) {
-        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndId(userId, foodInventoryId)
+        FoodInventory foodInventory = foodInventoryRepository.findByUser_IdAndIdAndIsDeletedFalse(userId, foodInventoryId)
                 .orElseThrow(() -> new BusinessLogicException(ExceptionCode.FOOD_INVENTORY_NOT_FOUND));
 
         foodInventory.updateStatus(status);

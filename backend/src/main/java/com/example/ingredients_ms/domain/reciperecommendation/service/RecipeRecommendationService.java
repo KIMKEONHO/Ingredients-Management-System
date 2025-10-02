@@ -27,7 +27,7 @@ public class RecipeRecommendationService {
      */
     public List<RecipeRecommendationResponseDto> getRecipeRecommendations(Long userId) {
         // 1. 사용자의 식품 재고 목록 조회
-        List<FoodInventory> userInventories = foodInventoryRepository.findByUser_IdOrderById(userId);
+        List<FoodInventory> userInventories = foodInventoryRepository.findByUser_IdAndIsDeletedFalseOrderById(userId);
         
         // 2. 보유한 재료의 ID 목록 추출
         List<Long> ingredientIds = userInventories.stream()

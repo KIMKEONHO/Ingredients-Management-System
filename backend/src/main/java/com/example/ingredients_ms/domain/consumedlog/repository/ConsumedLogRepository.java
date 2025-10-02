@@ -10,20 +10,6 @@ import java.util.List;
 
 public interface ConsumedLogRepository extends JpaRepository <ConsumedLog, Long> {
 
-
-    // 카테고리별 이번달 사용량 조회 (단위: g)
-    @Query("SELECT cl.inventory.ingredient.category.id as categoryId, " +
-           "cl.inventory.ingredient.category.name as categoryName, " +
-           "SUM(cl.consumedQuantity) as totalConsumedQuantity " +
-           "FROM ConsumedLog cl " +
-           "WHERE cl.user.id = :userId " +
-           "AND cl.consumedDate BETWEEN :startDate AND :endDate " +
-           "GROUP BY cl.inventory.ingredient.category.id, cl.inventory.ingredient.category.name")
-    List<Object[]> findConsumedQuantityByCategoryAndDateRange(
-            @Param("userId") Long userId,
-            @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
-
     // 이번년도 월별 카테고리별 사용량 조회 (단위: g)
     @Query("SELECT MONTH(cl.consumedDate) as month, " +
            "cl.inventory.ingredient.category.id as categoryId, " +
@@ -37,6 +23,8 @@ public interface ConsumedLogRepository extends JpaRepository <ConsumedLog, Long>
     List<Object[]> findMonthlyConsumedQuantityByCategory(
             @Param("userId") Long userId,
             @Param("year") int year);
+
+    List<ConsumedLog> findAllByUser_Id(Long userId);
 
     List<ConsumedLog> findByUser_IdAndConsumedDateBetween(Long userId, LocalDateTime startDate, LocalDateTime endDate);
 

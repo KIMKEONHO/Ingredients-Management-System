@@ -15,18 +15,17 @@ import java.util.Optional;
 
 // 냉장고 데이터베이스 관리자, JpaRepository님만 믿습니다!
 public interface FoodInventoryRepository extends JpaRepository<FoodInventory, Long> {
-    // 특정 유저의 모든 재료를 ID 순으로 정렬해서 찾아줘!
-    List<FoodInventory> findByUser_IdOrderById(Long userId);
 
-    Optional<FoodInventory> findByUser_IdAndId(Long userId,Long id);
+    List<FoodInventory> findByUser_IdAndIsDeletedFalseOrderById(Long userId);
 
-    List<FoodInventory> findByUser_IdAndIngredient_Category_IdOrderById(Long userId, Long categoryId);
+    Optional<FoodInventory> findByUser_IdAndIdAndIsDeletedFalse(Long userId, Long id);
 
-    List<FoodInventory> findByUser_IdAndPlace(Long userId, Place place);
+    List<FoodInventory> findByUser_IdAndIngredient_Category_IdAndIsDeletedFalseOrderById(Long userId, Long categoryId);
+
+    List<FoodInventory> findByUser_IdAndPlaceAndIsDeletedFalse(Long userId, Place place);
 
     List<FoodInventory> findByUser_IdAndStatus(Long userId, FoodStatus status);
 
-    boolean existsByUser_IdAndId(Long userId, Long id);
 
     // 만료 임박 식재료 조회 (3일 이내)
     @Query("SELECT fi FROM FoodInventory fi WHERE fi.status = 'NORMAL' AND fi.expirationDate <= :threeDaysLater AND fi.expirationDate > :now")

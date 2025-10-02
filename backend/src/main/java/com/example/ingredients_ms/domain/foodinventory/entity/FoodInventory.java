@@ -7,6 +7,8 @@ import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -50,10 +52,19 @@ public class FoodInventory extends BaseEntity {
     @Builder.Default
     private FoodStatus status = FoodStatus.NORMAL;
 
-    @OneToMany(mappedBy = "inventory", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "inventory", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ConsumedLog> logs = new ArrayList<>();
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private boolean isDeleted = false; // 소프트 삭제 상태 필드
 
     public void updateStatus(FoodStatus status) {
         this.status = status;
+    }
+
+    // 삭제 메서드
+    public void delete() {
+        this.isDeleted = true;
     }
 }

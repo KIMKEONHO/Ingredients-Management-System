@@ -39,20 +39,17 @@ import { UserGuard } from '@/lib/auth/authGuard';
 import { COLOR_PRESETS } from '@/lib/constants/colors';
 import PageHeader from '../components/ui/PageHeader';
 import SectionCard from '../components/ui/SectionCard';
+import { useGlobalLoginMember } from '../stores/auth/loginMamber';
 
 export default function InventoryPage() {
-  return (
-      <InventoryContent />
-  );
-}
-
-function InventoryContent() {
+  const { isLogin } = useGlobalLoginMember();
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [selectedLocationForEdit, setSelectedLocationForEdit] = useState<StorageLocation | null>(null); // 수정할 위치 선택
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [ingredientsMap, setIngredientsMap] = useState<Map<number, Ingredient>>(new Map());
   const [categories, setCategories] = useState<Category[]>([]);
@@ -65,6 +62,11 @@ function InventoryContent() {
   const [isBulkActionMode, setIsBulkActionMode] = useState(false); // 일괄 작업 모드 여부
 
   useEffect(() => {
+    // 로그인 상태가 아니면 API 호출하지 않음
+    if (!isLogin) {
+      return;
+    }
+
     const fetchAndSetInventory = async () => {
       try {
         const ingredientsData = await ingredientService.getAllIngredients();
@@ -196,9 +198,14 @@ function InventoryContent() {
     };
 
     fetchAndSetInventory();
-  }, []);
+  }, [isLogin]);
 
   useEffect(() => {
+    // 로그인 상태가 아니면 API 호출하지 않음
+    if (!isLogin) {
+      return;
+    }
+
     const fetchCategories = async () => {
       try {
         const categoryData = await categoryService.getAllCategories();
@@ -209,7 +216,7 @@ function InventoryContent() {
     };
 
     fetchCategories();
-  }, []);
+  }, [isLogin]);
 
   const [categoryFilter, setCategoryFilter] = useState('전체')
   const [statusFilter, setStatusFilter] = useState('전체')
@@ -400,11 +407,107 @@ function InventoryContent() {
 
   const handleUpdateItem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!editingItem) return;
+    if (!editingItem || !selectedLocationForEdit) return;
 
-    // 통합된 아이템의 경우 수정 모달에서는 개별 수정이 불가능하므로 단순히 닫기
-    alert('통합된 식재료의 개별 수정은 상세 모달에서 가능합니다.');
-    closeEditModal();
+    const formData = new FormData(e.currentTarget);
+    const location = selectedLocationForEdit;
+    
+    const quantity = parseInt(formData.get('quantity') as string, 10);
+    const storageMethodValue = formData.get('storageMethod') as string;
+    const boughtDate = formData.get('boughtDate') as string;
+    const expirationDate = formData.get('expirationDate') as string;
+    
+    const storageMethodMap: { [key: string]: "REFRIGERATED" | "FROZEN" | "ROOM" } = {
+      '냉장': 'REFRIGERATED',
+      '실온': 'ROOM',
+      '냉동': 'FROZEN',
+    };
+    const place = storageMethodMap[storageMethodValue];
+
+    try {
+      // API 요청으로 재고 수정
+      const updateData: UpdateFoodInventoryRequest = {
+        foodInventoryId: location.id,
+        quantity: quantity,
+        boughtDate: boughtDate ? new Date(boughtDate).toISOString() : undefined,
+        expirationDate: expirationDate ? new Date(expirationDate).toISOString() : undefined,
+        place: place,
+      };
+      
+      const updatedItem = await inventoryService.updateInventoryItem(updateData);
+      
+      // 상태 매핑
+      const statusMap: { [key: string]: '보관중' | '유통기한 임박' | '기간만료' | '사용완료' } = {
+        "NORMAL": '보관중',
+        "EXPIRING_SOON": '유통기한 임박',
+        "EXPIRED": '기간만료',
+        "CONSUMED": '사용완료'
+      };
+      
+      const storageMethodReverseMap: { [key: string]: string } = {
+        "REFRIGERATED": "냉장",
+        "FROZEN": "냉동",
+        "ROOM": "실온"
+      };
+      
+      // 로컬 상태 업데이트
+      setInventoryItems(prev => 
+        prev.map(item => {
+          if (item.id === editingItem.id) {
+            const updatedLocation: StorageLocation = {
+              id: location.id,
+              storageMethod: updatedItem.place ? storageMethodReverseMap[updatedItem.place] : location.storageMethod,
+              quantity: updatedItem.quantity || quantity,
+              originalQuantity: updatedItem.quantity || quantity,
+              unit: 'g',
+              expiryDate: updatedItem.expirationDate ? updatedItem.expirationDate.split('T')[0] : location.expiryDate,
+              addedDate: updatedItem.boughtDate ? updatedItem.boughtDate.split('T')[0] : location.addedDate,
+              status: updatedItem.status ? statusMap[updatedItem.status] : location.status,
+              isExpired: updatedItem.expirationDate ? new Date(updatedItem.expirationDate) < new Date() : false,
+            };
+            
+            // 업데이트된 위치 목록 생성
+            const updatedStorageLocations = item.storageLocations.map(loc => 
+              loc.id === location.id ? updatedLocation : loc
+            );
+            
+            // 전체 수량 재계산
+            const newTotalQuantity = updatedStorageLocations.reduce((sum, loc) => sum + loc.quantity, 0);
+            
+            // 만료일 범위 재계산
+            const expiryDates = updatedStorageLocations
+              .filter(loc => loc.expiryDate !== 'N/A')
+              .map(loc => loc.expiryDate)
+              .sort();
+            
+            // 전체 상태 재계산 (우선순위: 기간만료 > 유통기한 임박 > 사용완료 > 보관중)
+            const statusPriority: Record<string, number> = { '기간만료': 4, '유통기한 임박': 3, '사용완료': 2, '보관중': 1 };
+            const newOverallStatus = updatedStorageLocations.reduce((highest, loc) => 
+              statusPriority[loc.status] > statusPriority[highest] ? loc.status : highest, 
+              '보관중' as '보관중' | '유통기한 임박' | '기간만료' | '사용완료'
+            );
+            
+            return {
+              ...item,
+              totalQuantity: newTotalQuantity,
+              totalOriginalQuantity: newTotalQuantity,
+              storageLocations: updatedStorageLocations,
+              earliestExpiryDate: expiryDates.length > 0 ? expiryDates[0] : 'N/A',
+              latestExpiryDate: expiryDates.length > 0 ? expiryDates[expiryDates.length - 1] : 'N/A',
+              overallStatus: newOverallStatus,
+              hasExpiredItems: updatedStorageLocations.some(loc => loc.isExpired)
+            };
+          }
+          return item;
+        })
+      );
+      
+      alert('식재료가 수정되었습니다.');
+      closeEditModal();
+    } catch (error) {
+      console.error('식재료 수정 실패:', error);
+      alert('식재료 수정에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   const resetFilters = () => {
@@ -424,11 +527,14 @@ function InventoryContent() {
 
   const openEditModal = (item: InventoryItem) => {
     setEditingItem(item);
+    // 첫 번째 위치를 기본으로 선택
+    setSelectedLocationForEdit(item.storageLocations[0] || null);
     setIsEditModalOpen(true);
   };
 
   const closeEditModal = () => {
     setEditingItem(null);
+    setSelectedLocationForEdit(null);
     setIsEditModalOpen(false);
   };
 
@@ -697,7 +803,7 @@ function InventoryContent() {
                       {isBulkActionMode && selectedItems.size > 0 && (
                         <button
                           onClick={handleBulkDelete}
-                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                          className="px-4 py-2 text-red-700 bg-red-100 hover:bg-red-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
                         >
                           선택 삭제 ({selectedItems.size})
                         </button>
@@ -755,7 +861,7 @@ function InventoryContent() {
                         )}
                         
                 {filteredItems.map((item) => (
-                  <div key={item.id} className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow ${
+                  <div key={item.id} className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow flex flex-col ${
                     isBulkActionMode 
                       ? 'cursor-default' 
                       : 'cursor-pointer'
@@ -771,7 +877,7 @@ function InventoryContent() {
                     }
                   }}>
                     {/* 이미지 영역 */}
-                    <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center relative">
+                    <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center relative flex-shrink-0">
                       {/* 일괄 작업 모드일 때 체크박스 표시 */}
                       {isBulkActionMode && (
                         <div className="absolute top-3 left-3">
@@ -794,7 +900,7 @@ function InventoryContent() {
                     </div>
 
                     {/* 내용 영역 */}
-                    <div className="p-4">
+                    <div className="p-4 flex flex-col flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
                       
                       {/* 메타데이터 */}
@@ -803,9 +909,24 @@ function InventoryContent() {
                           <span>{item.category}</span>
                           <div className="flex items-center gap-2">
                             {item.storageLocations.length > 1 ? (
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                {item.storageLocations.length}개 위치
-                              </span>
+                              <>
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                  {item.storageLocations.length}개 위치
+                                </span>
+                                {/* 중복된 보관장소가 있는지 확인 */}
+                                {(() => {
+                                  const uniqueStorageMethods = [...new Set(item.storageLocations.map(loc => loc.storageMethod))];
+                                  if (uniqueStorageMethods.length === 1) {
+                                    // 모두 같은 보관장소인 경우
+                                    return (
+                                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                                        {uniqueStorageMethods[0]}
+                                      </span>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </>
                             ) : (
                               /* 중복되지 않은 식재료의 경우 보관장소와 재고 상태를 카테고리 오른쪽에 표시 */
                               <>
@@ -833,60 +954,33 @@ function InventoryContent() {
                         </div>
                       </div>
 
-                      {/* 중복되지 않은 식재료의 경우 추가 정보 표시 */}
-                      {item.storageLocations.length === 1 ? (
-                        <div className="mb-3 space-y-2">
-                          {/* 구매일자 */}
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">구매일자:</span>
-                            <span className="font-medium text-gray-900">
-                              {item.storageLocations[0].addedDate !== 'N/A' 
-                                ? new Date(item.storageLocations[0].addedDate).toLocaleDateString('ko-KR')
-                                : 'N/A'
-                              }
-                            </span>
-                          </div>
-                          
-                          {/* 만료일자 */}
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">만료일자:</span>
-                            <span className={`font-medium ${
-                              item.storageLocations[0].isExpired 
-                                ? 'text-red-600' 
-                                : item.storageLocations[0].expiryDate !== 'N/A' && 
-                                  new Date(item.storageLocations[0].expiryDate) <= new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
-                                ? 'text-orange-600'
-                                : 'text-gray-900'
-                            }`}>
-                              {item.storageLocations[0].expiryDate !== 'N/A' 
-                                ? new Date(item.storageLocations[0].expiryDate).toLocaleDateString('ko-KR')
-                                : 'N/A'
-                              }
-                            </span>
-                          </div>
+                      {/* 만료일자 표시 */}
+                      <div className="mb-3 flex-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">만료일자:</span>
+                          <span className={`font-medium ${
+                            item.earliestExpiryDate !== 'N/A' && new Date(item.earliestExpiryDate) < new Date()
+                              ? 'text-red-600' 
+                              : item.earliestExpiryDate !== 'N/A' && 
+                                new Date(item.earliestExpiryDate) <= new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+                              ? 'text-orange-600'
+                              : 'text-gray-900'
+                          }`}>
+                            {item.earliestExpiryDate !== 'N/A' 
+                              ? new Date(item.earliestExpiryDate).toLocaleDateString('ko-KR')
+                              : 'N/A'
+                            }
+                            {item.storageLocations.length > 1 && item.earliestExpiryDate !== item.latestExpiryDate && item.latestExpiryDate !== 'N/A' && (
+                              <span className="text-xs text-gray-400 ml-1">
+                                (일부)
+                              </span>
+                            )}
+                          </span>
                         </div>
-                      ) : (
-                        /* 중복된 식재료의 경우 전체 상태만 표시 */
-                        <div className="mb-3">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">전체 상태:</span>
-                            <span className={`text-xs rounded-full px-3 py-1 ${
-                              item.overallStatus === '보관중' 
-                                ? 'bg-green-100 text-green-800'
-                                : item.overallStatus === '유통기한 임박'
-                                ? 'bg-orange-100 text-orange-800'
-                                : item.overallStatus === '기간만료'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {item.overallStatus}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                      </div>
 
-                      {/* 하단 액션 버튼들 */}
-                      <div className="flex items-center justify-between">
+                      {/* 하단 액션 버튼들 - 카드 맨 아래 고정 */}
+                      <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
                         {isBulkActionMode ? (
                           <span className="text-xs text-blue-600 font-medium">
                             {selectedItems.has(item.id) ? '선택됨' : '선택하려면 클릭'}
@@ -1236,20 +1330,30 @@ function InventoryContent() {
                           id="boughtDate" 
                           required 
                           max={new Date().toISOString().split('T')[0]}
+                          onChange={(e) => {
+                            // 구매일자가 선택되면 유통기한의 최소값을 구매일자로 설정
+                            const expirationInput = document.getElementById('expirationDate') as HTMLInputElement;
+                            if (expirationInput && e.target.value) {
+                              expirationInput.min = e.target.value;
+                            }
+                          }}
                           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" 
                         />
                         <p className="text-xs text-gray-500 mt-1">오늘 이전의 날짜만 선택 가능합니다</p>
                       </div>
                       <div className="flex-1">
-                        <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-700">유통기한</label>
+                        <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-700">
+                          유통기한 <span className="text-red-500">*</span>
+                        </label>
                         <input 
                           type="date" 
                           name="expirationDate" 
                           id="expirationDate" 
+                          required
                           min={new Date().toISOString().split('T')[0]}
                           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black" 
                         />
-                        <p className="text-xs text-gray-500 mt-1">오늘 이후의 날짜만 선택 가능합니다</p>
+                        <p className="text-xs text-gray-500 mt-1">구매일자 이후의 날짜만 선택 가능합니다</p>
                       </div>
                     </div>
                     
@@ -1284,55 +1388,152 @@ function InventoryContent() {
               </div>
               <form onSubmit={handleUpdateItem}>
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700">식재료명</label>
-                      <input type="text" name="name" id="name" disabled value={editingItem?.name || ''} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black" />
-                    </div>
+                  {editingItem && (
+                    <div className="space-y-4">
+                      {/* 여러 위치에 보관된 경우 위치 선택 */}
+                      {editingItem.storageLocations.length > 1 && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-3">
+                            수정할 보관 위치 선택 <span className="text-red-500">*</span>
+                          </label>
+                          <div className="space-y-2">
+                            {editingItem.storageLocations.map((location) => (
+                              <label
+                                key={location.id}
+                                className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                                  selectedLocationForEdit?.id === location.id
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="radio"
+                                    name="selectedLocation"
+                                    value={location.id}
+                                    checked={selectedLocationForEdit?.id === location.id}
+                                    onChange={() => setSelectedLocationForEdit(location)}
+                                    className="text-blue-600 focus:ring-blue-500"
+                                  />
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-gray-900">{location.storageMethod}</span>
+                                      <span className={`text-xs rounded-full px-2 py-1 ${
+                                        location.status === '보관중' 
+                                          ? 'bg-green-100 text-green-800'
+                                          : location.status === '유통기한 임박'
+                                          ? 'bg-orange-100 text-orange-800'
+                                          : location.status === '기간만료'
+                                          ? 'bg-red-100 text-red-800'
+                                          : 'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {location.status}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      수량: {formatQuantity(location.quantity, location.unit)} | 유통기한: {location.expiryDate !== 'N/A' ? new Date(location.expiryDate).toLocaleDateString('ko-KR') : 'N/A'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
-                    <div>
-                      <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">총 수량</label>
-                      <div className="flex gap-2 mt-1">
-                        <input type="number" name="quantity" id="quantity" disabled value={editingItem?.totalQuantity || 0} className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black" />
-                        <select name="unit" id="unit" disabled value={editingItem?.unit || ''} className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black">
-                          <option value="개">개</option>
-                          <option value="g">g</option>
-                          <option value="ml">ml</option>
-                          <option value="팩">팩</option>
-                          <option value="봉">봉</option>
-                          <option value="줄">줄</option>
-                          <option value="컵">컵</option>
-                          <option value="리터">리터</option>
-                          <option value="kg">kg</option>
-                        </select>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">총 수량은 상세 모달에서 개별 위치별로 수정할 수 있습니다.</p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">보관 위치</label>
-                      <div className="mt-1 space-y-2">
-                        {editingItem?.storageLocations.map((location) => (
-                          <div key={location.id} className="bg-gray-50 rounded-lg p-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium">{location.storageMethod}</span>
-                              <span className="text-sm text-gray-600">{formatQuantity(location.quantity, location.unit)}</span>
+                      {/* 선택된 위치의 정보 수정 폼 */}
+                      {selectedLocationForEdit && (
+                        <>
+                          <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">식재료명</label>
+                            <input 
+                              type="text" 
+                              name="name" 
+                              id="name" 
+                              disabled 
+                              value={editingItem?.name || ''} 
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-black" 
+                            />
+                          </div>
+
+                          <div>
+                            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">수량 (단위: g)</label>
+                            <input 
+                              type="number" 
+                              name="quantity" 
+                              id="quantity" 
+                              required
+                              min="0"
+                              step="1"
+                              key={`qty-${selectedLocationForEdit.id}`}
+                              defaultValue={selectedLocationForEdit.quantity || 0} 
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black" 
+                            />
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="storageMethod" className="block text-sm font-medium text-gray-700">보관방법</label>
+                            <select 
+                              name="storageMethod" 
+                              id="storageMethod" 
+                              required
+                              key={`storage-${selectedLocationForEdit.id}`}
+                              defaultValue={selectedLocationForEdit.storageMethod || '냉장'} 
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+                            >
+                              {['냉장', '실온', '냉동'].map(sm => (
+                                <option key={sm} value={sm}>{sm}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="flex gap-4">
+                            <div className="flex-1">
+                              <label htmlFor="boughtDate" className="block text-sm font-medium text-gray-700">구매일자</label>
+                              <input 
+                                type="date" 
+                                name="boughtDate" 
+                                id="boughtDate" 
+                                required 
+                                max={new Date().toISOString().split('T')[0]}
+                                key={`bought-${selectedLocationForEdit.id}`}
+                                defaultValue={selectedLocationForEdit.addedDate !== 'N/A' ? selectedLocationForEdit.addedDate : ''}
+                                onChange={(e) => {
+                                  const expirationInput = document.getElementById('expirationDate-edit') as HTMLInputElement;
+                                  if (expirationInput && e.target.value) {
+                                    expirationInput.min = e.target.value;
+                                  }
+                                }}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black" 
+                              />
                             </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              유통기한: {location.expiryDate}
+                            <div className="flex-1">
+                              <label htmlFor="expirationDate-edit" className="block text-sm font-medium text-gray-700">
+                                유통기한 <span className="text-red-500">*</span>
+                              </label>
+                              <input 
+                                type="date" 
+                                name="expirationDate" 
+                                id="expirationDate-edit" 
+                                required
+                                key={`expiry-${selectedLocationForEdit.id}`}
+                                min={selectedLocationForEdit.addedDate !== 'N/A' ? selectedLocationForEdit.addedDate : new Date().toISOString().split('T')[0]}
+                                defaultValue={selectedLocationForEdit.expiryDate !== 'N/A' ? selectedLocationForEdit.expiryDate : ''}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black" 
+                              />
                             </div>
                           </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">개별 위치별 수정은 상세 모달에서 가능합니다.</p>
+                        </>
+                      )}
                     </div>
-                    
+                  )}
+                </div>
+                {editingItem && selectedLocationForEdit && (
+                  <div className="flex justify-end gap-4 p-6 border-t">
+                    <button type="button" onClick={closeEditModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">취소</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">저장</button>
                   </div>
-                </div>
-                <div className="flex justify-end gap-4 p-6 border-t">
-                  <button type="button" onClick={closeEditModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">취소</button>
-                  <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">저장</button>
-                </div>
+                )}
               </form>
             </div>
           </div>
@@ -1431,149 +1632,174 @@ function InventoryContent() {
                             </div>
                             <div className="flex items-center space-x-3">
                               <span className="text-sm font-medium">{formatQuantity(location.quantity, location.unit)}</span>
-                              <div className="flex items-center space-x-2">
-                                <input 
-                                  type="number" 
-                                  id={`consumption-${location.id}`}
-                                  placeholder="섭취량(g)" 
-                                  className="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                  min="0"
-                                  step="1"
-                                  onChange={() => {
-                                    // 입력값이 변경될 때 저장 버튼 표시/숨김을 위해 상태 업데이트
-                                    const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
-                                    const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
-                                    if (input && saveButton) {
-                                      if (input.value && parseInt(input.value) > 0) {
-                                        saveButton.style.display = 'block';
-                                      } else {
-                                        saveButton.style.display = 'none';
-                                      }
-                                    }
-                                  }}
-                                />
-                                <div className="flex space-x-1">
-                                  <button 
-                                    type="button"
-                                    onClick={() => {
-                                      const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
-                                      const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
-                                      if (input) {
-                                        const currentValue = parseInt(input.value) || 0;
-                                        input.value = (currentValue + 1000).toString();
-                                        if (saveButton) {
-                                          saveButton.style.display = 'block';
-                                        }
-                                      }
-                                    }}
-                                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                                  >
-                                    1kg
-                                  </button>
-                                  <button 
-                                    type="button"
-                                    onClick={() => {
-                                      const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
-                                      const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
-                                      if (input) {
-                                        const currentValue = parseInt(input.value) || 0;
-                                        input.value = (currentValue + 100).toString();
-                                        if (saveButton) {
-                                          saveButton.style.display = 'block';
-                                        }
-                                      }
-                                    }}
-                                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                                  >
-                                    100g
-                                  </button>
-                                  <button 
-                                    type="button"
-                                    onClick={() => {
-                                      const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
-                                      const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
-                                      if (input) {
-                                        const currentValue = parseInt(input.value) || 0;
-                                        input.value = (currentValue + 10).toString();
-                                        if (saveButton) {
-                                          saveButton.style.display = 'block';
-                                        }
-                                      }
-                                    }}
-                                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                                  >
-                                    10g
-                                  </button>
+                              {/* 사용완료 상태이거나 수량이 0이면 섭취 기능 비활성화 */}
+                              {location.status === '사용완료' || location.quantity === 0 ? (
+                                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-md">
+                                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                  </svg>
+                                  <span className="text-xs text-gray-500">
+                                    {location.status === '사용완료' ? '사용 완료됨' : '재고 없음'}
+                                  </span>
                                 </div>
-                              </div>
-                              <button 
-                                id={`save-${location.id}`}
-                                onClick={async () => {
-                                  const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
-                                  if (input && input.value) {
-                                    const consumptionAmount = parseInt(input.value);
-                                    if (consumptionAmount > 0) {
-                                      try {
-                                        // 현재 수량에서 섭취량을 뺀 값으로 업데이트
-                                        const newQuantity = Math.max(0, location.quantity - consumptionAmount);
-                                        
-                                        // API 요청으로 수량 업데이트
-                                        await inventoryService.updateFoodInventoryQuantity(location.id, { quantity: newQuantity });
-                                        
-                                        // 로컬 상태 업데이트
-                                        setInventoryItems(prev => 
-                                          prev.map(item => ({
-                                            ...item,
-                                            storageLocations: item.storageLocations.map(loc => 
-                                              loc.id === location.id 
-                                                ? { ...loc, quantity: newQuantity, originalQuantity: newQuantity }
-                                                : loc
-                                            ),
-                                            totalQuantity: item.storageLocations.reduce((sum, loc) => 
-                                              loc.id === location.id ? sum + newQuantity : sum + loc.quantity, 0
-                                            )
-                                          }))
-                                        );
-
-                                        // 모달창의 selectedItem 상태도 업데이트하여 즉시 반영
-                                        if (selectedItem) {
-                                          setSelectedItem(prev => {
-                                            if (!prev) return prev;
-                                            const updatedStorageLocations = prev.storageLocations.map(loc => 
-                                              loc.id === location.id 
-                                                ? { ...loc, quantity: newQuantity, originalQuantity: newQuantity }
-                                                : loc
-                                            );
-                                            const updatedTotalQuantity = updatedStorageLocations.reduce((sum, loc) => sum + loc.quantity, 0);
-                                            
-                                            return {
-                                              ...prev,
-                                              storageLocations: updatedStorageLocations,
-                                              totalQuantity: updatedTotalQuantity
-                                            };
-                                          });
-                                        }
-                                        
-                                        // 입력란 초기화 및 저장 버튼 숨김
-                                        input.value = '';
+                              ) : (
+                                <>
+                                  <div className="flex items-center space-x-2">
+                                    <input 
+                                      type="number" 
+                                      id={`consumption-${location.id}`}
+                                      placeholder="섭취량(g)" 
+                                      className="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                      min="0"
+                                      max={location.quantity}
+                                      step="1"
+                                      onChange={() => {
+                                        // 입력값이 변경될 때 저장 버튼 표시/숨김을 위해 상태 업데이트
+                                        const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
                                         const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
-                                        if (saveButton) {
-                                          saveButton.style.display = 'none';
+                                        if (input && saveButton) {
+                                          if (input.value && parseInt(input.value) > 0) {
+                                            saveButton.style.display = 'block';
+                                          } else {
+                                            saveButton.style.display = 'none';
+                                          }
                                         }
-                                        
-                                        alert('섭취량이 저장되었습니다.');
-                                      } catch (error) {
-                                        console.error('Failed to update quantity:', error);
-                                        alert('수량 저장에 실패했습니다.');
+                                      }}
+                                    />
+                                    <div className="flex space-x-1">
+                                      <button 
+                                        type="button"
+                                        onClick={() => {
+                                          const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
+                                          const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
+                                          if (input) {
+                                            const currentValue = parseInt(input.value) || 0;
+                                            input.value = (currentValue + 1000).toString();
+                                            if (saveButton) {
+                                              saveButton.style.display = 'block';
+                                            }
+                                          }
+                                        }}
+                                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                      >
+                                        1kg
+                                      </button>
+                                      <button 
+                                        type="button"
+                                        onClick={() => {
+                                          const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
+                                          const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
+                                          if (input) {
+                                            const currentValue = parseInt(input.value) || 0;
+                                            input.value = (currentValue + 100).toString();
+                                            if (saveButton) {
+                                              saveButton.style.display = 'block';
+                                            }
+                                          }
+                                        }}
+                                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                      >
+                                        100g
+                                      </button>
+                                      <button 
+                                        type="button"
+                                        onClick={() => {
+                                          const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
+                                          const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
+                                          if (input) {
+                                            const currentValue = parseInt(input.value) || 0;
+                                            input.value = (currentValue + 10).toString();
+                                            if (saveButton) {
+                                              saveButton.style.display = 'block';
+                                            }
+                                          }
+                                        }}
+                                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                      >
+                                        10g
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <button 
+                                    id={`save-${location.id}`}
+                                    onClick={async () => {
+                                      const input = document.getElementById(`consumption-${location.id}`) as HTMLInputElement;
+                                      if (input && input.value) {
+                                        const consumptionAmount = parseInt(input.value);
+                                        if (consumptionAmount > 0) {
+                                          try {
+                                            // 현재 수량에서 섭취량을 뺀 값으로 업데이트
+                                            const newQuantity = Math.max(0, location.quantity - consumptionAmount);
+                                            
+                                            // API 요청으로 수량 업데이트하고 응답 받기
+                                            const updatedItem = await inventoryService.updateFoodInventoryQuantity(location.id, { quantity: newQuantity });
+                                            
+                                            // 백엔드에서 반환된 상태 정보 추출
+                                            const statusMap: { [key: string]: '보관중' | '유통기한 임박' | '기간만료' | '사용완료' } = {
+                                              "NORMAL": '보관중',
+                                              "EXPIRING_SOON": '유통기한 임박',
+                                              "EXPIRED": '기간만료',
+                                              "CONSUMED": '사용완료'
+                                            };
+                                            const updatedStatus = updatedItem.status ? statusMap[updatedItem.status] : location.status;
+                                            const updatedQuantity = updatedItem.quantity ?? newQuantity;
+                                            
+                                            // 로컬 상태 업데이트 (수량과 상태 모두 업데이트)
+                                            setInventoryItems(prev => 
+                                              prev.map(item => ({
+                                                ...item,
+                                                storageLocations: item.storageLocations.map(loc => 
+                                                  loc.id === location.id 
+                                                    ? { ...loc, quantity: updatedQuantity, originalQuantity: updatedQuantity, status: updatedStatus }
+                                                    : loc
+                                                ),
+                                                totalQuantity: item.storageLocations.reduce((sum, loc) => 
+                                                  loc.id === location.id ? sum + updatedQuantity : sum + loc.quantity, 0
+                                                )
+                                              }))
+                                            );
+
+                                            // 모달창의 selectedItem 상태도 업데이트하여 즉시 반영
+                                            if (selectedItem) {
+                                              setSelectedItem(prev => {
+                                                if (!prev) return prev;
+                                                const updatedStorageLocations = prev.storageLocations.map(loc => 
+                                                  loc.id === location.id 
+                                                    ? { ...loc, quantity: updatedQuantity, originalQuantity: updatedQuantity, status: updatedStatus }
+                                                    : loc
+                                                );
+                                                const updatedTotalQuantity = updatedStorageLocations.reduce((sum, loc) => sum + loc.quantity, 0);
+                                                
+                                                return {
+                                                  ...prev,
+                                                  storageLocations: updatedStorageLocations,
+                                                  totalQuantity: updatedTotalQuantity
+                                                };
+                                              });
+                                            }
+                                            
+                                            // 입력란 초기화 및 저장 버튼 숨김
+                                            input.value = '';
+                                            const saveButton = document.getElementById(`save-${location.id}`) as HTMLButtonElement;
+                                            if (saveButton) {
+                                              saveButton.style.display = 'none';
+                                            }
+                                            
+                                            alert(`섭취량이 저장되었습니다.${updatedStatus === '사용완료' ? '\n재고가 모두 소진되어 "사용완료" 상태로 변경되었습니다.' : ''}`);
+                                          } catch (error) {
+                                            console.error('Failed to update quantity:', error);
+                                            alert('수량 저장에 실패했습니다.');
+                                          }
+                                        }
                                       }
-                                    }
-                                  }
-                                }}
-                                className="text-sm px-2 py-1 border rounded bg-blue-500 text-white hover:bg-blue-600"
-                                style={{ display: 'none' }}
-                              >
-                                저장
-                              </button>
+                                    }}
+                                    className="text-sm px-2 py-1 border rounded bg-blue-500 text-white hover:bg-blue-600"
+                                    style={{ display: 'none' }}
+                                  >
+                                    저장
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                           
