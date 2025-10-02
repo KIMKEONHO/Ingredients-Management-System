@@ -31,6 +31,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation("ognl:ognl:3.2.21")
+
 
     // redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
@@ -56,12 +59,12 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
 
     // OpenAPI
-//    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 
     // JSON 처리
-//    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-//    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-//    implementation("com.google.code.gson:gson")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.google.code.gson:gson")
 
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
@@ -91,6 +94,10 @@ dependencies {
     // Apache POI for Excel export - 추가된 부분
 //    implementation("org.apache.poi:poi:5.2.3")
 //    implementation("org.apache.poi:poi-ooxml:5.2.3")
+
+    // AWS
+    implementation(platform("software.amazon.awssdk:bom:2.24.0"))
+    implementation("software.amazon.awssdk:s3")
 }
 
 tasks.test {

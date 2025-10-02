@@ -2,15 +2,20 @@ package com.example.ingredients_ms.domain.user.entity;
 
 import com.example.ingredients_ms.domain.cart.entity.Cart;
 import com.example.ingredients_ms.domain.complaint.entity.Complaint;
+import com.example.ingredients_ms.domain.diet.entity.Diet;
 import com.example.ingredients_ms.domain.foodinventory.entity.FoodInventory;
+import com.example.ingredients_ms.domain.recipe.entity.Recipe;
+import com.example.ingredients_ms.domain.recipelike.entity.RecipeLike;
 import com.example.ingredients_ms.global.Status;
 import com.example.ingredients_ms.global.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -23,7 +28,7 @@ import java.util.Set;
 @SuperBuilder
 public class User extends BaseEntity {
 
-    @Column(name = "email", length = 255, nullable = false)
+    @Column(name = "email", length = 255, nullable = false, unique = true)
     private String email;
 
     @Column(name = "phone_num", length = 255, nullable = false)
@@ -38,22 +43,32 @@ public class User extends BaseEntity {
     @Column(name = "password", length = 255, nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Status status;
+    //oauth에서 제공된 user 식별 아이디
+    @Column(name = "social_id", length = 255)
+    private String socialId;
+
+    //사용된 oauth 이름, kakao, naver.
+    @Column(name = "sso_provider", length = 50)
+    private String ssoProvider;
+
+    @Column(name = "profile", length = 512)
+    private String profileUrl;
+
+    @JsonIgnore
+    @Column(name = "refresh_token", length = 512)
+    private String refreshToken;
 
     @Enumerated(EnumType.STRING)
-    @ElementCollection(fetch = FetchType.LAZY)
+    @Column(nullable = false)
     @Builder.Default
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "role", nullable = false)
-    private Set<Role> roles = new HashSet<>();
+    private Status status = Status.ACTIVE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", length = 50, nullable = false)
+    private Role role;
 
     @Column(length = 50)
     private String socialProvider;
-
-    @Column(length = 255)
-    private String socialId;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Cart cart;
@@ -63,5 +78,19 @@ public class User extends BaseEntity {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Complaint> complaints = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Diet>  diets = new ArrayList<>();
+
+    // 레시피 관련 관계 추가
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
+    private List<Recipe> authoredRecipes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<RecipeLike> recipeLikes = new ArrayList<>();
+
+    public Set<GrantedAuthority> getAuthorities() {
+        return Set.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
 
 }

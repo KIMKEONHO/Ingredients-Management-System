@@ -7,7 +7,7 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 1h # 스프링부트가 종료 요청을 받은 후 기다릴 수 있는 최대한의 시간
   datasource:
-    url: jdbc:mysql://52.79.119.147:3309/kkhims
+    url: jdbc:mysql://3.35.17.241:3309/kkhims
     username: root
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -28,9 +28,12 @@ logging:
     org.springframework.transaction.interceptor: INFO
 custom:
   site:
-    name: "My Site Prod"
+    name: "IMS"
+    cookieDomain: "${custom.prod.cookieDomain}"
+    frontUrl: "${custom.prod.frontUrl}"
+    backUrl: "${custom.prod.backUrl}"
 data:
   redis:
     host: 172.17.0.1
     port: 6379
-    password: ${custom.secret.spring.data.redis.password}
+    password: '${custom.secret.spring.data.redis.password}'

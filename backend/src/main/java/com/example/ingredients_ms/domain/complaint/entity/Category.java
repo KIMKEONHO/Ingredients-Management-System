@@ -3,23 +3,29 @@ package com.example.ingredients_ms.domain.complaint.entity;
 import java.util.Arrays;
 
 public enum Category {
-    REQUEST("request"),
-    COMPLAINT("complaint");
+    REQUEST(1, "request"),
+    COMPLAINT(2, "complaint");
 
+    private final int code;
     private final String value;
 
-    Category(String value) {
-        this.value = value; // Enum 값과 문자열 값을 연결
+    Category(int code, String value) {
+        this.code = code;
+        this.value = value;
+    }
+
+    public int getCode() {
+        return code;
     }
 
     public String getValue() {
-        return value; // 문자열 값을 반환
+        return value;
     }
 
-    public static Category fromValue(String value) {
+    public static Category fromCode(int code) {
         return Arrays.stream(Category.values())
-                .filter(category -> category.getValue().equals(value))
+                .filter(category -> category.getCode() == code)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Invalid category value: " + value));
+                .orElseThrow(() -> new IllegalArgumentException("Invalid category code: " + code));
     }
 }

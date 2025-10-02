@@ -1,15 +1,18 @@
 package com.example.ingredients_ms.domain.foodinventory.entity;
 
+import com.example.ingredients_ms.domain.consumedlog.entity.ConsumedLog;
 import com.example.ingredients_ms.domain.ingredients.entity.Ingredients;
 import com.example.ingredients_ms.domain.user.entity.User;
 import com.example.ingredients_ms.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -21,10 +24,10 @@ import java.util.Set;
 public class FoodInventory extends BaseEntity {
 
     @Column(name = "quantity", length = 255, nullable = false)
-    private Integer quantity;
+    private Integer quantity; // 현재 수량 (단위: g)
 
-    @Column(name = "unit", length = 255, nullable = false)
-    private String unit;
+    @Column(name = "original_quantity", nullable = false)
+    private Integer originalQuantity; // 처음 구매한 개수 (단위: g)
 
     @Column(name="bought_date", nullable = false)
     private LocalDateTime boughtDate;
@@ -33,11 +36,8 @@ public class FoodInventory extends BaseEntity {
     private LocalDateTime expirationDate;
 
     @Enumerated(EnumType.STRING)
-    @ElementCollection(fetch = FetchType.LAZY)
-    @Builder.Default
-    @CollectionTable(name = "places", joinColumns = @JoinColumn(name = "foodinventory_id"))
     @Column(name = "place", nullable = false)
-    private Set<Place> places = new HashSet<>();
+    private Place place; // Set<Place> -> Place
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -46,4 +46,25 @@ public class FoodInventory extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ingredient_id")
     private Ingredients ingredient;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private FoodStatus status = FoodStatus.NORMAL;
+
+    @OneToMany(mappedBy = "inventory", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ConsumedLog> logs = new ArrayList<>();
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private boolean isDeleted = false; // 소프트 삭제 상태 필드
+
+    public void updateStatus(FoodStatus status) {
+        this.status = status;
+    }
+
+    // 삭제 메서드
+    public void delete() {
+        this.isDeleted = true;
+    }
 }
