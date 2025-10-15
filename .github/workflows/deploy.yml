@@ -89,7 +89,8 @@ jobs:
               -v /dockerProjects/ims/volumes/gen:/gen \
               -v /dockerProjects/ims/config/application-secret.yml:/app/config/application-secret.yml \
               ghcr.io/kimkeonho/ims:latest \
-              --spring.config.additional-location=file:/app/config/
+              --spring.config.additional-location=file:/app/config/application-secret.yml
+
 
             
             echo "Deployment completed successfully"
