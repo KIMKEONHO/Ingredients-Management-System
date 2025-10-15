@@ -48,12 +48,7 @@ jobs:
           echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
         env:
           OWNER: "${{ github.repository_owner }}"
-      - name: 환경 변수 설정 확인
-        run: |
-          echo "환경 변수들이 설정되었는지 확인합니다..."
-          echo "GOOGLE_CLIENT_ID가 설정되어 있습니다: ${{ secrets.GOOGLE_CLIENT_ID != '' }}"
-          echo "KAKAO_CLIENT_ID가 설정되어 있습니다: ${{ secrets.KAKAO_CLIENT_ID != '' }}"
-          echo "CUSTOM_MAIL_USERNAME이 설정되어 있습니다: ${{ secrets.CUSTOM_MAIL_USERNAME != '' }}"
+
       - name: 빌드 앤 푸시
         uses: docker/build-push-action@v3
         with:
@@ -89,25 +84,12 @@ jobs:
             docker run -d \
               --name ims-app \
               --restart unless-stopped \
-              -p 8080:8090 \
+              -p 8081:8090 \
               -e TZ=Asia/Seoul \
-              -e SPRING_PROFILES_ACTIVE=prod,secret \
-              -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
-              -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
-              -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
-              -e REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}" \
-              -e CUSTOM_MAIL_USERNAME="${{ secrets.CUSTOM_MAIL_USERNAME }}" \
-              -e CUSTOM_MAIL_PASSWORD="${{ secrets.CUSTOM_MAIL_PASSWORD }}" \
-              -e CUSTOM_JWT_SECRETKEY="${{ secrets.CUSTOM_JWT_SECRETKEY }}" \
-              -e CUSTOM_ACCESS_TOKEN_EXPIRATIONSECONDS="${{ secrets.CUSTOM_ACCESS_TOKEN_EXPIRATIONSECONDS }}" \
-              -e CUSTOM_DEFAULT_PROFILE_URL="${{ secrets.CUSTOM_DEFAULT_PROFILE_URL }}" \
-              -e CUSTOM_AWS_S3_BUCKET_NAME="${{ secrets.CUSTOM_AWS_S3_BUCKET_NAME }}" \
-              -e CUSTOM_AWS_S3_REGION="${{ secrets.CUSTOM_AWS_S3_REGION }}" \
-              -e CUSTOM_AWS_S3_IMG_DIR_NAME="${{ secrets.CUSTOM_AWS_S3_IMG_DIR_NAME }}" \
-              -e CUSTOM_AWS_CREDENTIALS_ACCESS_KEY="${{ secrets.CUSTOM_AWS_CREDENTIALS_ACCESS_KEY }}" \
-              -e CUSTOM_AWS_CREDENTIALS_SECRET_KEY="${{ secrets.CUSTOM_AWS_CREDENTIALS_SECRET_KEY }}" \
-              -e CUSTOM_ADMIN_MAIN_EMAIL="${{ secrets.CUSTOM_ADMIN_MAIN_EMAIL }}" \
               -v /dockerProjects/ims/volumes/gen:/gen \
-              ghcr.io/kimkeonho/ims:latest
+              -v /dockerProjects/ims/config/application-secret.yml:/app/config/application-secret.yml \
+              ghcr.io/kimkeonho/ims:latest \
+              --spring.config.additional-location=file:/app/config/
+
             
             echo "Deployment completed successfully"
