@@ -269,7 +269,7 @@ export default function LoginPage() {
         <section className="w-full max-w-lg mx-auto">
         <div className="mb-6 text-center">
           <img 
-            src="https://dev-bucket-lolgun0629-1.s3.ap-northeast-2.amazonaws.com/img1/default/mkfood_letter_logo_nuggi.png" 
+            src="https://dev-bucket-lolgun0629-1.s3.ap-northeast-2.amazonaws.com/default/mkfood_letter_logo_nuggi_v3.png" 
             alt="MKFood Logo" 
             className="mx-auto h-30 w-auto mb-4"
           />
