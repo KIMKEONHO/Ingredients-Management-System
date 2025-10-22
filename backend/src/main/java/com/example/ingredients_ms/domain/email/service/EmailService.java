@@ -27,7 +27,7 @@ public class EmailService {
     private final JavaMailSender javaMailSender;
     private final RedisUtil redisUtil;
 
-    @Value("${custom.mail.username}")
+    @Value("${spring.mail.username}")
     private String senderEmail;
 
     private String createCode() {
