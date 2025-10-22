@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 
@@ -119,17 +119,21 @@ export default function ImageCropModal({
     }
   }, [onClose]);
 
-  // 모달이 열릴 때 키보드 이벤트 리스너 추가
-  useState(() => {
+  // 모달이 열릴 때 키보드 이벤트 리스너 추가 및 body 스크롤 제어
+  useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
+    } else {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
     }
+    
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  });
+  }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
 
