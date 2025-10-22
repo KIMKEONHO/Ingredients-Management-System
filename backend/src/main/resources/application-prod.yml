@@ -35,6 +35,11 @@ spring:
           timeout: 5000
           writetimeout: 5000
     auth-code-expiration-millis: 1800000  # 30 * 60 * 1000 == 30?
+  data:
+    redis:
+      host: 172.17.0.1
+      port: 6379
+      password: '${spring.data.redis.password}'
 logging:
   level:
     com.ll.demo03: INFO
@@ -48,9 +53,3 @@ custom:
     cookieDomain: "${custom.prod.cookieDomain}"
     frontUrl: "${custom.prod.frontUrl}"
     backUrl: "${custom.prod.backUrl}"
-spring:
-  data:
-    redis:
-      host: 172.17.0.1
-      port: 6379
-      password: '${spring.data.redis.password}'
