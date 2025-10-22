@@ -40,6 +40,10 @@ spring:
   profiles:
     active: prod
     include: secret
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
   jpa:
     open-in-view: false
     hibernate:
