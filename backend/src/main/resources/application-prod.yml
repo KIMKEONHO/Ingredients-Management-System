@@ -48,8 +48,9 @@ custom:
     cookieDomain: "${custom.prod.cookieDomain}"
     frontUrl: "${custom.prod.frontUrl}"
     backUrl: "${custom.prod.backUrl}"
-data:
-  redis:
-    host: 172.17.0.1
-    port: 6379
-    password: '${spring.data.redis.password}'
+spring:
+  data:
+    redis:
+      host: 172.17.0.1
+      port: 6379
+      password: '${spring.data.redis.password}'
