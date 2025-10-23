@@ -19,6 +19,7 @@
 4. [주요 기능](#hammer_and_wrench-주요-기능-features) 
 5. [프로젝트 구조도](#open_file_folder-프로젝트-구조도)
 6. [기술 스택](#gear-기술-스택-tech-stack)
+7. [브랜치 전략](#pushpin-브랜치-전략-branch-strategy)
 <br>
 
 ## :technologist: 팀원 소개 (Team Members)
@@ -56,6 +57,8 @@
 | **로그인** | <img width="561" height="715" alt="image" src="https://github.com/user-attachments/assets/4d6d85f0-4024-4460-a898-2eebd4dfea46" /> |
 | **회원 가입** | <img width="655" height="795" alt="image" src="https://github.com/user-attachments/assets/cab4a1f2-e27f-4d15-bd88-e956fe0b8f90" />|
 | **마이페이지** | <img width="800" height="418" alt="image" src="https://github.com/user-attachments/assets/749e9456-53a3-49e9-8f94-0224d9f7d157" />|
+| **비밀번호<br>찾기** | <img width="415" height="356" alt="image" src="https://github.com/user-attachments/assets/46cfc9d1-8c65-429a-81fd-903b5d73af0f" />|
+| **이메일<br>인증** |<img width="631" height="401" alt="image" src="https://github.com/user-attachments/assets/c3e27322-ea93-443d-89ef-52a524148746" />|
 </details>
 
 <details>
@@ -65,7 +68,8 @@
 | :---: | :---:  |
 | **레시피 <br> 커뮤니티** | <img width="800" height="778" alt="image" src="https://github.com/user-attachments/assets/a778382e-8da7-47fd-8a72-a5f34acf099e" />|
 | **레시피<br>작성** | <img width="453" height="1213" alt="image" src="https://github.com/user-attachments/assets/773a3861-1d58-4688-a841-6a5d06a43ffa" />|
-| **레시피<br>추천** | <img width="800" height="658" alt="image" src="https://github.com/user-attachments/assets/ceb98ea1-2c46-41f9-85f6-1549d400db63" />|
+| **레시피<br>추천** | <img width="800" height="658" alt="image" src="https://github.com/user-attachments/assets/ceb98ea1-2c46-41f9-85f6-1549d400db63" />|<img width="631" height="401" alt="image" src="https://github.com/user-attachments/assets/0c80f998-08de-4b4c-92af-52329932bf37" />|
+
 
 
 </details>
@@ -171,6 +175,10 @@
   ## :open_file_folder: 프로젝트 구조도
 
 ### :floppy_disk: Backend (src)
+
+<details>
+<summary>백엔드 구조도</summary>
+	
 ```
 📦main  
  ┣ 📂java  
@@ -233,7 +241,14 @@
     ┣ 📜application-test.yml  
     ┗ 📜application.yml
 ```
+
+</details>
+
 ### 🖥️ Frontend (src)
+
+<details>
+<summary>프론트 구조도</summary>
+	
 ```
 📦src  
  ┣ 📂app  
@@ -300,10 +315,13 @@
     ┃ ┗ 📜useNotifications.ts  
     ┗ 📂utils
 ```
+</details>
+
+
 
 <br>  
 
-## 📍 브랜치 전략
+## :pushpin: 브랜치 전략 (Branch Strategy)
 
 -   Git-Flow 전략
 
@@ -322,7 +340,7 @@
 | **feat/\*** | 기능 개발 브랜치 (develop에서 분기) |
 | **front/\*** | 프론트 개발 및 연동 브랜치 (develop에서 분기) |
 
-
+<br>
 
 ## 📍 커밋 메시지 컨벤션
 
