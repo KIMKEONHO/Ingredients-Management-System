@@ -14,10 +14,11 @@
 ## 📌 목차 (Table of Contents)  
   
 1. [팀원 소개](#technologist-팀원-소개-team-members)
-2. [개발 동기](#thought_balloon-개발-동기-motivation) 
-3. [주요 기능](#hammer_and_wrench-주요-기능-features) 
-4. [프로젝트 구조도](#open_file_folder-프로젝트-구조도)
-5. [기술 스택](#gear-기술-스택-tech-stack)
+2. [개발 동기](#thought_balloon-개발-동기-motivation)
+3. [사용자 인터페이스](#computer-사용자-인터페이스-user-interface)
+4. [주요 기능](#hammer_and_wrench-주요-기능-features) 
+5. [프로젝트 구조도](#open_file_folder-프로젝트-구조도)
+6. [기술 스택](#gear-기술-스택-tech-stack)
 <br>
 
 ## :technologist: 팀원 소개 (Team Members)
@@ -43,20 +44,102 @@
   
 <br>  
 
+
+
+## :computer: 사용자 인터페이스 (User Interface) 
+
+<details>
+<summary>👮 사용자 인증</summary>
+	
+| 기능 | 스크린샷 |
+| :---: | :---:  |
+| **로그인** | <img width="561" height="715" alt="image" src="https://github.com/user-attachments/assets/4d6d85f0-4024-4460-a898-2eebd4dfea46" /> |
+| **회원 가입** | <img width="655" height="795" alt="image" src="https://github.com/user-attachments/assets/cab4a1f2-e27f-4d15-bd88-e956fe0b8f90" />|
+| **마이페이지** | <img width="800" height="418" alt="image" src="https://github.com/user-attachments/assets/749e9456-53a3-49e9-8f94-0224d9f7d157" />|
+</details>
+
+<details>
+<summary>📜 레시피 공유</summary>
+	
+| 기능 | 스크린샷 |
+| :---: | :---:  |
+| **레시피 <br> 커뮤니티** | <img width="800" height="778" alt="image" src="https://github.com/user-attachments/assets/a778382e-8da7-47fd-8a72-a5f34acf099e" />|
+| **레시피<br>작성** | <img width="453" height="1213" alt="image" src="https://github.com/user-attachments/assets/773a3861-1d58-4688-a841-6a5d06a43ffa" />|
+| **레시피<br>추천** | <img width="800" height="658" alt="image" src="https://github.com/user-attachments/assets/ceb98ea1-2c46-41f9-85f6-1549d400db63" />|
+
+
+</details>
+
+<details>
+<summary>🥬 식재료 관리</summary>
+	
+| 기능 | 스크린샷 |
+| :---: | :---:  |
+| **식재료 <br> 관리** |<img width="800" height="669" alt="image" src="https://github.com/user-attachments/assets/76525b0d-d4fe-4e7d-9072-d26773f0dc1a" />|
+| **사용량<br>통계** | <img width="800" height="765" alt="image" src="https://github.com/user-attachments/assets/84cfd5c2-1986-48a9-a92b-e516218e34d0" />|
+
+
+</details>
+
+
+<details>
+<summary>🙂 고객 지원</summary>
+	
+| 기능 | 스크린샷 |
+| :---: | :---:  |
+| **민원 작성** |<img width="800" height="728" alt="image" src="https://github.com/user-attachments/assets/320230cd-1c50-4b68-8fe4-cd7897235b37" />|
+| **민원 목록** | <img width="800" height="476" alt="image" src="https://github.com/user-attachments/assets/cf03ae7b-2d91-45e6-867b-de4b48580862" />|
+
+
+</details>
+
+
+<details>
+<summary>👷 관리자</summary>
+	
+| 기능 | 스크린샷 |
+| :---: | :---:  |
+| **관리자<br>대시보드** |<img width="800" height="427" alt="image" src="https://github.com/user-attachments/assets/f08c3f53-0b90-429f-8976-f2ccd61abbbf" />|
+| **민원 관리** | <img width="800" height="370" alt="image" src="https://github.com/user-attachments/assets/b43d0eca-da52-4747-b905-d44daa0c5495" />|
+| **카테고리<br>관리** | <img width="800" height="270" alt="image" src="https://github.com/user-attachments/assets/c2e807f5-b247-40ba-b8b2-84468b8e34bd" />|
+| **식재료<br>관리** |<img width="800" height="367" alt="image" src="https://github.com/user-attachments/assets/e6d97692-ed18-4b3a-af20-9dd81fdb3715" />|
+| **사용자<br>관리** |<img width="800" height="204" alt="image" src="https://github.com/user-attachments/assets/304dbd1c-247b-4e48-a968-21d2b19cb906" />|
+
+
+</details>
+
+<details>
+<summary>✅ 부가기능</summary>
+	
+| 기능 | 스크린샷 |
+| :---: | :---:  |
+| **식단 관리** |<img width="800" height="544" alt="image" src="https://github.com/user-attachments/assets/3266d928-2437-4548-9fc4-c197ec4ec70d" />|
+| **알림** |<img width="588" height="360" alt="image" src="https://github.com/user-attachments/assets/c4e79bba-a4fa-4b1a-a4e8-a58489d043d4" />|
+
+
+</details>
+
+<br>
   
 ## :hammer_and_wrench: 주요 기능 (Features)  
   
 
 -   :cucumber:**식재료 관리**
 	- 구매한 식재료의 정보를 간편하게 관리하고, 필터를 통해 쉽게 확인
+	- 통계 페이지를 통해 사용한 식재료의 통계 정보를 간편하게 확인
 -   :calendar:**유통기한 알림**
 	- 유통기한이 임박한 식재료의 정보를 대시보드를 통해 확인
 -   :green_salad:**레시피 추천**: 
 	- 보유한 식재료를 기반으로 조리 가능한 레시피 목록을 추천
 	- 좋아요 순으로 정렬되어 인기있는 레시피 확인 가능
 -   :speech_balloon:**레시피 공유**
-	-  커뮤니티를 통해  레시피를 공유
-	-  사용자들 간에 
+	-  레시피 커뮤니티를 통해 수많은 레시피를 공유
+-   🥗 **식단 캘린더**
+  	-  식단 캘린더를 통해 이번달에 먹은 식단을 한눈에 확인
+  	-  통계 페이지에서 기간별 섭취 칼로리 편차를 간편하게 확인
+-   👷‍♂️ **관리자 기능**
+  	-  관리자 전용 페이지를 통해 간편하게 민원, 식재료 및 카테고리, 사용자를 관리
+  	
 
   <br>  
 
@@ -64,22 +147,23 @@
 ## :gear: 기술 스택 (Tech Stack)  
   
 ### Backend  
-![Java](https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=java&logoColor=white)  
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)  
-![Spring Security](https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)  
-![JPA(Hibernate)](https://img.shields.io/badge/JPA(Hibernate)-59666C?style=for-the-badge)  
-![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)  
-![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)  
+![Java](https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=java&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
+![JPA(Hibernate)](https://img.shields.io/badge/JPA(Hibernate)-59666C?style=for-the-badge)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
   
 ### Frontend  
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)  
-![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)  
-![Recoil](https://img.shields.io/badge/Recoil-3578E5?style=for-the-badge&logo=recoil&logoColor=white)  
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Axios](https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white)  
   
 ### Deployment  
-![AWS EC2](https://img.shields.io/badge/AWS%20EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white)  
-![AWS S3](https://img.shields.io/badge/AWS%20S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white) 
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![AWS EC2](https://img.shields.io/badge/AWS%20EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white)
+![AWS S3](https://img.shields.io/badge/AWS%20S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white)
   
 <br>  
   
