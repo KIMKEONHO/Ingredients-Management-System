@@ -23,7 +23,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         logout,
         logoutAndHome,
     }
-
+ 
     useEffect(() => {
         const checkAuthStatus = async () => {
             try {
