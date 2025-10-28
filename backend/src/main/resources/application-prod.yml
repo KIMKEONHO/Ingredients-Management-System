@@ -22,8 +22,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: '${custom.mail.username}'
-    password: '${custom.mail.password}'
+    username: "${custom.mail.username}"
+    password: "${custom.mail.password}"
     properties:
       mail:
         smtp:
@@ -39,7 +39,7 @@ spring:
     redis:
       host: 172.17.0.1
       port: 6379
-      password: '${spring.data.redis.password}'
+      password: 1234
 logging:
   level:
     com.ll.demo03: INFO
