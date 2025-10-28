@@ -185,7 +185,7 @@ public class ApiSecurityConfig {
 
         config.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "https://api.ms.mkfood.site",
+                "https://www.ms.mkfood.site",
                 "https://ms.mkfood.site"
         ));
         config.addAllowedHeader("*");
