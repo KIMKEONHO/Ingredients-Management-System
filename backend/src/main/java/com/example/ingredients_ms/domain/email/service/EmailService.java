@@ -2,10 +2,10 @@ package com.example.ingredients_ms.domain.email.service;
 
 import com.example.ingredients_ms.global.exeption.BusinessLogicException;
 import com.example.ingredients_ms.global.redis.util.RedisUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -97,6 +97,8 @@ public class EmailService {
     // 코드 검증
     public Boolean verifyEmailCode(String email, String code) {
         if (redisUtil == null) {
+
+
             log.warn("Redis is not available, email verification is disabled");
             return false;
         }
