@@ -101,7 +101,7 @@ class NotificationService {
    */
   createSSEConnection(): EventSource {
     // 쿠키 기반 인증 사용 (토큰 파라미터 제거)
-    const API_BASE_URL = 'http://localhost:8090';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
     const fullUrl = `${API_BASE_URL}${API_ENDPOINTS.NOTIFICATIONS.STREAM}`;
     console.log('SSE 연결 URL:', fullUrl);
     return new EventSource(fullUrl, {

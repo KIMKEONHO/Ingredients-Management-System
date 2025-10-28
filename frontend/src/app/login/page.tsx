@@ -37,7 +37,7 @@ export default function LoginPage() {
   
   const socialLoginForKakaoUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/oauth2/authorization/kakao`;
   const socialLoginForGoogleUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/oauth2/authorization/google`;
-  const redirectUrlAfterSocialLogin = 'http://localhost:3000';
+  const redirectUrlAfterSocialLogin = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
 
   // 일반 로그인 처리
   const handleLogin = async (e: React.FormEvent) => {
@@ -269,7 +269,7 @@ export default function LoginPage() {
         <section className="w-full max-w-lg mx-auto">
         <div className="mb-6 text-center">
           <img 
-            src="https://dev-bucket-lolgun0629-1.s3.ap-northeast-2.amazonaws.com/default/mkfood_letter_logo_nuggi_v3.png" 
+            src="https://dev-bucket-lolgun0629-1.s3.ap-northeast-2.amazonaws.com/img1/default/mkfood_letter_logo_nuggi.png" 
             alt="MKFood Logo" 
             className="mx-auto h-30 w-auto mb-4"
           />
