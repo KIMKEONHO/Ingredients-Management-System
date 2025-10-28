@@ -87,7 +87,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/users/me`, {
                         credentials: 'include',
                     });
-                    
+                     
                     if (response.ok) {
                         const result = await response.json();
                         setLoginMember(result.data);
