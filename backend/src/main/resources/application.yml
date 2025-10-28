@@ -38,7 +38,7 @@ spring:
     ansi:
       enabled: ALWAYS
   profiles:
-    active: prod
+    active: dev
     include: secret
   autoconfigure:
     exclude:
