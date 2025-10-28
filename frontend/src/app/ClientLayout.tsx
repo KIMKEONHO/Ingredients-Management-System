@@ -84,7 +84,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 
                 // 백엔드 API 호출로 인증 상태 확인 (선택적)
                 try {
-                    const response = await fetch('http://localhost:8090/api/v1/users/me', {
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/users/me`, {
                         credentials: 'include',
                     });
                     
