@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,9 +23,9 @@ public class FoodInventorySchedulerService {
     private final SseService sseService;
 
     /**
-     * 매일 자정에 식재료 상태 업데이트 및 알람 발송
+     * 매시간마다 식재료 상태 업데이트 및 알람 발송 (실시간성 향상)
      */
-    @Scheduled(cron = "0 0 0 * * ?") // 매일 자정
+    @Scheduled(cron = "0 0 * * * ?") // 매시간마다
     @Transactional
     public void updateFoodInventoryStatus() {
         log.info("식재료 상태 업데이트 스케줄러 시작");
@@ -78,18 +79,36 @@ public class FoodInventorySchedulerService {
     }
 
     /**
-     * 만료된 식재료 상태 업데이트
+     * 만료된 식재료 상태 업데이트 및 알람 발송
      */
     private void updateExpiredIngredients(LocalDateTime now) {
-        List<FoodInventory> expiredIngredients = foodInventoryRepository.findExpiredIngredients(now);
+        // 내일 자정을 기준으로 오늘 날짜까지 만료된 것으로 처리
+        LocalDate tomorrow = now.toLocalDate().plusDays(1);
+        LocalDateTime startOfTomorrow = tomorrow.atStartOfDay();
+        List<FoodInventory> expiredIngredients = foodInventoryRepository.findExpiredIngredients(startOfTomorrow);
         
         if (!expiredIngredients.isEmpty()) {
+            // 상태 업데이트
             List<Long> ids = expiredIngredients.stream()
                     .map(FoodInventory::getId)
                     .toList();
             foodInventoryRepository.updateStatusByIds(ids, FoodStatus.EXPIRED);
             
-            log.info("{}개의 식재료를 만료 상태로 업데이트했습니다.", expiredIngredients.size());
+            // 알람 발송
+            for (FoodInventory inventory : expiredIngredients) {
+                try {
+                    notificationService.createExpiredNotification(
+                            inventory.getUser().getId(),
+                            inventory.getIngredient().getName(),
+                            inventory.getExpirationDate()
+                    );
+                } catch (Exception e) {
+                    log.error("만료 알람 발송 실패 - 사용자 ID: {}, 식재료: {}", 
+                            inventory.getUser().getId(), inventory.getIngredient().getName(), e);
+                }
+            }
+            
+            log.info("{}개의 식재료를 만료 상태로 업데이트하고 알람을 발송했습니다.", expiredIngredients.size());
         }
     }
 

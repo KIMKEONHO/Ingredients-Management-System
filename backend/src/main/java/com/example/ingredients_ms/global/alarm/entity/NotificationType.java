@@ -7,7 +7,8 @@ public enum NotificationType {
 
     LIKE("like"),
     COMPLAINT("complaint"),
-    EXPIRING_SOON("expiring_soon")
+    EXPIRING_SOON("expiring_soon"),
+    EXPIRED("expired")
     ;
 
     private final String value;

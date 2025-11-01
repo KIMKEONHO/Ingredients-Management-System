@@ -31,9 +31,10 @@ public interface FoodInventoryRepository extends JpaRepository<FoodInventory, Lo
     @Query("SELECT fi FROM FoodInventory fi WHERE fi.status = 'NORMAL' AND fi.expirationDate <= :threeDaysLater AND fi.expirationDate > :now")
     List<FoodInventory> findExpiringSoonIngredients(@Param("now") LocalDateTime now, @Param("threeDaysLater") LocalDateTime threeDaysLater);
 
-    // 만료된 식재료 조회
-    @Query("SELECT fi FROM FoodInventory fi WHERE fi.status = 'NORMAL' AND fi.expirationDate < :now")
-    List<FoodInventory> findExpiredIngredients(@Param("now") LocalDateTime now);
+    // 만료된 식재료 조회 (오늘 날짜 포함하여 만료된 것들)
+    // 내일 자정 이전의 식재료를 만료로 처리 (오늘 날짜까지 포함)
+    @Query("SELECT fi FROM FoodInventory fi WHERE fi.status = 'NORMAL' AND fi.expirationDate < :startOfTomorrow")
+    List<FoodInventory> findExpiredIngredients(@Param("startOfTomorrow") LocalDateTime startOfTomorrow);
 
     // 상태별 식재료 조회
     List<FoodInventory> findByStatus(FoodStatus status);
