@@ -104,6 +104,19 @@ public class NotificationService {
     }
 
     /**
+     * 식재료 만료 알람 생성
+     */
+    @Transactional
+    public Notification createExpiredNotification(Long userId, String ingredientName, LocalDateTime expirationDate) {
+        String title = "식재료 만료";
+        String message = String.format("'%s'이(가) %s에 만료되었습니다.", ingredientName, expirationDate.toLocalDate());
+        String data = String.format("{\"ingredientName\":\"%s\",\"expirationDate\":\"%s\"}", 
+                ingredientName, expirationDate.toString());
+
+        return createNotification(userId, NotificationType.EXPIRED, title, message, data);
+    }
+
+    /**
      * 사용자의 알람 목록 조회
      */
     public List<Notification> getUserNotifications(Long userId, int page, int size) {
