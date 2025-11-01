@@ -18,7 +18,7 @@ spring:
     validate-on-migrate: true  # 마이그레이션 검증
   jpa:
     hibernate:
-      ddl-auto: none  # Flyway와 충돌 방지
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: false
