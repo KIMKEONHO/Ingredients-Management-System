@@ -1,4 +1,3 @@
--- 사용자 활동 로그 테이블 생성
 CREATE TABLE user_activities (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -14,8 +13,3 @@ CREATE TABLE user_activities (
     INDEX idx_user_activities_created_at (created_at),
     INDEX idx_user_activities_user_activity_type (user_id, activity_type)
 );
-
--- 활동 타입별 인덱스 추가
-CREATE INDEX idx_user_activities_login ON user_activities(activity_type, created_at) WHERE activity_type = 'LOGIN';
-CREATE INDEX idx_user_activities_recipe_view ON user_activities(activity_type, created_at) WHERE activity_type = 'RECIPE_VIEW';
-CREATE INDEX idx_user_activities_recipe_create ON user_activities(activity_type, created_at) WHERE activity_type = 'RECIPE_CREATE';
