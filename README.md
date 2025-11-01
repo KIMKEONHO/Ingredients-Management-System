@@ -68,6 +68,7 @@
 | :---: | :---:  |
 | **레시피 <br> 커뮤니티** | <img width="800" height="778" alt="image" src="https://github.com/user-attachments/assets/a778382e-8da7-47fd-8a72-a5f34acf099e" />|
 | **레시피<br>작성** | <img width="453" height="1213" alt="image" src="https://github.com/user-attachments/assets/773a3861-1d58-4688-a841-6a5d06a43ffa" />|
+
 | **레시피<br>추천** | <img width="800" height="658" alt="image" src="https://github.com/user-attachments/assets/ceb98ea1-2c46-41f9-85f6-1549d400db63" />|<img width="631" height="401" alt="image" src="https://github.com/user-attachments/assets/0c80f998-08de-4b4c-92af-52329932bf37" />|
 
 
@@ -178,7 +179,7 @@
 
 <details>
 <summary>백엔드 구조도</summary>
-	
+
 ```
 📦main  
  ┣ 📂java  
@@ -249,6 +250,7 @@
 <details>
 <summary>프론트 구조도</summary>
 	
+
 ```
 📦src  
  ┣ 📂app  
@@ -323,6 +325,7 @@
 
 ## :pushpin: 브랜치 전략 (Branch Strategy)
 
+
 -   Git-Flow 전략
 
 ### 📝기능 브랜치 형식
@@ -341,6 +344,7 @@
 | **front/\*** | 프론트 개발 및 연동 브랜치 (develop에서 분기) |
 
 <br>
+
 
 ## 📍 커밋 메시지 컨벤션
 
