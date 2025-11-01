@@ -2,9 +2,40 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { useSSENotifications } from '@/lib/hooks/useNotifications';
+import { NotificationResponseDto } from '@/lib/api/services/notificationService';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+
+  // SSE 연결로 실시간 알람 수신 (관리자는 항상 연결)
+  useSSENotifications((newNotification: NotificationResponseDto) => {
+    // 새 알람이 오면 브라우저 알림 표시
+    if (Notification.permission === 'granted') {
+      new Notification(newNotification.title, {
+        body: newNotification.message,
+        icon: '/favicon.ico'
+      });
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          new Notification(newNotification.title, {
+            body: newNotification.message,
+            icon: '/favicon.ico'
+          });
+        }
+      });
+    }
+    console.log('관리자 새 알람 수신:', newNotification);
+  }, true); // 관리자는 항상 SSE 연결
+
+  // 브라우저 알림 권한 요청
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   const isActive = (path: string) => {
     return pathname === path;

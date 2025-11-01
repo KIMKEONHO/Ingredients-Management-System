@@ -1,15 +1,19 @@
 package com.example.ingredients_ms.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
+@ConditionalOnProperty(name = "spring.data.redis.host")
 public class RedisConfig {
     @Value("${spring.data.redis.host}")
     private String host;
@@ -17,9 +21,19 @@ public class RedisConfig {
     @Value("${spring.data.redis.port}")
     private int port;
 
+    @Value("${spring.data.redis.password:}")  // 기본값을 빈 문자열로 설정
+    private String password;
+
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory(host, port);
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(host);
+        config.setPort(port);
+        // 비밀번호가 비어있지 않을 때만 설정
+        if (password != null && !password.isBlank()) {
+            config.setPassword(password);
+        }
+        return new LettuceConnectionFactory(config);
     }
 
     @Bean
@@ -34,5 +48,12 @@ public class RedisConfig {
         redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
 
         return redisTemplate;
+    }
+
+    @Bean
+    public StringRedisTemplate stringRedisTemplate() {
+        StringRedisTemplate template = new StringRedisTemplate();
+        template.setConnectionFactory(redisConnectionFactory());
+        return template;
     }
 }

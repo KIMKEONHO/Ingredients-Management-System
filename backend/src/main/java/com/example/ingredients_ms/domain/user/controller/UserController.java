@@ -92,19 +92,28 @@ public class UserController {
         Cookie[] cookies = req.getCookies();
         String accessToken = "";
 
-        for  (Cookie cookie : cookies) {
-            if(cookie.getName().equals("accessToken")) {
-                accessToken = cookie.getValue();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if(cookie.getName().equals("accessToken")) {
+                    accessToken = cookie.getValue();
+                    break;
+                }
             }
         }
 
-        Map<String, Object> claims = jwtProvider.getClaims(accessToken);
+        // accessToken이 비어있거나 null인 경우 처리
+        if (accessToken == null || accessToken.isBlank()) {
+            return new RsData<>("401", "인증 토큰이 없습니다.", null);
+        }
 
-        String userEmail = (String) claims.get("email");
-
-        ValidUserResponseDto responseDto = userService.getUserByEmailToDto(userEmail);
-
-        return new RsData<>("200","회원 인증에 성공하였습니다.", responseDto);
+        try {
+            Map<String, Object> claims = jwtProvider.getClaims(accessToken);
+            String userEmail = (String) claims.get("email");
+            ValidUserResponseDto responseDto = userService.getUserByEmailToDto(userEmail);
+            return new RsData<>("200","회원 인증에 성공하였습니다.", responseDto);
+        } catch (Exception e) {
+            return new RsData<>("401", "유효하지 않은 토큰입니다.", null);
+        }
     }
 
     @PostMapping("/logout")

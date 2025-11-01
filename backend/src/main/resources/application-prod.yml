@@ -19,6 +19,27 @@ spring:
         format_sql: false
         highlight_sql: false
         use_sql_comments: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: "${custom.mail.username}"
+    password: "${custom.mail.password}"
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    auth-code-expiration-millis: 1800000  # 30 * 60 * 1000 == 30?
+  data:
+    redis:
+      host: 172.17.0.1
+      port: 6379
+      password: 1234
 logging:
   level:
     com.ll.demo03: INFO
@@ -32,8 +53,3 @@ custom:
     cookieDomain: "${custom.prod.cookieDomain}"
     frontUrl: "${custom.prod.frontUrl}"
     backUrl: "${custom.prod.backUrl}"
-data:
-  redis:
-    host: 172.17.0.1
-    port: 6379
-    password: '${custom.secret.spring.data.redis.password}'

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // API 기본 설정
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8090';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 class ApiClient {
   private client: ReturnType<typeof axios.create>;

@@ -1,11 +1,17 @@
 name: 'deploy'
+
 on:
   push:
     paths:
       - 'backend/**'
       - '.github/workflows/**'
+      - 'build.gradle.kts'
+      - 'Dockerfile'
+      - 'README.md'
+      - 'infraScript/**'
     branches:
       - 'main'
+
 jobs:
   makeTagAndRelease:
     runs-on: ubuntu-latest
@@ -13,11 +19,13 @@ jobs:
       tag_name: ${{ steps.create_tag.outputs.new_tag }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Create Tag
         id: create_tag
         uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -29,32 +37,36 @@ jobs:
           body: ${{ steps.create_tag.outputs.changelog }}
           draft: false
           prerelease: false
+
   buildImageAndPush:
     name: 도커 이미지 빌드와 푸시
     needs: makeTagAndRelease
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Docker Buildx 설치
         uses: docker/setup-buildx-action@v2
+
       - name: 레지스트리 로그인
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: set lower case owner name
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
+        run: echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
         env:
           OWNER: "${{ github.repository_owner }}"
+
       - name: application-secret.yml 생성
         env:
-          ACTIONS_STEP_DEBUG: true
           APPLICATION_SECRET: ${{ secrets.APPLICATION_SECRET_YML }}
         run: |
-          mkdir -p backend/src/main/resources
           echo "$APPLICATION_SECRET" > backend/src/main/resources/application-secret.yml
+          echo "✅ application-secret.yml 파일 생성 완료"
+
       - name: 빌드 앤 푸시
         uses: docker/build-push-action@v3
         with:
@@ -64,9 +76,10 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/ims:${{ needs.makeTagAndRelease.outputs.tag_name }},
             ghcr.io/${{ env.OWNER_LC }}/ims:latest
+
   deploy:
     runs-on: ubuntu-latest
-    needs: [ buildImageAndPush ]
+    needs: [buildImageAndPush]
     steps:
       - name: AWS SSM Send-Command
         uses: peterkimzz/aws-ssm-send-command@master
@@ -75,24 +88,12 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          instance-ids: "i-016157dccdc3dfd5f"
+          instance-ids: "i-0b65a09c9b8da83a5"
           working-directory: /
           comment: Deploy
           command: |
             mkdir -p /dockerProjects/ims
-            cd /dockerProjects/ims
-            
-            # 기존 컨테이너 정리
-            docker stop ims-app || true
-            docker rm ims-app || true
-            
-            # 새 컨테이너 실행
-            docker run -d \
-              --name ims-app \
-              --restart unless-stopped \
-              -p 8080:8090 \
-              -e TZ=Asia/Seoul \
-              -v /dockerProjects/ims/volumes/gen:/gen \
-              ghcr.io/kimkeonho/ims:latest
-            
-            echo "Deployment completed successfully"
+            curl -o /dockerProjects/ims/zero_downtime_deploy.py \
+              https://raw.githubusercontent.com/KIMKEONHO/Ingredients-Management-System/main/backend/infraScript/zero_downtime_deploy.py
+            chmod +x /dockerProjects/ims/zero_downtime_deploy.py
+            /dockerProjects/ims/zero_downtime_deploy.py
