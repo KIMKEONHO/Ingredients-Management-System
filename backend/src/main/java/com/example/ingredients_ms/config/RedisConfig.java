@@ -21,7 +21,7 @@ public class RedisConfig {
     @Value("${spring.data.redis.port}")
     private int port;
 
-    @Value("${spring.data.redis.password}")
+    @Value("${spring.data.redis.password:}")  // 기본값을 빈 문자열로 설정
     private String password;
 
     @Bean
@@ -29,7 +29,10 @@ public class RedisConfig {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName(host);
         config.setPort(port);
-        config.setPassword(password);
+        // 비밀번호가 비어있지 않을 때만 설정
+        if (password != null && !password.isBlank()) {
+            config.setPassword(password);
+        }
         return new LettuceConnectionFactory(config);
     }
 
