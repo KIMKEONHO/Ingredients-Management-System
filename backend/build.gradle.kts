@@ -36,8 +36,8 @@ dependencies {
 
 
     // Flyway
-    implementation("org.flywaydb:flyway-core")
-    implementation("org.flywaydb:flyway-mysql")
+//    implementation("org.flywaydb:flyway-core")
+//    implementation("org.flywaydb:flyway-mysql")
 
     // redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
