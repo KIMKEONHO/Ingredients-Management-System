@@ -3,7 +3,7 @@ import { API_ENDPOINTS, createApiUrl } from '../endpoints';
 
 export interface NotificationResponseDto {
   id: number;
-  type: 'LIKE' | 'COMPLAINT' | 'EXPIRING_SOON';
+  type: 'LIKE' | 'COMPLAINT' | 'EXPIRING_SOON' | 'EXPIRED';
   title: string;
   message: string;
   data: string;
